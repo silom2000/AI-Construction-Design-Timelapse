@@ -1,0 +1,144 @@
+.app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+}
+
+.sidebar {
+  width: 350px;
+  background-color: #2a2a2a;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #444;
+}
+
+.generate-button {
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 15px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.3s;
+}
+
+.generate-button:hover {
+  background-color: #005f9e;
+}
+
+.generate-button:disabled {
+  background-color: #4a4a4a;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.theme-list {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.theme-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.theme-item:hover {
+  background-color: #3a3a3a;
+}
+
+.theme-item.selected {
+  background-color: #007acc;
+  border-color: #00aaff;
+}
+
+.theme-item label {
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.image-generation-area {
+  flex-grow: 1;
+  background-color: #242424;
+  border-radius: 8px;
+  border: 1px dashed #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.image-generation-area img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.placeholder, .loading-indicator {
+  color: #888;
+  font-size: 1.2rem;
+}
+
+.generate-image-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 15px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.generate-image-button:hover {
+  background-color: #218838;
+}
+
+.generate-image-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
