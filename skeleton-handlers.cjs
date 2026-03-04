@@ -1001,25 +1001,27 @@ For EACH scene (exactly 6), generate following JSON:
         const isRussian = langName === 'Russian';
 
         const prompt = mode === 'health'
-            ? `Provide 5 viral educational health video ideas about specific fruits/veg inside organs. 
-               Language: ${langName}. 
-               ${isRussian ? '' : 'Also provide Russian translation for each idea.'}
-               Output ONLY a JSON array of objects: [{"original": "...", "russian": "..."}] (no markers, no markdown blocks).`
-            : `Provide 5 viral funny talking object ideas for TikTok/Shorts. 
-               Language: ${langName}. 
-               ${isRussian ? '' : 'Also provide Russian translation for each idea.'}
-               Output ONLY a JSON array of objects: [{"original": "...", "russian": "..."}] (no markers, no markdown blocks).`;
+            ? `Output ONLY a JSON array of 5 objects for viral health ideas.
+               Each object MUST have "original" (in ${langName}) and "russian" (Russian translation).
+               Format: [{"original": "...", "russian": "..."}]
+               No markdown, no talk, just JSON.`
+            : `Output ONLY a JSON array of 5 objects for viral funny object ideas.
+               Each object MUST have "original" (in ${langName}) and "russian" (Russian translation).
+               Format: [{"original": "...", "russian": "..."}]
+               No markdown, no talk, just JSON.`;
 
         const raw = await callPollinations([{ role: 'user', content: prompt }], true);
+        console.log(`[Studio Ideas] Raw AI Result:`, raw);
+
         try {
             const jsonText = raw.match(/\[[\s\S]*\]/)?.[0] || raw;
             const parsed = JSON.parse(jsonText);
-            return parsed.map(item => ({
+            return (Array.isArray(parsed) ? parsed : []).map(item => ({
                 original: typeof item === 'string' ? item : (item.original || ''),
                 russian: isRussian ? '' : (item.russian || item.translation || '')
             }));
         } catch (e) {
-            console.error('Failed to parse Studio ideas:', raw);
+            console.error('Failed to parse Studio ideas:', raw, e.message);
             return [];
         }
     });
