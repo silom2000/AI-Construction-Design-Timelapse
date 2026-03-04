@@ -1001,14 +1001,14 @@ For EACH scene (exactly 6), generate following JSON:
         const isRussian = langName === 'Russian';
 
         const prompt = mode === 'health'
-            ? `Output ONLY a JSON array of 5 objects for viral health ideas.
-               Each object MUST have "original" (in ${langName}) and "russian" (Russian translation).
-               Format: [{"original": "...", "russian": "..."}]
-               No markdown, no talk, just JSON.`
-            : `Output ONLY a JSON array of 5 objects for viral funny object ideas.
-               Each object MUST have "original" (in ${langName}) and "russian" (Russian translation).
-               Format: [{"original": "...", "russian": "..."}]
-               No markdown, no talk, just JSON.`;
+            ? `Provide 5 viral educational health video ideas specifically about fruits or vegetables inside human organs (e.g., "What happens if a strawberry ends up in your stomach?").
+               Target Language: ${langName}.
+               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]
+               No markdown, no conversation, just JSON.`
+            : `Provide 5 viral funny talking object ideas for TikTok/Shorts (e.g., a sarcastic coffee machine or a tired smartphone).
+               Target Language: ${langName}.
+               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]
+               No markdown, no conversation, just JSON.`;
 
         const raw = await callPollinations([{ role: 'user', content: prompt }], true);
         console.log(`[Studio Ideas] Raw AI Result:`, raw);
