@@ -1009,9 +1009,9 @@ For EACH scene (exactly 6), generate following JSON:
                Make the ideas catchy, optimized for YouTube Shorts/Reels, and creator-friendly. 
                Target Language: ${langName}.
                Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]`
-            : `Provide 5 Topic Ideas for funny talking-object AI videos for TikTok/Shorts where everyday objects become dramatic or comedic characters.
-               Each topic idea should be dramatic, sarcastic, or hilarious (e.g., a coffee machine judging your morning choices, a Wi-Fi box threatening to reveal history).
-               Make the ideas catchy and optimized for viral retention.
+            : `Provide 5 highly viral topic ideas for "Talking Objects Conflict" videos (TikTok/Shorts).
+               Theme: Everyday objects, foods, or appliances that are ALIVE and constantly fighting about who is the best and most important.
+               Each idea should be broad, curiosity-driven (e.g., "The Kitchen Ego War", "The Gym Equipment Argument").
                Target Language: ${langName}.
                Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]`;
 
@@ -1064,15 +1064,18 @@ For EACH scene (exactly 6), generate following JSON:
               ]
             }`;
         } else {
-            systemInstruction = `You are a viral TikTok comedic scriptwriter for talking objects.
+            systemInstruction = `You are a viral TikTok comedic scriptwriter specialized in "Talking Objects Conflict".
             CRITICAL RULES:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
             3. "imagePrompt" Style: Anthropomorphic object with high-drama personality, Pixar-style round expressive eyes, visible lips/mouth for talking, placed in a realistic high-drama environment (e.g., a dark kitchen counter, a messy desk).
             4. "videoPrompt" Style: Dramatic lip-sync (matching dialogue: ${langName}), high emotion, expressive body language (trembling, jumping, leaning), slow cinematic vertical camera.
-            5. Characters: Everyday objects with intense, funny, or sarcastic personalities.`;
+            5. Characters: 3-4 objects ALIVE and fighting/competing about who is best. Ego-driven, slightly aggressive, and punchy.
+            6. Formatting: Each "line" must include an emotion in brackets, e.g., "[Angry] I am the king of this house!"`;
 
-            userPrompt = `Create a 5-scene viral funny drama about "${topic}".
+            userPrompt = `Create a 5-scene viral high-conflict script about "${topic}". 
+            Maximum 5 scenes, punchy, fast-paced (45-60s total). 1-2 lines per scene.
+            End with a funny or ironic line.
             Target Language: ${langName}.
             Output JSON format:
             {
@@ -1081,9 +1084,10 @@ For EACH scene (exactly 6), generate following JSON:
                 {
                   "id": 1,
                   "character": "Object Name in ${langName}",
-                  "line": "Dramatic dialogue in ${langName} (Sarcastic, emotional, or funny)",
-                  "imagePrompt": "(In English) Dramatic anthropomorphic Pixar-style [character] with round expressive eyes and lips, high drama spotlighting, professional cinematic render, 8k textures, expressive pose.",
-                  "videoPrompt": "(In English) High-drama lip-sync animation for: '[line]'. Emotional movement, expressive hand/body language, slow cinematic camera zoom, 9:16 framing."
+                  "line": "Spoken dialogue in ${langName} including [emotion in brackets]",
+                  "emotion": "Dominant emotion (Angry, Mocking, Laughing, Shouting) in English",
+                  "imagePrompt": "(In English) Dramatic anthropomorphic Pixar-style [character] with round expressive eyes and lips, showing [emotion], high drama spotlighting, professional cinematic render, 8k textures.",
+                  "videoPrompt": "(In English) High-drama lip-sync animation for: '[line]'. [character] expresses [emotion] with intense body language, slow cinematic camera zoom, 9:16 vertical framing."
                 }
               ]
             }`;
