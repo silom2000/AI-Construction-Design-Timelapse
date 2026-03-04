@@ -1001,14 +1001,19 @@ For EACH scene (exactly 6), generate following JSON:
         const isRussian = langName === 'Russian';
 
         const prompt = mode === 'health'
-            ? `Provide 5 viral educational health video ideas specifically about fruits or vegetables inside human organs (e.g., "What happens if a strawberry ends up in your stomach?").
+            ? `Provide 5 Topic Ideas for health-niche talking-object AI videos where fruits, vegetables, or healthy foods become anthropomorphic characters inside the human body and explain their benefits in a friendly, educational way.
+               Each topic idea must clearly mention:
+               - The specific health goal (e.g., fat burn, digestion, immunity, energy).
+               - The type of foods involved.
+               - The core outcome viewers will learn.
+               Make the ideas catchy, optimized for YouTube Shorts/Reels, and creator-friendly. 
                Target Language: ${langName}.
-               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]
-               No markdown, no conversation, just JSON.`
-            : `Provide 5 viral funny talking object ideas for TikTok/Shorts (e.g., a sarcastic coffee machine or a tired smartphone).
+               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]`
+            : `Provide 5 Topic Ideas for funny talking-object AI videos for TikTok/Shorts where everyday objects become dramatic or comedic characters.
+               Each topic idea should be dramatic, sarcastic, or hilarious (e.g., a coffee machine judging your morning choices, a Wi-Fi box threatening to reveal history).
+               Make the ideas catchy and optimized for viral retention.
                Target Language: ${langName}.
-               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]
-               No markdown, no conversation, just JSON.`;
+               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]`;
 
         const raw = await callPollinations([{ role: 'user', content: prompt }], true);
         console.log(`[Studio Ideas] Raw AI Result:`, raw);
@@ -1028,51 +1033,57 @@ For EACH scene (exactly 6), generate following JSON:
 
     ipcMain.handle('studio-generate-script', async (event, { mode, topic, language }) => {
         const langName = LANG_NAMES[language] || 'English';
-        const isRussian = langName === 'Russian';
+
         let systemInstruction = "";
         let userPrompt = "";
 
         if (mode === 'health') {
-            systemInstruction = `You are a world-class AI medical animator.
+            systemInstruction = `You are a world-class AI medical animator and viral scriptwriter.
             CRITICAL RULES:
-            1. ALL text for "line", "intro", "character" and "videoPrompt" MUST be written EXCLUSIVELY in ${langName}.
-            2. ONLY "imagePrompt" must be in English.
-            3. "videoPrompt" must include the EXACT text from "line" (in ${langName}) and describe the animation.`;
-            userPrompt = `Generate a 5 scene medical explainer about "${topic}".
+            1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
+            2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
+            3. "imagePrompt" Style: Pixar-style anthropomorphic character, round expressive eyes, smiling mouth with visible lips, soft proportions, child-friendly medical look. Placed inside a highly detailed realistic 3D human organ environment matching the dialogue.
+            4. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), subtle body movement using symbolic tools (scrubbing, melting, hydrating), cinematic 9:16 vertical motion.
+            5. Characters: Friendly fruits/veg performing helpful actions inside organs.`;
+
+            userPrompt = `Generate a 5-scene viral health explainer about "${topic}".
             Target Language: ${langName}.
-            Output JSON:
+            Output JSON format:
             {
-              "intro": "Title in ${langName}",
+              "intro": "Catchy Title in ${langName}",
               "scenes": [
                 {
                   "id": 1,
                   "character": "Name in ${langName}",
-                  "line": "Dialogue in ${langName}",
-                  "organ": "Organ in ${langName}",
-                  "action": "Action in ${langName}",
-                  "imagePrompt": "(In English) Detailed Pixar-style image prompt for [character]...",
-                  "videoPrompt": "(In ${langName}) Lip-sync for: '[line]'. [character] is performing [action] inside [organ]..."
+                  "line": "Spoken dialogue in ${langName} (Calm, friendly, educational first-person style)",
+                  "organ": "Matching human organ in English",
+                  "instrument": "Symbolic tool (e.g., cleansing brush, melting wand, smoothing roller) in English",
+                  "imagePrompt": "(In English) Cute friendly Pixar-style [character] with expressive eyes and lips, inside a 3D medical [organ] environment, actively [doing action] using [instrument]. Cinematic lighting, high-end medical explainer textures, multiple small versions in background for teamwork feel.",
+                  "videoPrompt": "(In English) Lip-sync for: '[line]'. [character] performs [action] inside [organ] with [instrument]. High emotion, natural animation, vertical 9:16 framing, slow cinematic camera."
                 }
               ]
             }`;
         } else {
-            systemInstruction = `You are a viral TikTok scriptwriter for talking objects.
+            systemInstruction = `You are a viral TikTok comedic scriptwriter for talking objects.
             CRITICAL RULES:
-            1. ALL text for "line", "intro", "character" and "videoPrompt" MUST be written EXCLUSIVELY in ${langName}.
-            2. ONLY "imagePrompt" must be in English.
-            3. "videoPrompt" MUST contain the EXACT dialogue in ${langName}.`;
-            userPrompt = `Create a 5 scene viral comedy about "${topic}".
+            1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
+            2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
+            3. "imagePrompt" Style: Anthropomorphic object with high-drama personality, Pixar-style round expressive eyes, visible lips/mouth for talking, placed in a realistic high-drama environment (e.g., a dark kitchen counter, a messy desk).
+            4. "videoPrompt" Style: Dramatic lip-sync (matching dialogue: ${langName}), high emotion, expressive body language (trembling, jumping, leaning), slow cinematic vertical camera.
+            5. Characters: Everyday objects with intense, funny, or sarcastic personalities.`;
+
+            userPrompt = `Create a 5-scene viral funny drama about "${topic}".
             Target Language: ${langName}.
-            Output JSON:
+            Output JSON format:
             {
-              "intro": "Funny Title in ${langName}",
+              "intro": "Funny Dramatic Title in ${langName}",
               "scenes": [
                 {
                   "id": 1,
                   "character": "Object Name in ${langName}",
-                  "line": "Dramatic dialogue in ${langName}",
-                  "imagePrompt": "(In English) Anthropomorphic [character], high drama lighting...",
-                  "videoPrompt": "(In ${langName}) Lip-sync animation: character says '[line]'. High emotion..."
+                  "line": "Dramatic dialogue in ${langName} (Sarcastic, emotional, or funny)",
+                  "imagePrompt": "(In English) Dramatic anthropomorphic Pixar-style [character] with round expressive eyes and lips, high drama spotlighting, professional cinematic render, 8k textures, expressive pose.",
+                  "videoPrompt": "(In English) High-drama lip-sync animation for: '[line]'. Emotional movement, expressive hand/body language, slow cinematic camera zoom, 9:16 framing."
                 }
               ]
             }`;
