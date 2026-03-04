@@ -193,12 +193,7 @@ if exist "%~dp0ffmpeg\bin\ffmpeg.exe" (
 cd /d "%~dp0"
 call npm run dev
 
-if !errorlevel! neq 0 (
-    echo.
-    echo  [X] Приложение завершилось с ошибкой (код: !errorlevel!)
-    echo  Проверьте логи выше.
-    pause
-)
+
 exit
 
 
