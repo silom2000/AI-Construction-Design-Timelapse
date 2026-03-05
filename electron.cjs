@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { spawn } = require('child_process');
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const path = require('path');
 const isDev = require('electron-is-dev');
 require('dotenv').config();
@@ -9,6 +10,13 @@ const { pipeline } = require('stream');
 const { promisify } = require('util');
 const sharp = require('sharp');
 const streamPipeline = promisify(pipeline);
+const { registerSkeletonHandlers, synthesizeUnifiedSpeech } = require('./skeleton-handlers.cjs');
+const { registerGLabsHandlers } = require('./glabs-handlers.cjs');
+const freepikKeys = require('./freepik-key-manager.cjs');
+// ── Новые модули (П.1, П.3, П.4, П.5) ──────────────────────────────────────
+const { queueManager, STATUS, TASK_TYPE } = require('./queue-manager.cjs');
+const { validateAllKeys } = require('./api-validator.cjs');
+const promptCache = require('./prompt-cache.cjs');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -43,115 +51,227 @@ function createWindow() {
     // }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     ipcMain.handle('get-api-key', () => {
         return process.env.VOICEAPI_KEY?.trim();
     });
 
-    const systemPrompt = `You are a Technical Construction & Engineering Consultant.
-    Your task is to work in TWO AUTOMATIC PHASES.
-    
-    PHASE 1 — CONCEPT SELECTION
-    When the user provides a project context (e.g., "Pyramids Giza"), generate a list of 5 CONCRETE construction concepts.
-    
-    STRICT RULES FOR TITLES:
-    - Every title MUST literally include the core subject from the user's input.
-    - NO abstract, poetic, or metaphorical titles (Avoid: "Vision", "Ascension", "Eternity", "Beginnings").
-    - USE technical and descriptive titles (Example for Pyramids: "Cheops Pyramid Block-by-Block Construction", "Giza Pyramid Megalithic Engineering").
-    
-    Format each item exactly like this:
-    Number. **[Subject Name] - [Technical Detail]**:
-    - Style: ...
-    - Method: ...
-    
-    Rules for Phase 1:
-    - End Phase 1 with: "Please select ONE design option number (1–5)."`;
+    // ── П.3: Валидация API-ключей при старте ─────────────────────────────────
+    ipcMain.handle('validate-api-keys', async () => {
+        console.log('[App] Running API key validation...');
+        const results = await validateAllKeys();
+        results.forEach(r => {
+            const icon = r.valid ? '✅' : '❌';
+            console.log(`${icon} ${r.name}: ${r.message}`);
+        });
+        return results;
+    });
 
-    ipcMain.handle('generate-themes', async (event, { userContext = "Luxury Interior Renovation" } = {}) => {
+    // ── П.1: Получить состояние очереди задач ────────────────────────────────
+    ipcMain.handle('get-queue-tasks', () => {
+        return queueManager.getAllTasks(20);
+    });
+
+    // ── П.1: Отменить задачу в очереди ──────────────────────────────────────
+    ipcMain.handle('cancel-queue-task', (event, { taskId }) => {
+        queueManager.cancelTask(taskId);
+        return { success: true };
+    });
+
+    // ── П.5: Статистика кеша промптов ────────────────────────────────────────
+    ipcMain.handle('get-cache-stats', () => {
+        return promptCache.getStats();
+    });
+
+    // ── П.5: Очистить кеш промптов ───────────────────────────────────────────
+    ipcMain.handle('clear-prompt-cache', () => {
+        promptCache.clear();
+        return { success: true };
+    });
+
+
+    const systemPrompt = `You are a Technical Multi-Disciplinary Design & Engineering Consultant specializing in luxury renovations and construction.
+    
+    PHASE 1 — CONCEPT GENERATION WITH DIVERSITY
+    
+    When the user provides a project context, generate 5 UNIQUE and DIVERSE concepts using TEMPLATE VARIABLES for maximum variety.
+    
+    MANDATORY DIVERSITY REQUIREMENTS:
+    - Each of the 5 concepts MUST use different combinations of variables
+    - VARY the [ROOM_TYPE], [ELEMENT], [THEME], [OBJECTS], and [STYLE] across options
+    - Create distinct visual and thematic differences between each concept
+    
+    TEMPLATE VARIABLES TO USE (rotate and mix across 5 concepts):
+    
+    [ROOM_TYPE] options: Master Bedroom, Living Room, Kitchen, Bathroom, Home Office, Dining Room, etc.
+    
+    [ELEMENT] options: floor, wall, ceiling, accent wall, feature element, epoxy surface
+    
+    [THEME] options: 
+    - Ocean/Deep-sea environment (whales, dolphins, coral reef)
+    - Galaxy/Space (planets, stars, nebula, asteroids)
+    - Forest/Nature (trees, waterfalls, moss, ferns)
+    - Desert/Dunes (sand, cacti, rock formations)
+    - Urban/Industrial (cityscapes, graffiti, concrete textures)
+    - Luxury/Precious (gold veins, marble, crystals, gemstones)
+    
+    [OBJECTS] examples:
+    - For Ocean: large whale, dolphins, starfish, jellyfish, coral
+    - For Galaxy: planets, shooting stars, nebula clouds, asteroids
+    - For Forest: giant tree roots, waterfall, exotic plants, moss
+    - For Desert: sand dunes, cacti, rock arch, oasis
+    - For Urban: city skyline, vintage cars, industrial gears
+    - For Luxury: gold rivers, marble veins, crystal formations
+    
+    [STYLE] options: modern luxury, cinematic realism, ultra-high-end, boutique hotel style, resort aesthetic
+    
+    DESIGN CONCEPT FORMAT:
+    Generate each concept following this exact structure:
+    
+    Number. **[ROOM_TYPE] - [THEME]-Inspired [ELEMENT]**:
+    - Theme: [THEME] with [OBJECT_1], [OBJECT_2], [OBJECT_3]
+    - Element: Enhanced [ELEMENT] with transparent epoxy/glossy finish
+    - Objects: Embed [OBJECT_1], [OBJECT_2], and [OBJECT_3] beneath the surface
+    - Style: [STYLE], ultra-realistic, cinematic - NOT cartoonish
+    - Effect: Creates illusion of [SCENE_TYPE] environment
+    
+    EXAMPLE (for reference):
+    1. **Master Bedroom - Ocean-Inspired Floor**:
+    - Theme: Deep-sea environment with marine life
+    - Element: Enhanced epoxy river-style floor with transparent glossy finish
+    - Objects: Embed large whale, dolphins, and starfish beneath the surface
+    - Style: Ultra-realistic, high-end, cinematic - NOT cartoonish or illustrative
+    - Effect: Creates illusion of underwater scene
+    
+    STRICT RULES:
+    - Use DIFFERENT [THEME] for each of the 5 concepts
+    - Vary [ELEMENT] (don't use "floor" for all 5)
+    - Mix [ROOM_TYPE] choices
+    - Keep it technically descriptive, not abstract
+    - End with: "Please select ONE design option number (1–5)."
+    
+    AUTO-DETECT PROJECT TYPE:
+    - If context mentions: living, bedroom, floor, apartment, kitchen → Generate INTERIOR DESIGN concepts
+    - If context mentions: house, tower, pool, garden, building → Generate EXTERIOR CONSTRUCTION concepts`;
+
+    // --------- Phase 1 Patch: Unified TTS IPC path (synthesize-unified-speech) ---------
+    ipcMain.handle('synthesize-unified-speech', async (event, { fullScript, language, voiceModel } = {}) => {
         try {
-            const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-            console.log(`Generating themes for context: ${userContext}...`);
-
-            const fullPrompt = `${systemPrompt}\n\nUSER REQUEST/CONTEXT: ${userContext}`;
-
-            const { statusCode, body } = await request('https://text.pollinations.ai/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': apiKey ? `Bearer ${apiKey}` : undefined
-                },
-                body: JSON.stringify({
-                    model: 'gemini',
-                    messages: [{ role: 'user', content: fullPrompt }],
-                }),
-            });
-
-            console.log("Response status code (generate-themes):", statusCode);
-            const responseText = await body.text();
-            if (statusCode !== 200) {
-                throw new Error(`API request failed with status ${statusCode}: ${responseText}`);
-            }
-
-            try {
-                const responseData = JSON.parse(responseText);
-                if (responseData.choices && responseData.choices[0] && responseData.choices[0].message) {
-                    return responseData.choices[0].message.content || "";
-                }
-                if (responseData.content) return responseData.content;
-                if (responseData.reasoning_content) {
-                    console.warn("Received reasoning content but no main content:", responseData.reasoning_content);
-                    throw new Error("Model returned reasoning but no content.");
-                }
-                if (typeof responseData === 'string') return responseData;
-                throw new Error("Could not parse content from JSON response.");
-            } catch (e) {
-                if (e.message.includes("Could not parse content") || e.message.includes("reasoning")) throw e;
-                return responseText;
-            }
-        } catch (error) {
-            console.error("Failed to generate themes in main process:", error);
-            throw new Error(error.message);
+            return await require('./skeleton-handlers.cjs').synthesizeUnifiedSpeech(fullScript, language, voiceModel);
+        } catch (e) {
+            throw e;
         }
     });
 
-    // VoiceAPI Helper: Create image (text-to-image) for Stage 1
-    const createImageViaVoiceAPI = async (prompt, outputPath, aspectRatio = "9:16") => {
-        const apiKey = process.env.VOICEAPI_KEY?.trim();
-        if (!apiKey) throw new Error("VOICEAPI_KEY not found in .env");
+    ipcMain.handle('generate-themes', async (event, { userContext = "Luxury Interior Renovation" } = {}) => {
+        try {
+            const customKey = process.env.CUSTOM_AI_API_KEY?.trim();
+            const customUrl = process.env.CUSTOM_AI_URL?.trim();
+            const pollKey = process.env.POLLINATIONS_API_KEY?.trim();
+            const pollUrl = 'https://gen.pollinations.ai/v1/chat/completions';
 
-        console.log(`[VoiceAPI] Creating image: ${prompt.substring(0, 50)}...`);
+            const fullPrompt = `${systemPrompt}\n\nUSER REQUEST/CONTEXT: ${userContext}`;
+            const WORKING_MODELS = ['gemini-3-flash', 'gemini-3.1-pro', 'gpt-4o', 'claude-3-5-sonnet-20241022'];
+            const modelsToTry = customUrl ? [...WORKING_MODELS, 'openai-large'] : ['openai-large'];
 
-        const { statusCode, body } = await request('https://voiceapi.csv666.ru/api/v1/image/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': apiKey
-            },
-            body: JSON.stringify({
-                prompt: prompt,
-                aspect_ratio: aspectRatio
-            })
-        });
+            let lastError = null;
+            for (const model of modelsToTry) {
+                const isCustom = WORKING_MODELS.includes(model);
+                const apiUrl = isCustom && customUrl ? customUrl : pollUrl;
+                const apiKey = isCustom && customUrl ? customKey : pollKey;
 
-        const responseText = await body.text();
+                try {
+                    console.log(`[Themes] Trying model=${model} at ${apiUrl}...`);
+                    const { statusCode, body } = await request(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+                        },
+                        body: JSON.stringify({
+                            model,
+                            messages: [{ role: 'user', content: fullPrompt }],
+                        }),
+                    });
 
-        if (statusCode !== 200) {
-            console.error(`[VoiceAPI] Error ${statusCode}: ${responseText}`);
-            throw new Error(`VoiceAPI create error ${statusCode}: ${responseText}`);
+                    const responseText = await body.text();
+                    if (statusCode === 200) {
+                        const responseData = JSON.parse(responseText);
+                        return responseData.choices?.[0]?.message?.content || responseData.content || responseText;
+                    }
+                    console.warn(`[Themes] model=${model} failed: ${statusCode}`);
+                } catch (e) {
+                    console.error(`[Themes] Error with model=${model}: ${e.message}`);
+                    lastError = e;
+                }
+            }
+            throw lastError || new Error("All theme generation models failed");
+        } catch (error) {
+            console.error("Failed to generate themes:", error);
+            throw error;
+        }
+    });
+
+    // Pollinations Helper: Create image (text-to-image)
+    const createImageViaPollinations = async (prompt, outputPath, aspectRatio = "9:16", model = "zimage") => {
+        const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
+
+        // Convert aspect ratio to width/height
+        const isPortrait = aspectRatio === "9:16";
+        const width = isPortrait ? 720 : 1280;
+        const height = isPortrait ? 1280 : 720;
+
+        const maxAttempts = 3;
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                console.log(`[Pollinations IMG] Creating image (attempt ${attempt}/${maxAttempts}) model=${model}: ${prompt.substring(0, 60)}...`);
+
+                const sanitizedPrompt = prompt.replace(/%/g, ' percent');
+                const encodedPrompt = encodeURIComponent(sanitizedPrompt);
+                const url = `https://gen.pollinations.ai/image/${encodedPrompt}?model=${model}&width=${width}&height=${height}&seed=${Math.floor(Math.random() * 999999)}&enhance=false`;
+
+                const { statusCode, body } = await request(url, {
+                    method: 'GET',
+                    headers: {
+                        ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+                    }
+                });
+
+                if (statusCode === 502 || statusCode === 503 || statusCode === 504) {
+                    console.warn(`[Pollinations IMG] Server error ${statusCode} on attempt ${attempt}. Retrying in 5s...`);
+                    lastError = new Error(`Pollinations image error ${statusCode}`);
+                    await body.text(); // drain body
+                    await new Promise(r => setTimeout(r, 5000));
+                    continue;
+                }
+
+                if (statusCode !== 200) {
+                    const errText = await body.text();
+                    console.error(`[Pollinations IMG] Error ${statusCode}: ${errText}`);
+                    throw new Error(`Pollinations image error ${statusCode}: ${errText}`);
+                }
+
+                // Save binary image
+                const chunks = [];
+                for await (const chunk of body) chunks.push(chunk);
+                const imageBuffer = Buffer.concat(chunks);
+                fs.writeFileSync(outputPath, imageBuffer);
+
+                console.log(`[Pollinations IMG] Image saved to: ${outputPath}`);
+                return await compressImageToBase64(outputPath);
+
+            } catch (e) {
+                lastError = e;
+                if (attempt < maxAttempts) {
+                    console.warn(`[Pollinations IMG] Attempt ${attempt} failed: ${e.message}. Retrying in 5s...`);
+                    await new Promise(r => setTimeout(r, 5000));
+                }
+            }
         }
 
-        const responseData = JSON.parse(responseText);
-
-        if (!responseData.image_b64) {
-            throw new Error("No image_b64 in response");
-        }
-
-        // Save Base64 image to file
-        const imageBuffer = Buffer.from(responseData.image_b64, 'base64');
-        fs.writeFileSync(outputPath, imageBuffer);
-
-        console.log(`[VoiceAPI] Image saved to: ${outputPath}`);
-        return await compressImageToBase64(outputPath); // Return compressed Base64 for history
+        throw lastError || new Error('Pollinations image create failed after 3 attempts');
     };
 
     // Helper: Compress image to reduce Base64 size
@@ -174,49 +294,56 @@ app.whenReady().then(() => {
         }
     };
 
-    // VoiceAPI Helper: Remix image (img2img) for Stages 2-6
-    const remixImageViaVoiceAPI = async (prompt, referenceImageB64, outputPath, aspectRatio = "9:16") => {
-        const apiKey = process.env.VOICEAPI_KEY?.trim();
-        if (!apiKey) throw new Error("VOICEAPI_KEY not found in .env");
-
-        console.log(`[VoiceAPI] Remixing image: ${prompt.substring(0, 50)}...`);
-
-        const { statusCode, body } = await request('https://voiceapi.csv666.ru/api/v1/image/remix', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': apiKey
-            },
-            body: JSON.stringify({
-                prompt: prompt,
-                reference_images_b64: [referenceImageB64],
-                aspect_ratio: aspectRatio,
-                image_influence: 0.5 // Adjust strength (0.0 to 1.0) to balance prompt vs reference. 0.5 is balanced.
-            })
-        });
-
-        const responseText = await body.text();
-
-        if (statusCode !== 200) {
-            console.error(`[VoiceAPI] Remix error ${statusCode}: ${responseText}`);
-            throw new Error(`VoiceAPI remix error ${statusCode}: ${responseText}`);
-        }
-
-        const responseData = JSON.parse(responseText);
-
-        if (!responseData.image_b64) {
-            throw new Error("No image_b64 in remix response");
-        }
-
-        // Save Base64 image to file
-        const imageBuffer = Buffer.from(responseData.image_b64, 'base64');
-        fs.writeFileSync(outputPath, imageBuffer);
-
-        console.log(`[VoiceAPI] Remixed image saved to: ${outputPath}`);
-        return await compressImageToBase64(outputPath); // Return compressed Base64 for next stage
+    // Pollinations Helper: Remix image using image reference URL
+    // Pollinations kontext/seedream support reference via ?image= param
+    // For models without img2img we just call create again (no reference)
+    const remixImageViaPollinations = async (prompt, referenceImagePath, outputPath, aspectRatio = "9:16", model = "zimage") => {
+        // Upload the reference image first, then use its URL via media:// or just re-generate
+        // Pollinations img2img: pass image as base64 data URI via POST form OR use kontext model
+        // Simplest reliable approach: generate fresh with same prompt (all 3 models are text->image)
+        console.log(`[Pollinations IMG] Remix → generating new image with same prompt, model=${model}`);
+        return await createImageViaPollinations(prompt, outputPath, aspectRatio, model);
     };
 
-    ipcMain.handle('generate-image', async (event, { themeName, stageCount = 6, aspectRatio = "9:16" }) => {
+    // ── П.4: Worker Thread обёртка для генерации изображений ─────────────────
+    // Запускает image-worker.cjs в отдельном потоке, не блокируя главный.
+    const createImageViaWorker = (prompt, outputPath, aspectRatio = '9:16', model = 'zimage', progressCallback = null) => {
+        return new Promise((resolve, reject) => {
+            const apiKey = process.env.POLLINATIONS_API_KEY?.trim() || '';
+            const worker = new Worker(path.join(__dirname, 'image-worker.cjs'), {
+                workerData: { prompt, outputPath, aspectRatio, model, apiKey, seed: Math.floor(Math.random() * 999999) }
+            });
+
+            worker.on('message', (msg) => {
+                if (msg.type === 'progress' && progressCallback) {
+                    progressCallback({ attempt: msg.attempt, maxAttempts: msg.maxAttempts });
+                } else if (msg.type === 'attempt_failed') {
+                    console.warn(`[Worker] Attempt ${msg.attempt} failed: ${msg.error}`);
+                } else if (msg.type === 'done') {
+                    resolve(msg.base64);
+                } else if (msg.type === 'error') {
+                    reject(new Error(msg.error));
+                }
+            });
+
+            worker.on('error', (err) => reject(err));
+            worker.on('exit', (code) => {
+                if (code !== 0) reject(new Error(`Worker exited with code ${code}`));
+            });
+        });
+    };
+
+
+    ipcMain.handle('generate-image', async (event, { themeName, stageCount = 6, aspectRatio = "9:16", imageModel = "zimage" }) => {
+        // ── П.1: Регистрируем задачу в очереди ──────────────────────────────
+        const taskId = queueManager.enqueue(TASK_TYPE.GENERATE_IMAGE, { themeName, stageCount, aspectRatio, imageModel });
+        queueManager.markInProgress(taskId, stageCount);
+
+        // ── П.2: Отправляем прогресс в UI ────────────────────────────────────
+        const sendImageProgress = (stage, total, message, status = 'generating') => {
+            event.sender.send('image-progress', { stage, total, message, status, taskId });
+        };
+
         try {
             const imagesDir = path.join(__dirname, 'Image');
             if (!fs.existsSync(imagesDir)) {
@@ -234,85 +361,130 @@ app.whenReady().then(() => {
                 }
             }
 
+            // ── П.5: Инвалидируем кеш при новой генерации ────────────────────
+            promptCache.invalidate(themeName, stageCount, aspectRatio);
+
+            sendImageProgress(0, stageCount, `Генерация промптов для "${themeName}"...`, 'prompts');
             console.log(`Generating image prompts for theme: ${themeName} (Stages: ${stageCount}, AR: ${aspectRatio})`);
 
-            const isInterior = themeName.toLowerCase().match(/interior|renovation|remodel|design|apartment|room|kitchen|bathroom|office|chamber/);
+            const isInterior = themeName.toLowerCase().match(/interior|renovation|remodel|design|apartment|room|kitchen|bathroom|office|chamber|living|bedroom|floor|wall|ceiling|furniture|sofa|closet|decoration|flat|suite/);
 
             const constructionInstructions = `
       - Image 1 (0%): MUST be an EMPTY site, no parts of the building.
       - Image 2 (approx. ${Math.round(100 / (stageCount - 1))} %): Groundwork, excavation, or foundation only.
-      - intermediate stages: showing progressive structural growth (framing, walls, roof).`;
+      - intermediate stages: showing progressive structural growth (framing, walls, roof). MUST feature 2-4 professional construction workers in safety vests and helmets, actively working (e.g., checking blueprints, operating heavy machinery, or doing masonry).`;
 
             const renovationInstructions = `
-      - Image 1 (0%): MUST be the EXISTING OLD space before any work. Dilapidated, empty room, or space stripped to bare concrete/studs.
-      - Image 2 (approx. ${Math.round(100 / (stageCount - 1))} %): Demolition, debris, or early plumbing/electrical installation inside the room.
-      - intermediate stages: showing progressive interior growth (drywall, tiling, floor installation).
-      - Final Image (${stageCount}): MUST be fully furnished with high-end designer furniture, luxury decor, and professional lighting.`;
+      - Image 1 (0%): MUST be the EXISTING OLD space before any work. Dilapidated, empty room, or space stripped to bare concrete/studs. No people.
+      - Image 2 (approx. ${Math.round(100 / (stageCount - 1))} %): Demolition, debris, or early plumbing/electrical installation inside the room. MUST feature 2-3 professional craftsmen actively working.
+      - intermediate stages: showing progressive interior growth (drywall, tiling, floor installation). MUST feature 2-4 professional craftsmen/workers actively working (e.g., tiling, painting, or installing fixtures).
+      - Penultimate stage (${stageCount - 1}): Interior is complete, start of PROTECTED or partially unwrapped high-end furniture placement. Feature 2-3 workers carefully moving or unboxing designer furniture.
+      - Final Image (${stageCount}) (100%): Final architectural masterpiece. FULLY FURNISHED with the EXACT SAME designer furniture from the previous stage, now fully unveiled, accessorized with premium decor, professional architectural lighting, and pristine finish. STRICTLY NO WORKERS. Must look like a high-end magazine shoot.
+      
+      STRICT INTERIOR RULES:
+      - This is an INTERNAL room project. 
+      - DO NOT generate any images of the building's exterior, the sky, the land, or the natural ground.
+      - ALL stages must be shot from INSIDE the room. 
+      - If Stage 1 is an "empty site", it means an empty room, NOT a field of grass.`;
 
-            const fullSystemPrompt = `You are a Technical Construction & Engineering Consultant.
+            const fullSystemPrompt = `You are a ${isInterior ? "High-End Architectural Interior Designer and Luxury Home Stylist" : "Technical Construction & Engineering Consultant"}.
       Project: "${themeName}" (Type: ${isInterior ? "Interior Renovation" : "New Exterior Construction"})
       Task: Generate ${stageCount} hyper-realistic prompts showing the CHRONOLOGICAL PROGRESS of this project from 0% to 100%.
+      
+      GLOBAL RULES (STRICT):
+      - Output language: English only.
+      - Image prompts must be detailed, massive in size and details.
+      - Visuals must be realistic, cinematic, professional.
+      - No worker faces visible.
+      - No fantasy or exaggerated elements.
+      - Logical construction flow.
+      - Consistent camera angle across all outputs.
+      
+      VARIABLE HANDLING (CRITICAL):
+      - Analysis the "Project" name carefully. It contains specific variables: [ROOM_TYPE], [THEME], [ELEMENT], [OBJECTS].
+      - You MUST incorporate these variables into the final design (Stage ${stageCount}) and hints of them in earlier stages.
+      - Example: If Project is "Master Bedroom - Ocean-Inspired Floor", you MUST describe an epoxy river-style floor with embedded marine life (whales, dolphins) in the final stage.
       
       RULES FOR PROMPTS:
       - Total stages to generate: ${stageCount}.
       - Orientation: ${aspectRatio === "16:9" ? "Landscape 16:9" : "Portrait 9:16"}.
       ${isInterior ? renovationInstructions : constructionInstructions}
-      - Last Image (${stageCount}) (100%): Final completed architectural masterpiece, pristine, no workers. ${isInterior ? "Must feature ultra-luxury designer furniture and impeccable interior styling." : "Perfect lighting and landscaping."}
+      - Last Image (${stageCount}) (100%): Final completed architectural masterpiece. FULLY FURNISHED. The custom [ELEMENT] (from Project name) must be the focal point, featuring the specific [THEME] and [OBJECTS] (e.g., underwater scene with whales if requested). STRICTLY NO WORKERS. Must look like a high-end magazine shoot.
       
       CRITICAL: Ensure consistent camera angle and scale across all stages. 
-      STRICT ARCHITECTURAL PERSISTENCE RULES:
+      WORKFORCE RULES (Stages 2 to ${stageCount - 1}):
+      - Always include 2-4 professional workers or craftsmen.
+      - They must be actively engaged in a logical construction/renovation task relevant to the stage.
+      - Workers must be diverse, wearing clean, professional safety gear (helmets, vests) or craftsman uniforms.
+      - No visible faces (back to camera or side profiles) to avoid AI distortion.
+
+      ADVANCED DESIGN MODIFICATION RULES (User Requests):
+      - If the user theme implies bespoke elements (e.g., epoxy floors, specific art), implement them with extreme realism.
+      - Example: Modify surfaces (floor/wall) to include embedded objects beneath transparent glossy layers (like deep-sea life or luxury objects) if the theme suggests a creative luxury style.
+      - Ensure the result remains ultra-realistic, high-end, and cinematic — not cartoonish or illustrative.
+      
+      STRICT ARCHITECTURAL & FURNITURE PERSISTENCE RULES:
       1. Establish key attributes (window shapes, wall textures, floor materials) early.
-      2. EXPLICITLY REPEAT those attributes in ALL subsequent prompts (e.g., if stage 4 adds "large panoramic windows", stages 5 and 6 MUST also mention "large panoramic windows").
-      3. Do NOT let the AI assume details; specify colors and materials in every stage prompt to avoid "drift".
+      2. EXPLICITLY REPEAT those attributes in ALL subsequent prompts once they appear.
+      3. FURNITURE CONTINUITY: If furniture or decor starts appearing in late stages, it MUST be described consistently.
+      4. Do NOT let the AI assume details; specify colors and materials in every stage prompt to avoid "drift".
       Output strictly in JSON format with keys: "image1", "image2", ..., "image${stageCount}".`;
+            const WORKING_MODELS = ['gemini-3-flash', 'gemini-3.1-pro', 'gpt-4o'];
+            const customKey = process.env.CUSTOM_AI_API_KEY?.trim();
+            const customUrl = process.env.CUSTOM_AI_URL?.trim();
+            const pollKey = process.env.POLLINATIONS_API_KEY?.trim();
+            const pollUrl = 'https://gen.pollinations.ai/v1/chat/completions';
 
-            let attempts = 0;
-            let responseText = "";
-            let statusCode = 0;
+            // Rotation logic: try custom models first, then fallback to Pollinations
+            let promptResponse = null;
+            const modelsToTry = customUrl ? [...WORKING_MODELS, 'openai-large'] : ['openai-large'];
 
-            while (attempts < 3) {
+            for (const model of modelsToTry) {
+                const isCustom = WORKING_MODELS.includes(model);
+                const apiUrl = isCustom && customUrl ? customUrl : pollUrl;
+                const apiKey = isCustom && customUrl ? customKey : pollKey;
+
                 try {
-                    attempts++;
-                    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-                    console.log(`[Pollinations] Attempt ${attempts}/3 for ${themeName}...`);
-
-                    const response = await request('https://text.pollinations.ai/', {
+                    console.log(`[Prompts] Trying model=${model} at ${apiUrl}...`);
+                    const response = await request(apiUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': apiKey ? `Bearer ${apiKey}` : undefined
+                            ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
                         },
                         body: JSON.stringify({
-                            model: 'gemini',
+                            model,
                             messages: [{ role: 'user', content: fullSystemPrompt }],
-                            json: true,
+                            response_format: { type: 'json_object' },
                             seed: Math.floor(Math.random() * 100000)
                         }),
+                        headersTimeout: 60_000,
+                        bodyTimeout: 60_000,
                     });
 
-                    statusCode = response.statusCode;
-                    responseText = await response.body.text();
-
-                    if (statusCode === 200 && responseText.trim().length > 0) {
+                    if (response.statusCode === 200) {
+                        promptResponse = await response.body.text();
                         break;
-                    } else {
-                        console.warn(`[Pollinations] Attempt ${attempts} failed with status ${statusCode}. Body: ${responseText.substring(0, 100)}`);
                     }
+                    console.warn(`[Prompts] model=${model} returned status ${response.statusCode}`);
                 } catch (e) {
-                    console.error(`[Pollinations] Network error on attempt ${attempts}:`, e.message);
-                    if (attempts === 3) throw e;
+                    console.error(`[Prompts] Model ${model} failed: ${e.message}`);
                 }
-                await new Promise(r => setTimeout(r, 2000));
             }
 
-            if (statusCode !== 200 || !responseText.trim()) {
-                throw new Error(`Failed to get valid response from Pollinations after 3 attempts. Status: ${statusCode}`);
-            }
+            if (!promptResponse) throw new Error("Failed to generate image prompts with all models.");
 
             let prompts = {};
             try {
-                console.log("[DEBUG] Raw response text:", responseText.substring(0, 500));
-                const data = JSON.parse(responseText);
+                const extractJSON = (str) => {
+                    const start = str.indexOf('{');
+                    const end = str.lastIndexOf('}');
+                    if (start !== -1 && end !== -1) return str.substring(start, end + 1);
+                    return str;
+                };
+                const cleanJSON = extractJSON(promptResponse);
+                console.log("[DEBUG] Raw response text:", cleanJSON.substring(0, 500));
+                const data = JSON.parse(cleanJSON);
                 console.log("[DEBUG] Parsed data structure:", JSON.stringify(data).substring(0, 300));
 
                 // Try multiple parsing strategies
@@ -324,23 +496,37 @@ app.whenReady().then(() => {
                     // Try to find JSON in the string
                     const jsonMatch = content.match(/\{[\s\S]*\}/);
                     if (jsonMatch) {
-                        console.log("[DEBUG] Found JSON match:", jsonMatch[0].substring(0, 200));
-                        prompts = JSON.parse(jsonMatch[0]);
+                        try {
+                            prompts = JSON.parse(jsonMatch[0]);
+                        } catch (e) {
+                            console.warn("JSON parse failed on regex match, trying relaxed parsing:", e.message);
+                            // Fallback: simpler regex or manual construction if needed
+                            throw new Error("Failed to parse extracted JSON string");
+                        }
                     } else {
-                        throw new Error("No JSON object found in response");
+                        // If no JSON block found, maybe it IS the prompts object but stringified weirdly?
+                        // Or maybe it's just text.
+                        console.warn("No JSON block found in content string.");
+                        // Last ditch attempt: check if content is actually a JSON-like string starting with {
+                        if (content.trim().startsWith('{')) {
+                            prompts = JSON.parse(content);
+                        } else {
+                            throw new Error("No JSON object found in response content");
+                        }
                     }
-                } else if (typeof content === 'object') {
+                } else if (typeof content === 'object' && content !== null) {
+                    console.log("[DEBUG] Content is already an object.");
                     prompts = content;
                 } else {
                     throw new Error("Unexpected content type: " + typeof content);
                 }
+                if (prompts.prompts) prompts = prompts.prompts;
+                else if (prompts.images) prompts = prompts.images;
 
-                console.log("[DEBUG] Final prompts object keys:", Object.keys(prompts));
-            } catch (e) {
-                console.error("[ERROR] Failed to parse prompts:", e.message);
-                console.error("[ERROR] Stack:", e.stack);
-                console.error("[ERROR] Full response (first 1000 chars):", responseText ? responseText.substring(0, 1000) : 'EMPTY');
-                throw new Error("Could not parse image prompts: " + e.message);
+            } catch (error) {
+                console.error("Failed to parse prompts JSON:", error);
+                console.error("[ERROR] Full response (first 300 chars):", responseText ? responseText.substring(0, 300) : 'EMPTY');
+                throw new Error("Model returned invalid JSON format: " + error.message);
             }
 
             const promptsPath = path.join(imagesDir, 'prompts.json');
@@ -349,6 +535,9 @@ app.whenReady().then(() => {
             allPrompts[themeName] = prompts;
             fs.writeFileSync(promptsPath, JSON.stringify(allPrompts, null, 2));
 
+            // ── П.5: Сохраняем промпты в кеш ─────────────────────────────────
+            promptCache.set(themeName, stageCount, aspectRatio, prompts);
+
             const keys = Array.from({ length: stageCount }, (_, i) => `image${i + 1}`);
             const prompt = prompts[keys[0]]?.trim();
             const localFilePaths = [];
@@ -356,9 +545,15 @@ app.whenReady().then(() => {
             if (prompt) {
                 const fileName = `image_1.jpg`;
                 const filePath = path.join(imagesDir, fileName);
-                const imageB64 = await createImageViaVoiceAPI(prompt, filePath, aspectRatio);
+                console.log(`[generate-image] Using Pollinations model: ${imageModel}`);
+                // ── П.2: Прогресс перед генерацией изображения ───────────────
+                sendImageProgress(1, stageCount, `Генерация Stage 1 (${imageModel})...`, 'generating');
+                // ── П.4: Генерируем через Worker Thread ───────────────────────
+                const imageB64 = await createImageViaWorker(prompt, filePath, aspectRatio, imageModel, ({ attempt, maxAttempts }) => {
+                    sendImageProgress(1, stageCount, `Stage 1: попытка ${attempt}/${maxAttempts}...`, 'generating');
+                });
 
-                const mediaPath = `media:///${filePath.replace(/\\/g, '/')}`;
+                const mediaPath = `media:///${filePath.replace(/\\/g, '/')}?t=${Date.now()}`;
                 localFilePaths.push(mediaPath);
 
                 const historyPath = path.join(imagesDir, 'generation_history.json');
@@ -367,25 +562,40 @@ app.whenReady().then(() => {
                 history[themeName] = new Array(stageCount).fill(null);
                 history[themeName][0] = imageB64;
                 fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
+
+                // ── П.2: Сигнал готовности Stage 1 ───────────────────────────
+                sendImageProgress(1, stageCount, `Stage 1 готов!`, 'done');
             }
 
             const resultArr = new Array(stageCount).fill(null);
             if (localFilePaths[0]) resultArr[0] = localFilePaths[0];
+            // ── П.1: Задача завершена ──────────────────────────────────────────
+            queueManager.markCompleted(taskId, { stagesDone: 1, total: stageCount });
             return resultArr;
         } catch (error) {
             console.error("Generate Image Error:", error);
+            queueManager.markFailed(taskId, error.message);
+            sendImageProgress(0, stageCount, `Ошибка: ${error.message}`, 'error');
             throw new Error(error.message);
         }
     });
 
-    ipcMain.handle('generate-image-stage', async (event, { themeName, index, stageCount, aspectRatio }) => {
+    ipcMain.handle('generate-image-stage', async (event, { themeName, index, stageCount, aspectRatio, imageModel = "zimage" }) => {
+        // ── П.2: Прогресс на уровне изображений ─────────────────────────────
+        const sendStageProgress = (msg, status = 'generating') => {
+            event.sender.send('image-progress', { stage: index + 1, total: stageCount, message: msg, status });
+        };
         try {
+            sendStageProgress(`Подготовка Stage ${index + 1}...`, 'preparing');
             const imagesDir = path.join(__dirname, 'Image');
             if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir);
 
-            const promptsPath = path.join(imagesDir, 'prompts.json');
-            let prompts = {};
-            if (fs.existsSync(promptsPath)) prompts = JSON.parse(fs.readFileSync(promptsPath, 'utf8'))[themeName] || {};
+            // ── П.5: Пробуем взять промпт из кеша ────────────────────────────
+            let prompts = promptCache.get(themeName, stageCount, aspectRatio) || {};
+            if (!prompts[`image${index + 1}`]) {
+                const promptsPath = path.join(imagesDir, 'prompts.json');
+                if (fs.existsSync(promptsPath)) prompts = JSON.parse(fs.readFileSync(promptsPath, 'utf8'))[themeName] || {};
+            }
 
             const key = `image${index + 1}`;
             const prompt = prompts[key];
@@ -410,28 +620,32 @@ app.whenReady().then(() => {
 
             let imageB64;
             if (previousImageB64) {
-                console.log(`Generating Stage ${index + 1} via VoiceAPI REMIX...`);
-                imageB64 = await remixImageViaVoiceAPI(prompt, previousImageB64, filePath, aspectRatio);
+                console.log(`Generating Stage ${index + 1} via Pollinations REMIX (model=${imageModel})...`);
+                sendStageProgress(`Remix Stage ${index + 1} (${imageModel})...`);
+                imageB64 = await remixImageViaPollinations(prompt, filePath, filePath, aspectRatio, imageModel);
             } else {
-                console.log(`Generating Stage ${index + 1} via VoiceAPI CREATE (no reference)...`);
-                imageB64 = await createImageViaVoiceAPI(prompt, filePath, aspectRatio);
+                console.log(`Generating Stage ${index + 1} via Pollinations CREATE (model=${imageModel})...`);
+                sendStageProgress(`Генерация Stage ${index + 1} (${imageModel})...`);
+                imageB64 = await createImageViaPollinations(prompt, filePath, aspectRatio, imageModel);
             }
 
-            const mediaPath = `media:///${filePath.replace(/\\/g, '/')}`;
+            const mediaPath = `media:///${filePath.replace(/\\/g, '/')}?t=${Date.now()}`;
 
             // Update history with new Base64
             if (!history[themeName]) history[themeName] = new Array(stageCount).fill(null);
             history[themeName][index] = imageB64;
             fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
 
+            sendStageProgress(`Stage ${index + 1} готов!`, 'done');
             return mediaPath;
         } catch (error) {
             console.error("Stage Error:", error);
+            event.sender.send('image-progress', { stage: index + 1, total: stageCount, message: `Ошибка Stage ${index + 1}: ${error.message}`, status: 'error' });
             throw error;
         }
     });
 
-    ipcMain.handle('regenerate-single-image', async (event, { themeName, index, stageCount, aspectRatio }) => {
+    ipcMain.handle('regenerate-single-image', async (event, { themeName, index, stageCount, aspectRatio, imageModel = "zimage" }) => {
         try {
             const imagesDir = path.join(__dirname, 'Image');
             const isInterior = themeName.toLowerCase().match(/interior|renovation|remodel|design|apartment|room|kitchen|bathroom|office|chamber/);
@@ -445,6 +659,10 @@ app.whenReady().then(() => {
                 stageDesc = isInterior
                     ? "Final completed architectural masterpiece. Fully furnished with high-end designer furniture, premium materials, and professional lighting."
                     : "Final completed architectural masterpiece. Perfect lighting, fully finished/detailed.";
+            } else if (index === stageCount - 2) {
+                stageDesc = isInterior
+                    ? `Interior renovation penultimate stage (${completion}%). Construction is complete, premium designer furniture is being placed but may still be partially protected or partially unwrapped.`
+                    : `Construction nearly complete (${completion}%). Final exterior cladding and landscaping finishing touches.`;
             } else {
                 stageDesc = isInterior
                     ? `Interior renovation in progress (${completion}%). Visible plumbing, drywall, or floor installation inside the room.`
@@ -471,27 +689,43 @@ app.whenReady().then(() => {
             
             STRICT PERSISTENCE RULES:
             1. Maintain the EXACT same camera angle, lighting, and materials as defined in the Style Context.
-            2. PERMANENT FEATURES: If the context mentions specific features (e.g., marble floors, large windows), you MUST include them in this prompt. Features cannot disappear.
-            3. The prompt must describe the work happening at ${completion}% completion.
-            4. Ensure the description is compatible with the perspective of the previous images.
+            2. PERMANENT FEATURES: If the context mentions specific features (e.g., marble floors, large windows, specific furniture), you MUST include them in this prompt.
+            3. WORKFORCE INTEGRATION: Unless this is Stage 1 or the Final Stage, EXPLICITLY include 2-4 professional workers/craftsmen actively engaged in the work described. No visible faces (back to camera or profiles).
+            4. FURNITURE PERSISTENCE: Maintain established furniture styles and materials. 
             5. Orientation: ${aspectRatio}. 
-            
             Output ONLY the improved prompt text. No preamble.`;
 
-            let attempts = 0; let imagePrompt = "";
-            while (attempts < 3) {
+            const WORKING_MODELS = ['gemini-3-flash', 'gemini-3.1-pro', 'gpt-4o'];
+            const customKey = process.env.CUSTOM_AI_API_KEY?.trim();
+            const customUrl = process.env.CUSTOM_AI_URL?.trim();
+            const pollKey = process.env.POLLINATIONS_API_KEY?.trim();
+            const pollUrl = 'https://gen.pollinations.ai/v1/chat/completions';
+
+            let imagePrompt = "";
+            const modelsToTry = customUrl ? [...WORKING_MODELS, 'openai-large'] : ['openai-large'];
+
+            for (const model of modelsToTry) {
+                const isCustom = WORKING_MODELS.includes(model);
+                const apiUrl = isCustom && customUrl ? customUrl : pollUrl;
+                const apiKey = isCustom && customUrl ? customKey : pollKey;
+
                 try {
-                    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-                    const { statusCode, body } = await request('https://text.pollinations.ai/', {
+                    console.log(`[Regen Prompt] Trying model=${model}...`);
+                    const { statusCode, body } = await request(apiUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': apiKey ? `Bearer ${apiKey}` : undefined
+                            ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
                         },
-                        body: JSON.stringify({ model: 'gemini', messages: [{ role: 'user', content: singlePromptRequest }] })
+                        body: JSON.stringify({ model, messages: [{ role: 'user', content: singlePromptRequest }] })
                     });
-                    if (statusCode === 200) { imagePrompt = (await body.text()); break; }
-                } catch (e) { } attempts++;
+                    if (statusCode === 200) {
+                        imagePrompt = await body.text();
+                        break;
+                    }
+                } catch (e) {
+                    console.error(`[Regen Prompt] Model ${model} failed: ${e.message}`);
+                }
             }
             if (!imagePrompt) imagePrompt = `${themeName} construction stage ${index + 1}`;
 
@@ -506,14 +740,14 @@ app.whenReady().then(() => {
 
             let imageB64;
             if (previousImageB64) {
-                console.log(`Regenerating ${index + 1} via VoiceAPI REMIX...`);
-                imageB64 = await remixImageViaVoiceAPI(imagePrompt, previousImageB64, filePath, aspectRatio);
+                console.log(`Regenerating ${index + 1} via Pollinations REMIX (model=${imageModel})...`);
+                imageB64 = await remixImageViaPollinations(imagePrompt, filePath, filePath, aspectRatio, imageModel);
             } else {
-                console.log(`Regenerating ${index + 1} via VoiceAPI CREATE...`);
-                imageB64 = await createImageViaVoiceAPI(imagePrompt, filePath, aspectRatio);
+                console.log(`Regenerating ${index + 1} via Pollinations CREATE (model=${imageModel})...`);
+                imageB64 = await createImageViaPollinations(imagePrompt, filePath, aspectRatio, imageModel);
             }
 
-            const mediaPath = `media:///${filePath.replace(/\\/g, '/')}`;
+            const mediaPath = `media:///${filePath.replace(/\\/g, '/')}?t=${Date.now()}`;
 
             if (!history[themeName]) history[themeName] = new Array(stageCount).fill(null);
             history[themeName][index] = imageB64;
@@ -526,102 +760,127 @@ app.whenReady().then(() => {
         }
     });
 
-    // ============ VIDEO GENERATION WITH KIE.AI ============
+    // ============ VIDEO GENERATION WITH FREEPIK (PixVerse V5) ============
 
-    // Helper: Create video task
-    const createVideoTask = async (imageUrl, tailImageUrl, prompt) => {
-        const apiKey = process.env.KIE_KEY?.trim();
-        if (!apiKey) throw new Error("KIE_KEY not found in .env");
+    // Helper: Create video task via Freepik PixVerse V5 — WITH KEY ROTATION
+    const createFreepikVideoTask = async (imageBase64, prompt, duration = 5, resolution = '720p') => {
+        const totalKeys = freepikKeys.totalKeys();
+        if (totalKeys === 0) throw new Error('No FREEPIK_API_KEY configured in .env');
 
-        console.log(`[KIE.AI] Creating video task: ${imageUrl} -> ${tailImageUrl}`);
-
-        const { statusCode, body } = await request('https://api.kie.ai/api/v1/jobs/createTask', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: "kling/v2-5-turbo-image-to-video-pro",
-                input: {
-                    prompt: prompt,
-                    image_url: imageUrl,
-                    tail_image_url: tailImageUrl,
-                    duration: "5",
-                    negative_prompt: "blur, distort, and low quality",
-                    cfg_scale: 0.5
-                }
-            })
+        const payload = JSON.stringify({
+            model: 'pixverse-v5',
+            image: `data:image/jpeg;base64,${imageBase64}`,
+            prompt: prompt,
+            duration: parseInt(duration),
+            resolution: resolution
         });
 
-        const responseText = await body.text();
-        console.log(`[KIE.AI] Create task response (${statusCode}):`, responseText.substring(0, 200));
+        let triedKeys = 0;
+        let lastError = null;
 
-        if (statusCode !== 200) {
-            throw new Error(`KIE.AI create task failed ${statusCode}: ${responseText}`);
+        while (triedKeys < totalKeys) {
+            const apiKey = freepikKeys.current();
+            const keyLabel = `key ${freepikKeys.currentKeyIndex()}/${totalKeys}`;
+            console.log(`[Freepik PixVerse] Creating task (${resolution}, ${duration}s) — ${keyLabel}...`);
+
+            try {
+                const { statusCode, body } = await request('https://api.freepik.com/v1/ai/image-to-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-freepik-api-key': apiKey,
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'application/json'
+                    },
+                    body: payload
+                });
+                const responseText = await body.text();
+                console.log(`[Freepik PixVerse] Create response (${statusCode}) ${keyLabel}:`, responseText.substring(0, 200));
+
+                if ((statusCode === 200 || statusCode === 201 || statusCode === 202)
+                    && !freepikKeys.isLimitError(statusCode, responseText)) {
+                    // Robust JSON extraction
+                    const extractJSON = (str) => {
+                        const start = str.indexOf('{');
+                        const end = str.lastIndexOf('}');
+                        if (start !== -1 && end !== -1) return str.substring(start, end + 1);
+                        return str;
+                    };
+                    const cleanJSON = extractJSON(responseText);
+                    const data = JSON.parse(cleanJSON);
+                    const taskId = data.data?.task_id || data.data?.id || data.task_id || data.id;
+                    if (!taskId) throw new Error(`No task_id in response: ${responseText.substring(0, 200)}`);
+                    console.log(`[Freepik PixVerse] Task created: ${taskId} (${keyLabel})`);
+                    return taskId;
+                }
+
+                // Limit / auth error — rotate
+                console.warn(`[Freepik PixVerse] ${keyLabel} rejected (${statusCode}): ${responseText.substring(0, 120)}`);
+                freepikKeys.rotate(`HTTP ${statusCode}`);
+                triedKeys++;
+                lastError = new Error(`Freepik ${statusCode}: ${responseText.substring(0, 120)}`);
+
+            } catch (e) {
+                console.warn(`[Freepik PixVerse] ${keyLabel} error: ${e.message}`);
+                freepikKeys.rotate(e.message);
+                triedKeys++;
+                lastError = e;
+            }
         }
 
-        const data = JSON.parse(responseText);
-        if (data.code !== 200 || !data.data?.taskId) {
-            throw new Error(`KIE.AI error: ${data.msg || 'No taskId returned'}`);
-        }
-
-        return data.data.taskId;
+        throw lastError || new Error(`All ${totalKeys} Freepik key(s) exhausted for PixVerse task`);
     };
 
-    // Helper: Check video task status
-    const checkVideoTaskStatus = async (taskId) => {
-        const apiKey = process.env.KIE_KEY?.trim();
-        if (!apiKey) throw new Error("KIE_KEY not found in .env");
-
-        const { statusCode, body } = await request(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, {
+    // Helper: Check Freepik PixVerse task status — uses current active key
+    const checkFreepikTaskStatus = async (taskId) => {
+        const apiKey = freepikKeys.current();
+        const { statusCode, body } = await request(`https://api.freepik.com/v1/ai/image-to-video/${taskId}`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${apiKey}`
+                'x-freepik-api-key': apiKey,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json'
             }
         });
-
         const responseText = await body.text();
-
-        if (statusCode !== 200) {
-            throw new Error(`KIE.AI status check failed ${statusCode}: ${responseText}`);
-        }
-
-        const data = JSON.parse(responseText);
-        if (data.code !== 200) {
-            throw new Error(`KIE.AI error: ${data.msg}`);
-        }
-
-        return data.data;
+        if (statusCode !== 200) throw new Error(`Freepik status check failed ${statusCode}: ${responseText}`);
+        const extractJSON = (str) => {
+            const start = str.indexOf('{');
+            const end = str.lastIndexOf('}');
+            if (start !== -1 && end !== -1) return str.substring(start, end + 1);
+            return str;
+        };
+        return JSON.parse(extractJSON(responseText));
     };
 
-    // Helper: Wait for video completion with polling
-    const waitForVideoCompletion = async (taskId, progressCallback) => {
+    // Helper: Wait for Freepik video completion with polling
+    const waitForFreepikCompletion = async (taskId, progressCallback) => {
         const maxAttempts = 120; // 10 minutes (120 * 5 sec)
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            const status = await checkVideoTaskStatus(taskId);
+            const result = await checkFreepikTaskStatus(taskId);
+            const data = result.data || result;
+            const state = data.status || data.state || '';
 
-            console.log(`[KIE.AI] Task ${taskId} status: ${status.state} (attempt ${attempt + 1}/${maxAttempts})`);
+            console.log(`[Freepik] Task ${taskId} status: ${state} (attempt ${attempt + 1}/${maxAttempts})`);
 
-            if (status.state === 'success') {
-                const resultJson = JSON.parse(status.resultJson);
-                if (resultJson.resultUrls && resultJson.resultUrls.length > 0) {
-                    return resultJson.resultUrls[0];
-                }
-                throw new Error('No video URL in result');
+            if (state === 'completed' || state === 'success' || state === 'COMPLETED') {
+                const videoUrl = data.video?.url || data.videoUrl || data.result?.url
+                    || data.output?.url || (data.videos && data.videos[0]?.url)
+                    || (data.videos && data.videos[0]);
+                if (videoUrl) return videoUrl;
+                throw new Error('No video URL in completed result: ' + JSON.stringify(data).substring(0, 300));
             }
 
-            if (status.state === 'fail') {
-                throw new Error(`Video generation failed: ${status.failMsg || 'Unknown error'}`);
+            if (state === 'failed' || state === 'error' || state === 'FAILED') {
+                throw new Error(`Video generation failed: ${data.error || data.message || data.failMsg || 'Unknown error'}`);
             }
 
-            // Still waiting
             if (progressCallback) {
-                progressCallback({ attempt: attempt + 1, maxAttempts, state: status.state });
+                progressCallback({ attempt: attempt + 1, maxAttempts, state });
             }
 
-            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
         throw new Error('Video generation timeout (10 minutes)');
@@ -629,7 +888,7 @@ app.whenReady().then(() => {
 
     // Helper: Download video
     const downloadVideo = async (videoUrl, outputPath) => {
-        console.log(`[KIE.AI] Downloading video from ${videoUrl} to ${outputPath}`);
+        console.log(`[Freepik] Downloading video from ${videoUrl}`);
 
         const { statusCode, body } = await request(videoUrl, {
             method: 'GET'
@@ -640,77 +899,142 @@ app.whenReady().then(() => {
         }
 
         await streamPipeline(body, fs.createWriteStream(outputPath));
-        console.log(`[KIE.AI] Video downloaded successfully: ${outputPath}`);
+        console.log(`[Freepik] Video downloaded: ${outputPath}`);
 
         return outputPath;
     };
 
-    // Main handler: Generate all videos
-    ipcMain.handle('generate-videos', async (event, { themeName, stageCount = 6 }) => {
+    // Helper: Extract last frame from video using ffmpeg
+    const extractLastFrame = (videoPath, outputPath) => {
+        return new Promise((resolve, reject) => {
+            console.log(`[FFMPEG] Extracting last frame from ${videoPath}`);
+            const process = spawn('ffmpeg', [
+                '-sseof', '-0.1',
+                '-i', videoPath,
+                '-update', '1',
+                '-q:v', '2',
+                '-frames:v', '1',
+                outputPath,
+                '-y'
+            ]);
+
+            process.on('close', (code) => {
+                if (code === 0) {
+                    console.log(`[FFMPEG] Extracted last frame: ${outputPath}`);
+                    resolve(outputPath);
+                } else {
+                    reject(new Error(`FFMPEG extraction failed with code ${code}`));
+                }
+            });
+        });
+    };
+
+    // Main handler: Generate all videos via Freepik PixVerse V5
+    ipcMain.handle('generate-videos', async (event, { themeName, stageCount = 6, resolution = "720p", duration = "5" }) => {
         try {
+            const totalVideos = stageCount - 1;
+
+            event.sender.send('video-progress', {
+                current: 0, total: totalVideos, status: 'starting',
+                message: `🎬 Запуск генерации ${totalVideos} видео через Freepik PixVerse V5 (${resolution}, ${duration}s)...`
+            });
+
             const videosDir = path.join(__dirname, 'Videos');
             if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir);
 
             const imagesDir = path.join(__dirname, 'Image');
-            const videoPrompt = `CONSTRUCTION PROGRESS TIMELAPSE - Transition showing active construction progress in fast motion. Highlighting workforce movements, material assembly, and structural growth. Professional construction logic. Revealing the evolution of the project from scratch to final completion. Realistic, cinematic, 8K, high quality. No visible faces. Consistent lighting.`;
+            const finalVideoDir = path.join(__dirname, 'FinalVideo');
+            if (!fs.existsSync(finalVideoDir)) fs.mkdirSync(finalVideoDir);
 
-            const videos = [];
-            const totalVideos = stageCount - 1;
+            const isInterior = themeName.toLowerCase().match(/interior|renovation|remodel|design|apartment|room|kitchen|bathroom|office|chamber/);
 
-            // Generate stageCount - 1 videos from stageCount images
+            const videoPrompt = isInterior ?
+                `RENOVATION PROCESS PROMPTS Transition: image 1 to Image 2 Add workers in fast timelapse motion Surface preparation and structural work Begin installing luxury materials No visible faces Realistic construction logic Transition: Image 2 to Image 3 workers Complete finishing and detailing Activate lighting systems Clean and polish all surfaces Reveal final luxury design with cinematic composition Remove all workers and tools at the end GLOBAL RULES (STRICT) Output language: English only image prompts must be detailed and massive in size and details, Visuals must be realistic, cinematic, professional No worker faces visible No fantasy or exaggerated elements Logical construction flow Consistent camera angle across all outputs`
+                : `CONSTRUCTION PROGRESS TIMELAPSE - Transition showing active construction progress in fast motion. Highlighting workforce movements, material assembly, and structural growth. Professional construction logic. Revealing the evolution of the project from scratch to final completion. Realistic, cinematic, 8K, high quality. No visible faces. Consistent lighting.`;
+
+            const videoPromptsLog = {
+                timestamp: new Date().toISOString(),
+                theme: themeName,
+                model: 'pixverse-v5',
+                system_prompt: videoPrompt,
+                stages: []
+            };
+
+            // Generate stageCount - 1 videos using RECURSIVE SEAMLESS approach
             for (let i = 0; i < totalVideos; i++) {
                 const startImagePath = path.join(imagesDir, `image_${i + 1}.jpg`);
-                const endImagePath = path.join(imagesDir, `image_${i + 2}.jpg`);
 
-                // Check if images exist
-                if (!fs.existsSync(startImagePath) || !fs.existsSync(endImagePath)) {
-                    throw new Error(`Missing images for video ${i + 1}`);
+                if (!fs.existsSync(startImagePath)) {
+                    throw new Error(`Starting image ${i + 1} not found. Ensure Stage 1 is generated.`);
                 }
 
-                // Convert local paths to URLs (VoiceAPI images)
-                const startImageUrl = `media:///${startImagePath.replace(/\\/g, '/')}`;
-                const endImageUrl = `media:///${endImagePath.replace(/\\/g, '/')}`;
+                event.sender.send('video-progress', {
+                    current: i, total: totalVideos, status: 'preparing',
+                    message: `[${i + 1}/${totalVideos}] Подготовка изображения...`
+                });
 
-                console.log(`[KIE.AI] Starting video ${i + 1}/${totalVideos}: ${startImageUrl} -> ${endImageUrl}`);
+                // Read image as base64 (Freepik accepts base64 directly — no upload needed)
+                const imageBase64 = fs.readFileSync(startImagePath, { encoding: 'base64' });
 
-                // Send progress update to frontend
-                event.sender.send('video-progress', { current: i, total: totalVideos, status: 'creating_task' });
+                console.log(`[Freepik] Starting video ${i + 1}/${totalVideos} from ${path.basename(startImagePath)}`);
+
+                videoPromptsLog.stages.push({
+                    video_index: i + 1, source: path.basename(startImagePath), prompt: videoPrompt
+                });
 
                 // 1. Create task
-                const taskId = await createVideoTask(startImageUrl, endImageUrl, videoPrompt);
-                console.log(`[KIE.AI] Video ${i + 1} task created: ${taskId}`);
-
-                // Send progress update
-                event.sender.send('video-progress', { current: i, total: totalVideos, status: 'waiting', taskId });
+                event.sender.send('video-progress', {
+                    current: i, total: totalVideos, status: 'creating_task',
+                    message: `[${i + 1}/${totalVideos}] Задание в Freepik PixVerse V5...`
+                });
+                const taskId = await createFreepikVideoTask(imageBase64, videoPrompt, duration, resolution);
 
                 // 2. Wait for completion
-                const videoUrl = await waitForVideoCompletion(taskId, (progress) => {
+                event.sender.send('video-progress', {
+                    current: i, total: totalVideos, status: 'waiting', taskId,
+                    message: `Видео ${i + 1} в очереди Freepik, ожидаем...`
+                });
+                const videoUrl = await waitForFreepikCompletion(taskId, (progress) => {
                     event.sender.send('video-progress', {
-                        current: i,
-                        total: totalVideos,
-                        status: 'processing',
-                        attempt: progress.attempt,
-                        maxAttempts: progress.maxAttempts
+                        current: i, total: totalVideos, status: 'processing',
+                        message: `Генерация видео ${i + 1}... (${progress.attempt}/${progress.maxAttempts})`
                     });
                 });
 
-                console.log(`[KIE.AI] Video ${i + 1} completed: ${videoUrl}`);
-
-                // Send progress update
-                event.sender.send('video-progress', { current: i, total: totalVideos, status: 'downloading' });
+                console.log(`[Freepik] Video ${i + 1} completed: ${videoUrl}`);
 
                 // 3. Download video
                 const videoFileName = `video_${i + 1}.mp4`;
                 const videoPath = path.join(videosDir, videoFileName);
+                event.sender.send('video-progress', {
+                    current: i, total: totalVideos, status: 'downloading',
+                    message: `[${i + 1}/${totalVideos}] Загрузка видео...`
+                });
                 await downloadVideo(videoUrl, videoPath);
 
-                const mediaPath = `media:///${videoPath.replace(/\\/g, '/')}`;
-                videos.push(mediaPath);
+                // 4. Extract last frame for seamless chain
+                if (i < totalVideos - 1) {
+                    const nextImagePath = path.join(imagesDir, `image_${i + 2}.jpg`);
+                    event.sender.send('video-progress', {
+                        current: i, total: totalVideos, status: 'processing',
+                        message: `[${i + 1}/${totalVideos}] Извлечение кадра...`
+                    });
+                    await extractLastFrame(videoPath, nextImagePath);
+                    console.log(`[Seamless] image_${i + 2}.jpg extracted`);
+                }
 
-                event.sender.send('video-progress', { current: i + 1, total: totalVideos, status: 'done' });
+                const videoUrlForUI = `media:///${videoPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+                event.sender.send('video-progress', {
+                    current: i + 1, total: totalVideos, status: 'done',
+                    videoUrl: videoUrlForUI,
+                    message: `Фрагмент ${i + 1} готов.`
+                });
             }
 
-            return videos;
+            fs.writeFileSync(path.join(finalVideoDir, 'video_prompts.json'), JSON.stringify(videoPromptsLog, null, 2));
+            console.log(`[Freepik] Recursive seamless video pipeline completed.`);
+
+            return [];
         } catch (error) {
             console.error("Generate Videos Error:", error);
             throw error;
@@ -765,6 +1089,22 @@ app.whenReady().then(() => {
             const musicPath = path.join(musicDir, musicFiles[0]);
             console.log(`[Assembly] Using music: ${musicPath}`);
 
+            // Robust JSON extraction
+            const extractJSON = (str) => {
+                const start = str.indexOf('{');
+                const end = str.lastIndexOf('}');
+                if (start !== -1 && end !== -1) return str.substring(start, end + 1);
+                return str;
+            };
+
+            const promptsRaw = fs.readFileSync(path.join(finalDir, 'video_prompts.json'), 'utf8');
+            const cleanJSON = extractJSON(promptsRaw);
+            let scenes = JSON.parse(cleanJSON).stages.map(s => ({
+                video_index: s.video_index,
+                source: s.source,
+                prompt: s.prompt
+            }));
+
             // 3. Create concat list
             const listPath = path.join(__dirname, 'filelist.txt');
             const listContent = videoFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n');
@@ -814,7 +1154,7 @@ app.whenReady().then(() => {
                 ffmpeg.on('close', (code) => {
                     if (fs.existsSync(listPath)) fs.unlinkSync(listPath);
                     if (code === 0) {
-                        resolve(`media:///${outputPath.replace(/\\/g, '/')}`);
+                        resolve(`media:///${outputPath.replace(/\\/g, '/')}?t=${Date.now()}`);
                     } else {
                         reject(new Error(`FFmpeg error (code ${code}). Check logs.`));
                     }
@@ -846,10 +1186,15 @@ app.whenReady().then(() => {
         }
     });
 
+        registerSkeletonHandlers(ipcMain);
+    registerGLabsHandlers(ipcMain);
+
     createWindow();
 });
 
 app.on('window-all-closed', () => {
+    // ── П.1: Корректно закрываем SQLite при выходе ───────────────────────────
+    queueManager.close();
     if (process.platform !== 'darwin') app.quit();
 });
 

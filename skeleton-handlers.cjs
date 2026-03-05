@@ -721,6 +721,83 @@ async function createVideoViaPollinationsWAN(prompt, sceneIndex, event) {
     throw lastError;
 }
 
+// ── Grok Video (text-to-video via Pollinations) ─────────────────────────────
+async function createVideoViaPollinationsGrok(prompt, sceneIndex, event) {
+    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
+    const imgbbKey = process.env.IMGBB_API_KEY?.trim();
+    const skeletonDir = path.join(__dirname, 'SkeletonShorts');
+    const imagePath = path.join(skeletonDir, `scene_${sceneIndex + 1}.jpg`);
+
+    if (!fs.existsSync(imagePath)) {
+        throw new Error(`Reference image not found: ${imagePath}`);
+    }
+    if (!imgbbKey) {
+        throw new Error(`IMGBB_API_KEY missing in .env — required for Grok Video image hosting`);
+    }
+
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            console.log(`[Skeleton Grok Video] Scene ${sceneIndex + 1} — attempt ${attempt}/3`);
+            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'UPLOADING' });
+
+            // Шаг 1: Загружаем на ImgBB → получаем публичный URL
+            const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
+            const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+            const uploadBody = Buffer.concat([
+                Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="key"\r\n\r\n${imgbbKey}\r\n`),
+                Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"\r\n\r\n${imageBase64}\r\n`),
+                Buffer.from(`--${boundary}--\r\n`)
+            ]);
+            const { statusCode: uploadStatus, body: uploadBody2 } = await request('https://api.imgbb.com/1/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+                body: uploadBody
+            });
+            const uploadText = await uploadBody2.text();
+            const uploadData = JSON.parse(uploadText);
+            if (uploadStatus !== 200 || !uploadData.data?.url) {
+                throw new Error(`ImgBB upload failed (${uploadStatus}): ${uploadData.error?.message || uploadText.substring(0, 100)}`);
+            }
+            const imagePublicUrl = uploadData.data.url;
+            console.log(`[Skeleton Grok Video] Image hosted at: ${imagePublicUrl}`);
+
+            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'PROCESSING' });
+
+            // Шаг 2: GET /video/{prompt}?model=grok-video&image={publicUrl}
+            const seed = Math.floor(Math.random() * 999999);
+            const encodedPrompt = encodeURIComponent(prompt);
+            const videoUrl = `https://gen.pollinations.ai/video/${encodedPrompt}?model=grok-video&width=720&height=1280&aspectRatio=9:16&seed=${seed}&image=${encodeURIComponent(imagePublicUrl)}`;
+
+            console.log(`[Skeleton Grok Video] Generating video (may take 2-4 min)...`);
+
+            const { statusCode, body } = await request(videoUrl, {
+                method: 'GET',
+                headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {},
+                headersTimeout: 600_000,
+                bodyTimeout: 600_000
+            });
+
+            if (statusCode !== 200) {
+                const errText = await body.text();
+                throw new Error(`Grok Video failed (${statusCode}): ${errText.substring(0, 200)}`);
+            }
+
+            const videoPath = path.join(skeletonDir, `scene_${sceneIndex + 1}.mp4`);
+            await streamPipeline(body, fs.createWriteStream(videoPath));
+            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'COMPLETED' });
+            console.log(`[Skeleton Grok Video] Scene ${sceneIndex + 1} saved: ${videoPath}`);
+            return videoPath;
+
+        } catch (e) {
+            lastError = e;
+            console.warn(`[Skeleton Grok Video] Attempt ${attempt} failed: ${e.message}`);
+            if (attempt < 3) await new Promise(r => setTimeout(r, 15000)); // 15 сек между попытками
+        }
+    }
+    throw lastError;
+}
+
 // createVideoViaFreepikPixVerse is now part of unified createVideoViaFreepik
 
 // ── LTX-2 Text-to-Video (no image support) ─────────────────────────────────────
@@ -896,6 +973,8 @@ For EACH scene (exactly 6), generate following JSON:
         try {
             if (videoModel === 'pollinations-ltx2') {
                 videoFile = await createVideoViaPollinationsLTX2TextOnly(ltxVideoPrompt || videoPrompt, sceneIndex, event);
+            } else if (videoModel === 'grok-video') {
+                videoFile = await createVideoViaPollinationsGrok(videoPrompt, sceneIndex, event);
             } else {
                 // Default to Freepik for other models (wan, pixverse, kling, etc.)
                 const realModel = videoModel || 'wan-v2-6-720p';
