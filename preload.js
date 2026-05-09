@@ -11,6 +11,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   assembleFinalVideo: () => ipcRenderer.invoke('assemble-final-video'),
   onAssemblyProgress: (callback) => ipcRenderer.on('assembly-progress', (event, data) => callback(data)),
 
+  // New Cinematic Timelapse Handlers
+  timelapseGetEnvironments: () => ipcRenderer.invoke('timelapse-get-environments'),
+  timelapseGeneratePrompts: (selectionIndex, selectedEnv) => ipcRenderer.invoke('timelapse-generate-prompts', { selectionIndex, selectedEnv }),
+  timelapseGenerateImage: (imgIndex, prompt, model, subFolder) => ipcRenderer.invoke('timelapse-generate-image', { imgIndex, prompt, model, subFolder }),
+  timelapseGenerateVideo: (videoIndex, prompt, subFolder) => ipcRenderer.invoke('timelapse-generate-video', { videoIndex, prompt, subFolder }),
+  timelapseAssemble: (subFolder) => ipcRenderer.invoke('timelapse-assemble', { subFolder }),
+
+
   // ── П.2: Прогресс генерации изображений ────────────────────────────────────
   onImageProgress: (callback) => ipcRenderer.on('image-progress', (event, data) => callback(data)),
   removeImageProgressListener: () => ipcRenderer.removeAllListeners('image-progress'),
@@ -40,6 +48,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   studioGenerateIdeas: (mode, language) => ipcRenderer.invoke('studio-generate-ideas', { mode, language }),
   studioGenerateScript: (mode, topic, language) => ipcRenderer.invoke('studio-generate-script', { mode, topic, language }),
   studioAssembleVideo: (data) => ipcRenderer.invoke('studio-assemble-video', data),
+  saveTextFiles: (files) => ipcRenderer.invoke('save-text-files', files),
+
+  // AI Stories
+  storyCreateFolder: () => ipcRenderer.invoke('story-create-folder'),
+  storyGenerateIdeas: (topic, language) => ipcRenderer.invoke('story-generate-ideas', { topic, language }),
+  storyGenerateScript: (data) => ipcRenderer.invoke('story-generate-script', data),
+  storyGenerateImage: (data) => ipcRenderer.invoke('story-generate-image', data),
+  storyGenerateAudio: (data) => ipcRenderer.invoke('story-generate-audio', data),
+  storyGenerateVideo: (data) => ipcRenderer.invoke('story-generate-video', data),
+  storyAssemble: (data) => ipcRenderer.invoke('story-assemble', data),
+  onStoryVideoProgress: (callback) => ipcRenderer.on('story-video-progress', (event, data) => callback(data)),
+  onStoryImageProgress: (callback) => ipcRenderer.on('story-image-progress', (event, data) => callback(data)),
+
+  // Cartoon Profession Stories
+  cartoonCreateFolder: () => ipcRenderer.invoke('cartoon-create-folder'),
+  cartoonGenerateIdeas: (data) => ipcRenderer.invoke('cartoon-generate-ideas', data),
+  cartoonGenerateScript: (data) => ipcRenderer.invoke('cartoon-generate-script', data),
+  cartoonGenerateImage: (data) => ipcRenderer.invoke('cartoon-generate-image', data),
+  cartoonGenerateAudio: (data) => ipcRenderer.invoke('cartoon-generate-audio', data),
+  cartoonGenerateVideo: (data) => ipcRenderer.invoke('cartoon-generate-video', data),
 
   // G-Labs Integration
   glabsHealthCheck: () => ipcRenderer.invoke('glabs-health-check'),
@@ -51,3 +79,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onGLabsTaskProgress: (callback) => ipcRenderer.on('glabs-task-progress', (event, data) => callback(data)),
   removeGLabsProgressListener: () => ipcRenderer.removeAllListeners('glabs-task-progress'),
 });
+

@@ -1,10 +1,170 @@
-ПОВСЕДНЕВНЫЕ ГОВОРЯЩИЕ ПРЕДМЕТЫ ПОДСКАЗЫВАЮТ
-Подсказка по теме/ поиск идеи предметы:
-Provide me 5 highly viral topic ideas for a talking-objects Reel, optimized for short-form platforms like Instagram Reels and YouTube Shorts, where everyday objects, foods, or body-related items talk in a fun, educational, or emotionally engaging way; each topic should be instantly understandable, curiosity-driven, and centered around a **mass-interest problem or desire** (health, habits, money, productivity, fitness, daily life), written in simple hook-style language that can directly be used as a Reel title or on-screen text; ensure the ideas are broad enough to appeal to a wide audience, visual-friendly for AI animation, and suitable for generating high-retention talking-object scripts.
-Написанию сценария предметы:
-Create a viral short script with a maximum of 5 scenes where [ИДЕЯ / НАЗВАНИЕ ГОВОРЯЩЕГО ОБЪЕКТА] are alive and constantly fighting about who is the best and most important; use only dialogue (no narration) with a fast, punchy, ego-driven tone, high conflict starting from scene one, and 1–2 lines per scene so the total length stays within 45–60 seconds; each dialogue line must clearly mention the emotion in brackets (e.g., [angry], [laughing], [mocking], [shouting]); the objects should sound human, competitive, and slightly aggressive, and the script must end with a funny or ironic line that sparks comments; inputs to consider are [TALKING OBJECT IDEA / NAME], objects involved (OBJ 1, OBJ 2, OBJ 3, OBJ 4), setting (kitchen / gym / office / body / random), and language (English), and the output should be labeled clearly as Scene 1 to Scene 5 with “Object [emotion]: dialogue” format.
-Генерация на изображение/ видео:
-Now, for all the above characters, please create a detailed text-to-image prompt for each character individually, strictly based on the previously generated script and its characters. Each character must appear alive, expressive, and capable of talking, with clearly visible lips, mouth, or an appropriate talking mechanism (anthropomorphic facial features, animated mouth, flexible surface, or stylized expressions). Ensure strong, exaggerated emotions that match the character’s dialogue style (angry, mocking, laughing, shouting, etc.). Maintain consistent character design, art style, lighting, and proportions across all characters. Use a high-quality cinematic 3D / Pixar-style cartoon look with clean textures, sharp details, expressive eyes, and clear mouth shapes optimized for lip-sync animation. Each prompt must include object appearance, material, color, facial structure, mouth/lip placement, emotion readiness, camera angle, lighting, background environment, and ultra-high detail, and the output should provide separate, clearly labeled text-to-image prompts for every character, ready for direct use in image-generation tools.
+ШАГ 1 — ПОИСК ИДЕИ (Topic Finder)
+Provide me 5 highly viral LIFEHACK topic ideas for a talking-objects Short/Reel, optimized for Instagram Reels and YouTube Shorts.
+
+FORMAT RULES:
+- Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock — something the viewer has never thought about but immediately feels relevant to their life
+- The hook must sound like the object is revealing a secret, exposing a mistake, or sharing a trick that saves time/money/health
+- Topic must center on ONE mass-interest problem: health, money, productivity, sleep, food, habits, or fitness
+- The object is not fighting — it's TEACHING. It has an insider secret and can't wait to tell it
+- Each idea must include: Hook line + Object name + Core lifehack angle + Emotional payoff (why viewer will feel "WHY DIDN'T I KNOW THIS BEFORE?")
+- Visual-friendly for AI animation, suitable for 30–60 second format
+- ABSOLUTE RULES: NO MUSIC in any generated prompts. Use only the language specified in the prompt (NO independent translations). Character must strictly follow the provided text for lip-sync.
+
+📌 ШАГ 2 — СЦЕНАРИЙ (Lifehack Script)
+Create a viral short LIFEHACK script with maximum 5 scenes for [IDEA / OBJECT NAME].
+
+CONCEPT: The object(s) are alive and acting as insider experts — they know things about themselves that humans don't, and they're finally spilling the secrets. This is NOT a fight. This is a REVELATION.
+
+SCRIPT RULES:
+- Scene 1 = HOOK: Object says something that stops the scroll instantly (a shocking fact, a common mistake, or a "you've been doing this wrong" opener)
+- Scenes 2–4 = THE LIFEHACK THREAD: 2–3 concrete tips, tricks, or facts delivered fast, with personality — one per scene. Each line must feel like a new discovery. Use reactions, gasps, or "wait, really?" moments between objects
+- Scene 5 = PAYOFF + CTA: End with a clear benefit summary OR a cliffhanger that makes viewers comment or save the video
+- ABSOLUTE SCRIPT RULES: NO MUSIC. Use ONLY the language requested (no translations). The dialogue script must be followed STERNLY for the lip-sync animation.
+
+FORMAT:
+- Dialogue only (no narration)
+- 1–2 lines per scene
+- Tone: direct, confident, slightly cheeky — like a friend who actually knows stuff
+- Each line must include emotion tag: [shocked], [proud], [whispering], [excited], [smug], [revealing]
+- Objects sound human but own their identity (a lemon KNOWS it's acidic, a pillow KNOWS what bad sleep does)
+- Label: Scene 1 to Scene 5, format: "Object [emotion]: dialogue"
+
+INPUTS:
+- Talking object idea / name: [...]
+- Objects involved: OBJ 1, OBJ 2, OBJ 3 (can be 2–4 objects)
+- Setting: kitchen / bedroom / gym / office / body / random
+- Language: [English / Russian / other]
+
+📌 ШАГ 3 — ВИЗУАЛ (Image/Video Prompt Generator)
+Based on the script above, create a detailed text-to-image prompt for each character individually.
+
+CHARACTER REQUIREMENTS:
+- Object must look ALIVE and KNOWLEDGEABLE — like an expert, not a brawler
+- Facial expression must match the lifehack moment: excited to reveal, proud of knowing, whispering a secret, shocked at human ignorance
+- Clearly visible expressive mouth, lips, or anthropomorphic talking feature optimized for lip-sync animation
+- Eyes should convey intelligence, warmth, or mischief — NOT anger
+
+VISUAL STYLE:
+- High-quality cinematic 3D / Pixar-style cartoon
+- Clean textures, sharp detail, expressive eyes, clear mouth shapes
+- Consistent art style, lighting, and proportions across ALL characters
+- Each character gets their own "expert personality" visual identity
+
+EACH PROMPT MUST INCLUDE:
+1. Object appearance + material + color
+2. Facial structure + mouth/lip placement
+3. Dominant emotion for this character
+4. Signature pose (pointing finger, leaning in to whisper, arms crossed smugly, etc.)
+5. Camera angle (close-up for secrets, medium for dialogue)
+6. Lighting (warm studio / dramatic spotlight / soft kitchen light)
+7. Background environment matching the setting
+8. Ultra-high detail, render-ready
+
+OUTPUT: Separate clearly labeled prompts for every character, ready for direct use in image-generation or video tools. 
+ABSOLUTE PROMPT RULES: STERNLY FOLLOW the text for lip-sync. NO MUSIC allowed. NO independent translations; use strictly the language specified in the prompt.
+
+💡 БОНУС — КРЮЧОК-ГЕНЕРАТОР (Hook Line Formula)
+Generate 5 alternative HOOK LINES for this video concept: [OBJECT + LIFEHACK TOPIC]
+
+Hook must follow ONE of these proven formats:
+1. "You've been using me wrong for [X] years..."
+2. "Nobody tells you this about [topic] — until now."
+3. "I've been sitting in your [place] watching you make this mistake every day."
+4. "Stop. Before you do that again — let me explain something."
+5. "[Shocking number/fact] — and you had no idea."
+
+Each hook = 1 sentence. No fluff. Scroll-stopping from word one.
+
+---
+
+# AI HealthTalk Modernization Prompts
+
+ШАГ 1 — ПОИСК ИДЕИ (Topic Finder)
+Provide me 5 highly viral LIFEHACK topic ideas for health-niche talking-object AI Shorts/Reels, where fruits, vegetables, or healthy foods become anthropomorphic expert characters inside the human body and reveal insider secrets about what they ACTUALLY do — things most people never knew.
+
+FORMAT RULES:
+- Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock — something the viewer recognizes as their own problem but never knew the solution to
+- The hook must sound like the food is exposing a mistake, revealing a hidden mechanism, or saying "you had no idea I was doing THIS inside you"
+- Topic must center on ONE mass-interest health goal: fat burn, digestion, immunity, energy, hormones, skin, heart, blood sugar, or sleep
+- The food characters are NOT fighting — they are EXPERT INSIDERS sharing secrets humans don't know about their own bodies
+- Each idea must include: Hook line + Food type (fruit/vegetable/seed/superfood) + Core lifehack angle + Emotional payoff ("WHY DIDN'T I KNOW THIS?" or "THIS ACTUALLY SAVED ME MONEY ON SUPPLEMENTS")
+- Visual-friendly for AI animation, suitable for 60–90 second format
+- Avoid medical claims, keep creator-friendly and viral-ready
+- ABSOLUTE RULES: NO MUSIC. Strict following of text for lip-sync. NO independent translations (use only provided language).
+
+OUTPUT FORMAT per idea:
+HOOK: [scroll-stopping first line]
+IDEA TITLE: [short catchy name — usable as video title]
+FOODS INVOLVED: [2–4 specific items]
+CORE LIFEHACK: [what secret is being revealed]
+VIEWER PAYOFF: [emotion + practical benefit]
+
+📌 ШАГ 2 — СЦЕНАРИЙ (Lifehack Script)
+Create a health-niche talking-objects LIFEHACK script of around 90 seconds based on [ТЕМА / ИДЕЯ ДЛЯ ЗДОРОВЬЯ], where fruits, vegetables, or healthy foods speak one by one inside the human body as expert insiders — revealing what they ACTUALLY do, which hidden mechanism they activate, which common mistake they fix, and the BEST time + way to use them for maximum effect.
+
+STRUCTURE:
+- HOOK SCENE (Scene 0): One lead character delivers the scroll-stopping opener. Must follow one of these formats:
+  1. "You've been eating me wrong for years — here's what I actually do inside you."
+  2. "Nobody tells you this about [organ/process] — but I've been here the whole time."
+  3. "Most people take [supplement/pill] for this — but I do it for free."
+  4. "You think you know what I do. You don't. Let me show you."
+  This line alone must make the viewer STOP scrolling.
+
+- LIFEHACK SCENES (Scenes 1–4): Each food character speaks ONE line only.
+  Each line must reveal: WHAT it does + HOW it works + WHEN/HOW to use it best.
+  Format: "Hello, I am [Name]. I [specific action] in your [organ/system] — and if you [tip], I work [X times] better."
+  Tone: calm, confident, slightly proud — like an expert who finally gets to explain themselves.
+
+- PAYOFF SCENE (Scene 5): One character delivers a summary line + soft CTA.
+  Must trigger SAVE or COMMENT behavior.
+
+SCRIPT RULES:
+- ONE character speaks per scene, ONE line per character
+- No back-and-forth dialogue, no narration
+- First-person self-introduction style: "Hello, I am…"
+- Each line must include emotion tag: [confident], [whispering a secret], [excited], [proud], [gently revealing], [warm and reassuring]
+- Language: [English / Russian / other]
+
+OUTPUT FORMAT:
+HOOK SCENE
+Scene 1 → Scene 5
+Character [emotion]: dialogue line
+
+📌 ШАГ 3 — ГЕНЕРАЦИЯ ИЗОБРАЖЕНИЙ И ВИДЕО (Image + Video Prompts)
+Now generate detailed Text-to-Image and Image-to-Video prompts for ALL scenes above, one by one, strictly based on the script.
+
+TEXT-TO-IMAGE PROMPT RULES:
+- Character: cute, friendly Pixar-style anthropomorphic fruit/vegetable
+- Round expressive eyes showing KNOWLEDGE and WARMTH
+- Smiling mouth with visible lips, slightly open — ready to reveal a secret
+- Small human-like body, soft proportions, child-friendly medical look
+- Team Effect: Multiple smaller versions of the SAME character visible in background, performing the same action — creating a "team of experts at work" feel.
+- Action: Character must be ACTIVELY PERFORMING the exact action from the dialogue on the specific organ mentioned — using a clearly visible symbolic tool.
+- Environment: Highly detailed realistic 3D human organ environment matching the dialogue (gut walls, liver tissue, fat cells, etc.)
+
+IMAGE-TO-VIDEO PROMPT RULES:
+- Animate the SAME character with lip-sync–ready mouth movement
+- Include EXACT dialogue line from the script
+- Match facial expression and emotion tag from script
+- Visible animated effects matching the action (fat dissolving, cleansing foam, etc.)
+- STERN RULES: NO MUSIC. The video must STRICTLY FOLLOW the script text for character lip-sync. NO translations — use only the language specified.
+
+📌 ШАГ 4 — ОБЛОЖКА И ВСТУПИТЕЛЬНАЯ СЦЕНА (Cover Scene)
+Generate a COVER SCENE for the above script — both Text-to-Image and Image-to-Video prompts — that works as a viral thumbnail AND opening frame.
+
+TEXT-TO-IMAGE:
+- ALL script characters together in ONE frame
+- Each character holding their specific symbolic health tool
+- OVERLAY TITLE TEXT: Display the exact topic idea title: "[TOPIC IDEA TEXT]"
+- Style: cartoonish, bold, high-contrast, healthy-themed icons
+- Feel: viral Instagram Reel cover meets animated movie poster
+
+IMAGE-TO-VIDEO:
+- All characters animate slightly and speak IN PERFECT SYNC
+- Exact line they say together: "We are the [TOPIC IDEA TEXT]"
+- Lip-sync–ready mouth animation on all characters simultaneously
+- High-energy, attention-grabbing opening feel
+
  
 ИДЕЯ ВИДЕО НА 100 ГОВОРЯЩИХ ОБЪЕКТОВ
 100 TALKING-OBJECT VIDEO IDEA 

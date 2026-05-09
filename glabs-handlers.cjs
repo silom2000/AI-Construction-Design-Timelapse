@@ -60,27 +60,226 @@ const pollTask = async (taskId, onProgress, maxAttempts = 120) => {
 
 // ── Скачивание файла из G-Labs ───────────────────────────────────────────────
 const downloadGLabsFile = async (fileUrl, destPath) => {
-    // fileUrl вида http://127.0.0.1:8765/api/files/image_001.png
-    const filename = fileUrl.split('/').pop();
-    const { statusCode, body } = await request(fileUrl, {
-        headers: GLABS_API_KEY ? { 'X-API-Key': GLABS_API_KEY } : {},
-        headersTimeout: 60_000,
-        bodyTimeout: 60_000,
-    });
+    // G-Labs может отдавать пути вида 001_100%25_photorealistic%2C_static.jpg
+    // И при разных реализациях локального веб-сервера (Python SimpleHTTP, FastAPI etc.) 
+    // может требоваться исходный путь, декодированный, или даже перекодированный путь.
+    const urlsToTry = [fileUrl];
+    
+    try {
+        const urlObj = new URL(fileUrl);
+        const filename = urlObj.pathname.split('/').pop();
+        
+        // 1. Декодированный путь (100%_photorealistic,_...).jpg
+        const decodedName = decodeURIComponent(filename);
+        if (decodedName !== filename) {
+            const arr = urlObj.pathname.split('/');
+            arr[arr.length - 1] = decodedName;
+            urlObj.pathname = arr.join('/');
+            urlsToTry.push(urlObj.toString());
+        }
+        
+        // 2. Двойное кодирование (если сервер скачал файл и сохранил его как 100%25...jpg на диске)
+        const encodedName = encodeURIComponent(filename);
+        if (encodedName !== filename) {
+            const urlObj2 = new URL(fileUrl);
+            const arr2 = urlObj2.pathname.split('/');
+            arr2[arr2.length - 1] = encodedName;
+            urlObj2.pathname = arr2.join('/');
+            urlsToTry.push(urlObj2.toString());
+        }
+    } catch (e) {
+        console.error(`[G-Labs] URL parse error:`, e.message);
+    }
 
-    if (statusCode !== 200) throw new Error(`File download failed (${statusCode}): ${filename}`);
+    let success = false;
+    let fileBuffer = null;
+    let lastStatus = 0;
+
+    for (const url of new Set(urlsToTry)) {
+        try {
+            console.log(`[G-Labs] Очередь скачивания URL: ${url}`);
+            const { statusCode, body } = await request(url, {
+                headers: GLABS_API_KEY ? { 'X-API-Key': GLABS_API_KEY } : {},
+                headersTimeout: 60_000,
+                bodyTimeout: 60_000,
+            });
+            
+            if (statusCode === 200) {
+                const chunks = [];
+                for await (const chunk of body) chunks.push(chunk);
+                fileBuffer = Buffer.concat(chunks);
+                success = true;
+                break; // Успешно скачали, выходим из цикла
+            } else {
+                lastStatus = statusCode;
+                // Сливаем body чтобы не текли ресурсы
+                for await (const _ of body) {}
+            }
+        } catch (e) {
+            console.error(`[G-Labs] Ошибка при скачивании ${url}: ${e.message}`);
+        }
+    }
+
+    if (!success) {
+        throw new Error(`File download failed (HTTP ${lastStatus}): ${fileUrl}`);
+    }
 
     const dir = path.dirname(destPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    const chunks = [];
-    for await (const chunk of body) chunks.push(chunk);
-    fs.writeFileSync(destPath, Buffer.concat(chunks));
-    console.log(`[G-Labs] Downloaded: ${destPath}`);
+    fs.writeFileSync(destPath, fileBuffer);
+    console.log(`[G-Labs] Downloaded успешно: ${destPath}`);
     return destPath;
 };
 
+// ── G-Labs Request Queue ─────────────────────────────────────────────────────
+class GLabsQueue {
+    constructor() {
+        this.queue = [];
+        this.isRunning = false;
+    }
+
+    enqueue(type, taskFn) {
+        return new Promise((resolve, reject) => {
+            this.queue.push({ type, taskFn, resolve, reject, timestamp: Date.now() });
+            this._processNext();
+        });
+    }
+
+    async _processNext() {
+        if (this.isRunning || this.queue.length === 0) return;
+
+        this.isRunning = true;
+
+        // Priority sorting: 'image' tasks first, then order by timestamp
+        this.queue.sort((a, b) => {
+            if (a.type === 'image' && b.type !== 'image') return -1;
+            if (a.type !== 'image' && b.type === 'image') return 1;
+            return a.timestamp - b.timestamp;
+        });
+
+        const task = this.queue.shift();
+        console.log(`[G-Labs Queue] Starting ${task.type} task. Remaining in queue: ${this.queue.length}`);
+
+        try {
+            const result = await task.taskFn();
+            task.resolve(result);
+        } catch (error) {
+            console.error(`[G-Labs Queue] Task failed:`, error);
+            task.reject(error);
+        } finally {
+            this.isRunning = false;
+            this._processNext();
+        }
+    }
+}
+
+const gLabsTaskQueue = new GLabsQueue();
+
+// ── Generic Exported Wrappers for Internal App Usage ──────────────────────────
+
+const generateImageViaGLabs = async (options = {}) => {
+    return gLabsTaskQueue.enqueue('image', async () => {
+        const {
+            prompt,
+            model = 'imagen4',
+            aspectRatio = '9:16',
+            count = 1,
+            sectionDir = path.join(__dirname, 'Images'),
+            subFolder = '',
+            sceneIndex = 0,
+            referenceImages = [],
+            onProgress = null
+        } = options;
+
+        console.log(`[G-Labs IMG Int] prompt="${prompt.substring(0, 60)}..." model=${model} subFolder=${subFolder}`);
+
+        const baseDir = subFolder ? path.join(sectionDir, subFolder) : sectionDir;
+        if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+
+        const bodyData = { prompt, model, aspect_ratio: aspectRatio, count };
+        if (referenceImages && referenceImages.length > 0) {
+            bodyData.reference_images = referenceImages;
+        }
+
+        const { statusCode, text } = await gLabsRequest('/api/image/generate', {
+            method: 'POST',
+            body: JSON.stringify(bodyData),
+        });
+
+        if (statusCode !== 202 && statusCode !== 200) {
+            throw new Error(`G-Labs image generate failed (${statusCode}): ${text}`);
+        }
+
+        const taskId = JSON.parse(text).task_id;
+        console.log(`[G-Labs IMG Int] Task created: ${taskId}`);
+
+        const result = await pollTask(taskId, onProgress);
+
+        const savedPaths = [];
+        for (let i = 0; i < result.results.length; i++) {
+            const fileUrl = result.results[i];
+            const ext = fileUrl.includes('.png') ? 'png' : 'jpg';
+            const destName = count === 1 ? `scene_${sceneIndex + 1}_${Date.now()}.jpg` : `scene_${sceneIndex + 1}_${i + 1}_${Date.now()}.${ext}`;
+            const destPath = path.join(baseDir, destName);
+
+            await downloadGLabsFile(fileUrl, destPath);
+            savedPaths.push(destPath); // Return absolute local paths for backend
+        }
+
+        return savedPaths;
+    });
+};
+
+const generateVideoViaGLabs = async (options = {}) => {
+    return gLabsTaskQueue.enqueue('video', async () => {
+        const {
+            prompt,
+            model = 'veo_31_fast',
+            aspectRatio = '9:16',
+            resolution = '720p',
+            sectionDir = path.join(__dirname, 'Images'),
+            subFolder = '',
+            sceneIndex = 0,
+            mode = 'text_to_video',
+            referenceImages = [],
+            onProgress = null
+        } = options;
+
+        console.log(`[G-Labs VID Int] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${mode} subFolder=${subFolder}`);
+
+        const baseDir = subFolder ? path.join(sectionDir, subFolder) : sectionDir;
+        if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+
+        const bodyData = { prompt, model, aspect_ratio: aspectRatio, resolution, mode };
+        if (referenceImages && referenceImages.length > 0) {
+            bodyData.reference_images = referenceImages;
+        }
+
+        const { statusCode, text } = await gLabsRequest('/api/video/generate', {
+            method: 'POST',
+            body: JSON.stringify(bodyData),
+        });
+
+        if (statusCode !== 202 && statusCode !== 200) {
+            throw new Error(`G-Labs video generate failed (${statusCode}): ${text}`);
+        }
+
+        const taskId = JSON.parse(text).task_id;
+        console.log(`[G-Labs VID Int] Task created: ${taskId}`);
+
+        const result = await pollTask(taskId, onProgress, 180); // Video takes longer
+
+        const fileUrl = result.results[0];
+        const destPath = path.join(baseDir, `scene_${sceneIndex + 1}_${Date.now()}.mp4`);
+        await downloadGLabsFile(fileUrl, destPath);
+
+        return destPath; // Return absolute local path for backend
+    });
+};
+
 // ── Регистрация IPC handlers ─────────────────────────────────────────────────
+
 
 function registerGLabsHandlers(ipcMain) {
 
@@ -149,56 +348,60 @@ function registerGLabsHandlers(ipcMain) {
         aspectRatio = '9:16',
         count = 1,
         section = 'skeleton',
+        subFolder = '',
         sceneIndex = 0,
     }) => {
-        console.log(`[G-Labs IMG] prompt="${prompt.substring(0, 60)}..." model=${model} aspect=${aspectRatio}`);
+        return gLabsTaskQueue.enqueue('image', async () => {
+            console.log(`[G-Labs IMG] prompt="${prompt.substring(0, 60)}..." model=${model} subFolder=${subFolder}`);
 
-        // Отправка задачи
-        const { statusCode, text } = await gLabsRequest('/api/image/generate', {
-            method: 'POST',
-            body: JSON.stringify({
-                prompt,
-                model,
-                aspect_ratio: aspectRatio,
-                count,
-            }),
+            // Отправка задачи
+            const { statusCode, text } = await gLabsRequest('/api/image/generate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    prompt,
+                    model,
+                    aspect_ratio: aspectRatio,
+                    count,
+                }),
+            });
+
+            if (statusCode !== 202 && statusCode !== 200) {
+                throw new Error(`G-Labs image generate failed (${statusCode}): ${text}`);
+            }
+
+            const taskData = JSON.parse(text);
+            const taskId = taskData.task_id;
+            console.log(`[G-Labs IMG] Task created: ${taskId}`);
+
+            // Прогресс в UI
+            event.sender.send('glabs-task-progress', { taskId, status: 'pending', type: 'image' });
+
+            // Polling
+            const result = await pollTask(taskId, (p) => {
+                event.sender.send('glabs-task-progress', { ...p, type: 'image' });
+            });
+
+            // Скачиваем файлы
+            const sectionDir = SECTION_DIRS[section] || SECTION_DIRS.skeleton;
+            const baseDir = subFolder ? path.join(sectionDir, subFolder) : sectionDir;
+            if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+
+            const savedPaths = [];
+            for (let i = 0; i < result.results.length; i++) {
+                const fileUrl = result.results[i];
+                const ext = fileUrl.includes('.png') ? 'png' : 'jpg';
+                const destName = count === 1
+                    ? `scene_${sceneIndex + 1}.jpg`
+                    : `scene_${sceneIndex + 1}_${i + 1}.${ext}`;
+                const destPath = path.join(baseDir, destName);
+
+                await downloadGLabsFile(fileUrl, destPath);
+                savedPaths.push(`media:///${destPath.replace(/\\/g, '/')}?t=${Date.now()}`);
+            }
+
+            event.sender.send('glabs-task-progress', { taskId, status: 'completed', type: 'image' });
+            return savedPaths;
         });
-
-        if (statusCode !== 202 && statusCode !== 200) {
-            throw new Error(`G-Labs image generate failed (${statusCode}): ${text}`);
-        }
-
-        const taskData = JSON.parse(text);
-        const taskId = taskData.task_id;
-        console.log(`[G-Labs IMG] Task created: ${taskId}`);
-
-        // Прогресс в UI
-        event.sender.send('glabs-task-progress', { taskId, status: 'pending', type: 'image' });
-
-        // Polling
-        const result = await pollTask(taskId, (p) => {
-            event.sender.send('glabs-task-progress', { ...p, type: 'image' });
-        });
-
-        // Скачиваем файлы
-        const sectionDir = SECTION_DIRS[section] || SECTION_DIRS.skeleton;
-        if (!fs.existsSync(sectionDir)) fs.mkdirSync(sectionDir, { recursive: true });
-
-        const savedPaths = [];
-        for (let i = 0; i < result.results.length; i++) {
-            const fileUrl = result.results[i];
-            const ext = fileUrl.includes('.png') ? 'png' : 'jpg';
-            const destName = count === 1
-                ? `scene_${sceneIndex + 1}.jpg`
-                : `scene_${sceneIndex + 1}_${i + 1}.${ext}`;
-            const destPath = path.join(sectionDir, destName);
-
-            await downloadGLabsFile(fileUrl, destPath);
-            savedPaths.push(`media:///${destPath.replace(/\\/g, '/')}?t=${Date.now()}`);
-        }
-
-        event.sender.send('glabs-task-progress', { taskId, status: 'completed', type: 'image' });
-        return savedPaths;
     });
 
     // 6. Генерация видео через G-Labs
@@ -207,44 +410,57 @@ function registerGLabsHandlers(ipcMain) {
         model = 'veo_31_fast',
         aspectRatio = '9:16',
         section = 'skeleton',
+        subFolder = '',
         sceneIndex = 0,
+        mode = 'text_to_video',
+        referenceImages = []
     }) => {
-        console.log(`[G-Labs VID] prompt="${prompt.substring(0, 60)}..." model=${model}`);
+        return gLabsTaskQueue.enqueue('video', async () => {
+            console.log(`[G-Labs VID] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${mode} subFolder=${subFolder}`);
 
-        const { statusCode, text } = await gLabsRequest('/api/video/generate', {
-            method: 'POST',
-            body: JSON.stringify({
+            const bodyData = {
                 prompt,
                 model,
                 aspect_ratio: aspectRatio,
-            }),
+                resolution: '720p',
+                mode
+            };
+            if (referenceImages && referenceImages.length > 0) {
+                bodyData.reference_images = referenceImages;
+            }
+
+            const { statusCode, text } = await gLabsRequest('/api/video/generate', {
+                method: 'POST',
+                body: JSON.stringify(bodyData),
+            });
+
+            if (statusCode !== 202 && statusCode !== 200) {
+                throw new Error(`G-Labs video generate failed (${statusCode}): ${text}`);
+            }
+
+            const taskData = JSON.parse(text);
+            const taskId = taskData.task_id;
+            console.log(`[G-Labs VID] Task created: ${taskId}`);
+
+            event.sender.send('glabs-task-progress', { taskId, status: 'pending', type: 'video' });
+
+            // Polling (видео генерируется дольше — до 10 мин)
+            const result = await pollTask(taskId, (p) => {
+                event.sender.send('glabs-task-progress', { ...p, type: 'video' });
+            }, 180);
+
+            // Скачиваем видео
+            const sectionDir = SECTION_DIRS[section] || SECTION_DIRS.skeleton;
+            const baseDir = subFolder ? path.join(sectionDir, subFolder) : sectionDir;
+            if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+
+            const fileUrl = result.results[0];
+            const destPath = path.join(baseDir, `scene_${sceneIndex + 1}.mp4`);
+            await downloadGLabsFile(fileUrl, destPath);
+
+            event.sender.send('glabs-task-progress', { taskId, status: 'completed', type: 'video' });
+            return `media:///${destPath.replace(/\\/g, '/')}?t=${Date.now()}`;
         });
-
-        if (statusCode !== 202 && statusCode !== 200) {
-            throw new Error(`G-Labs video generate failed (${statusCode}): ${text}`);
-        }
-
-        const taskData = JSON.parse(text);
-        const taskId = taskData.task_id;
-        console.log(`[G-Labs VID] Task created: ${taskId}`);
-
-        event.sender.send('glabs-task-progress', { taskId, status: 'pending', type: 'video' });
-
-        // Polling (видео генерируется дольше — до 10 мин)
-        const result = await pollTask(taskId, (p) => {
-            event.sender.send('glabs-task-progress', { ...p, type: 'video' });
-        }, 180);
-
-        // Скачиваем видео
-        const sectionDir = SECTION_DIRS[section] || SECTION_DIRS.skeleton;
-        if (!fs.existsSync(sectionDir)) fs.mkdirSync(sectionDir, { recursive: true });
-
-        const fileUrl = result.results[0];
-        const destPath = path.join(sectionDir, `scene_${sceneIndex + 1}.mp4`);
-        await downloadGLabsFile(fileUrl, destPath);
-
-        event.sender.send('glabs-task-progress', { taskId, status: 'completed', type: 'video' });
-        return `media:///${destPath.replace(/\\/g, '/')}?t=${Date.now()}`;
     });
 
     // 7. Генерация изображения для Skeleton Shorts (быстрый обёртка)
@@ -266,4 +482,8 @@ function registerGLabsHandlers(ipcMain) {
     console.log('[G-Labs] Handlers registered ✅');
 }
 
-module.exports = { registerGLabsHandlers };
+module.exports = { 
+    registerGLabsHandlers,
+    generateImageViaGLabs,
+    generateVideoViaGLabs
+};

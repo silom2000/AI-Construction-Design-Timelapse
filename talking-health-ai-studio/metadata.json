@@ -1,0 +1,7 @@
+{
+  "name": "Talking Health AI Studio",
+  "description": "Генератор образовательных видео о здоровье с говорящими фруктами внутри тела",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

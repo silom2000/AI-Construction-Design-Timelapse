@@ -10,7 +10,8 @@ import {
     X,
     AlertTriangle,
     Download,
-    FileAudio
+    FileAudio,
+    FileText
 } from 'lucide-react';
 import { StudioScript, StudioScene } from './electron.d';
 import './StudioTab.css';
@@ -32,7 +33,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [topic, setTopic] = useState('');
     const [lang, setLang] = useState('Russian');
     const [imageModel, setImageModel] = useState<string>('freepik-mystic');
-    const [videoModel, setVideoModel] = useState<string>('freepik-wan');
+    const [videoModel] = useState<string>('veo_31_fast');
     const [script, setScript] = useState<StudioScript | null>(null);
 
     const [isLoading, setIsLoading] = useState(false);
@@ -41,31 +42,25 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [viralIdeas, setViralIdeas] = useState<{ original: string; translation: string }[]>([]);
 
     // Assembly
-    const [useKaraoke, setUseKaraoke] = useState(false);
     const [assembling, setAssembling] = useState(false);
     const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
+    const [projectFolder, setProjectFolder] = useState('');
 
     const IMAGE_MODELS = [
-        { value: 'freepik-mystic', label: 'Freepik Mystic', desc: 'Ultra-realistic, luxury' },
-        { value: 'freepik-flux-dev', label: 'Freepik Flux Dev', desc: 'Detailed, photorealistic' },
-        { value: 'zimage', label: 'ZImage', desc: 'Fast, universal' },
-        { value: 'antigravity-gemini', label: 'Antigravity Gemini', desc: 'Fast, high quality' },
-        { value: 'imagen-4', label: 'Imagen 4', desc: 'Google High Quality' },
+        { value: 'imagen4', label: 'Imagen 4', desc: 'Google High Quality (Safe/Detailed)' },
+        { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Improved Versatility' },
+        { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Professional High Output' },
     ];
 
-    const VIDEO_MODELS = [
-        { value: 'freepik-wan', label: 'Freepik WAN v2.6', desc: 'Highest quality (20/day)' },
-        { value: 'pixverse-v5', label: 'PixVerse V5', desc: 'Optimal: 125 gen/day' },
-    ];
 
     const fetchViralIdeas = async () => {
         setIsIdeasLoading(true);
         setError(null);
         try {
             const ideas = await window.electronAPI.studioGenerateIdeas(mode, lang) as any;
-            setViralIdeas(ideas.map((idea: { original: string; russian: string }) => ({
+            setViralIdeas(ideas.map((idea: { original: string; translation: string }) => ({
                 original: idea.original,
-                translation: lang === 'Russian' ? '' : idea.russian,
+                translation: idea.translation,
             })));
         } catch (err: any) {
             setError(err.message);
@@ -80,6 +75,11 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         setError(null);
         setViralIdeas([] as { original: string; translation: string }[]);
         try {
+            const now = new Date();
+            const timestamp = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}_${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getFullYear()}`;
+            const folder = `Studio_${timestamp}`;
+            setProjectFolder(folder);
+
             const result = await window.electronAPI.studioGenerateScript(mode, topic, lang);
             setScript({
                 ...result,
@@ -106,8 +106,9 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         try {
             const imageUrl = await window.electronAPI.skeletonGenerateImage({
                 sceneIndex: sceneId,
-                imagePrompt: `STRICT VERTICAL 9:16 PORTRAIT. ${scene.imagePrompt}. 3D Disney Pixar style.`,
-                imageModel: imageModel as any
+                imagePrompt: `STRICT VERTICAL 9:16 PORTRAIT. ${scene.imagePrompt}. 3D Disney Pixar style. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`,
+                imageModel: imageModel as any,
+                projectFolder
             });
             updateScene(sceneId, { status: 'idle', selectedImage: imageUrl, generatedImages: [imageUrl] });
         } catch (err: any) {
@@ -123,24 +124,6 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
             return;
         }
 
-        let audioUrl = scene.audio_url;
-        if (!audioUrl) {
-            updateScene(sceneId, { status: 'generating_video' });
-            try {
-                const { sceneAudioUrls } = await window.electronAPI.skeletonGenerateAudio({
-                    script: scene.line,
-                    scenes: [{ script_line: scene.line } as any],
-                    language: lang
-                });
-                audioUrl = sceneAudioUrls[0];
-                updateScene(sceneId, { audio_url: audioUrl });
-            } catch (e: any) {
-                setError("Ошибка аудио: " + e.message);
-                updateScene(sceneId, { status: 'idle' });
-                return;
-            }
-        }
-
         updateScene(sceneId, { status: 'generating_video' });
         try {
             const videoUrl = await window.electronAPI.skeletonGenerateVideo({
@@ -149,7 +132,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                 scriptLine: scene.line,
                 language: lang,
                 videoModel: videoModel as any,
-                audioUrl: audioUrl
+                projectFolder
             });
             updateScene(sceneId, { status: 'ready', generatedVideoUrl: videoUrl });
         } catch (err: any) {
@@ -164,7 +147,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         setFinalVideoUrl(null);
         try {
             const url = await window.electronAPI.studioAssembleVideo({
-                useKaraoke,
+                useKaraoke: false,
                 ideaTitle: script.intro,
                 language: lang
             });
@@ -173,6 +156,31 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
             setError('Ошибка сборки: ' + e.message);
         } finally {
             setAssembling(false);
+        }
+    };
+
+    const exportPrompts = async () => {
+        if (!script) return;
+        
+        const imagePrompts = script.scenes.map(s => s.imagePrompt).join('\n\n');
+        const videoPrompts = script.scenes.map(s => s.videoPrompt).join('\n\n');
+        
+        const safeTopic = script.intro.replace(/[^a-z0-9а-яё]/gi, '_').substring(0, 50);
+        
+        const files = [
+            { filename: `${safeTopic}_image.txt`, content: imagePrompts },
+            { filename: `${safeTopic}_video.txt`, content: videoPrompts }
+        ];
+        
+        try {
+            const result = await window.electronAPI.saveTextFiles(files);
+            if (result.success) {
+                alert('Промпты успешно экспортированы!');
+            } else {
+                setError('Ошибка экспорта: ' + result.error);
+            }
+        } catch (e: any) {
+            setError('Ошибка экспорта: ' + e.message);
         }
     };
 
@@ -199,24 +207,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                     </div>
                 </div>
 
-                <div className="sidebar-section">
-                    <h3 className="sidebar-title">🎬 VIDEO MODEL</h3>
-                    <div className="selection-list">
-                        {VIDEO_MODELS.map(m => (
-                            <div
-                                key={m.value}
-                                className={`selection-chip ${videoModel === m.value ? 'active' : ''}`}
-                                onClick={() => setVideoModel(m.value)}
-                            >
-                                <div className="chip-radio" />
-                                <div className="chip-info">
-                                    <span className="chip-label">{m.label}</span>
-                                    <span className="chip-desc">{m.desc}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {/* Video model selection - removed as unified in G-Labs */}
 
                 <div className="sidebar-section">
                     <h3 className="sidebar-title">🌍 LANGUAGE</h3>
@@ -236,20 +227,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                     </div>
                 </div>
 
-                <div className="sidebar-section">
-                    <h3 className="sidebar-title">🎤 OPTIONS</h3>
-                    <label className="selection-chip" style={{ cursor: 'pointer' }}>
-                        <input
-                            type="checkbox"
-                            checked={useKaraoke}
-                            onChange={(e) => setUseKaraoke(e.target.checked)}
-                            style={{ margin: 0 }}
-                        />
-                        <div className="chip-info">
-                            <span className="chip-label">Karaoke Subtitles</span>
-                        </div>
-                    </label>
-                </div>
+
 
                 {script && script.scenes.every(s => s.status === 'ready' || s.generatedVideoUrl) && (
                     <div className="sidebar-section assembly-section">
@@ -319,6 +297,12 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                 <button onClick={generateScript} disabled={isLoading || !topic} className="generate-btn">
                                     {isLoading ? <RefreshCw className="spin" size={18} /> : <Zap size={18} />} GENERATE SCRIPT
                                 </button>
+
+                                {script && (
+                                    <button onClick={exportPrompts} className="export-prompts-btn">
+                                        <FileText size={18} /> EXPORT PROMPTS
+                                    </button>
+                                )}
                             </div>
 
                             {viralIdeas.length > 0 && (
@@ -412,7 +396,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                         </div>
 
                                         <div className="asset-display">
-                                            {scene.status !== 'idle' ? (
+                                            {scene.status === 'generating_images' || scene.status === 'generating_video' ? (
                                                 <div className="loading-overlay">
                                                     <RefreshCw size={48} className="spin text-emerald-500" />
                                                     <p className="loading-text">Rendering...</p>
@@ -459,6 +443,8 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         .download-floating-btn:hover { transform: scale(1.1); }
         .overlay-animate-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 0.75rem 1.5rem; border-radius: 2rem; font-weight: 900; font-size: 0.75rem; border: none; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
         .preview-container:hover .overlay-animate-btn { opacity: 1; }
+        .export-prompts-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #6366f1; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        .export-prompts-btn:hover { background: #4f46e5; }
       `}</style>
         </div>
     );

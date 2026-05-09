@@ -1,0 +1,380 @@
+/* ── CartoonTab — Profession Stories ──────────────────────────────────────── */
+
+.cartoon-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: #0d0d0d;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.cartoon-sidebar {
+  width: 300px;
+  min-width: 260px;
+  max-width: 340px;
+  padding: 20px 16px;
+  border-right: 1px solid #222;
+  overflow-y: auto;
+  background: #111;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cartoon-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f0c040;
+  margin: 0 0 6px;
+  letter-spacing: 0.5px;
+}
+
+.cartoon-subtitle {
+  color: #888;
+  font-size: 0.75rem;
+  margin-bottom: 18px;
+  line-height: 1.45;
+}
+
+.cartoon-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cartoon-label {
+  font-size: 0.75rem;
+  color: #aaa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  margin-top: 12px;
+}
+
+.cartoon-input {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #eee;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.cartoon-input:focus {
+  border-color: #f0c040;
+}
+
+.cartoon-btn {
+  margin-top: 14px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #b8860b, #f0c040);
+  color: #111;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  width: 100%;
+}
+
+.cartoon-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.cartoon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Idea Cards ──────────────────────────────────────── */
+.cartoon-idea-btn {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.cartoon-idea-btn:hover {
+  border-color: #f0c040;
+  background: #1f1f1f;
+}
+
+.cartoon-idea-btn.selected {
+  border-color: #f0c040;
+  background: linear-gradient(135deg, #1a1500 0%, #2a2000 100%);
+  box-shadow: 0 0 10px rgba(240, 192, 64, 0.15);
+}
+
+.cartoon-idea-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f0c040;
+  margin: 0 0 4px;
+  line-height: 1.3;
+}
+
+.cartoon-idea-profession {
+  font-size: 0.7rem;
+  color: #f0c040;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.cartoon-idea-hook {
+  font-size: 0.75rem;
+  color: #bbb;
+  margin: 5px 0 0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.cartoon-idea-fact {
+  font-size: 0.7rem;
+  color: #888;
+  margin: 4px 0 0;
+  padding: 4px 8px;
+  background: #222;
+  border-left: 2px solid #f0c040;
+  border-radius: 3px;
+}
+
+/* ── Main content area ───────────────────────────────── */
+.cartoon-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  background: #0d0d0d;
+}
+
+.cartoon-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-size: 1rem;
+  color: #888;
+}
+
+.cartoon-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60%;
+  font-size: 1rem;
+  color: #555;
+  text-align: center;
+  padding: 40px;
+}
+
+/* ── Script/Scene container ──────────────────────────── */
+.cartoon-script-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.cartoon-script-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f0c040;
+  margin: 0 0 6px;
+  letter-spacing: 0.3px;
+}
+
+.cartoon-profession-badge {
+  display: inline-block;
+  background: #2a2000;
+  border: 1px solid #f0c040;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.72rem;
+  color: #f0c040;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* ── Character Profile card ──────────────────────────── */
+.cartoon-char-card {
+  background: linear-gradient(135deg, #1a1500 0%, #1f1b00 100%);
+  border: 1px solid #f0c040;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.cartoon-char-card h4 {
+  color: #f0c040;
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.cartoon-char-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 16px;
+  font-size: 0.74rem;
+}
+
+.cartoon-char-grid span.lbl {
+  color: #888;
+}
+
+.cartoon-char-grid span.val {
+  color: #ddd;
+}
+
+/* ── Scene cards ─────────────────────────────────────── */
+.cartoon-scene {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 18px;
+  transition: border-color 0.2s;
+}
+
+.cartoon-scene:hover {
+  border-color: #3a3a2a;
+}
+
+.cartoon-scene-header {
+  margin-bottom: 10px;
+}
+
+.cartoon-scene-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #2a2000, #3a2800);
+  border: 1px solid #f0c040;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #f0c040;
+  letter-spacing: 0.3px;
+}
+
+.cartoon-scene-line {
+  font-size: 0.95rem;
+  color: #e8e8e8;
+  line-height: 1.5;
+  margin: 10px 0 14px;
+  padding: 10px 14px;
+  background: #1a1a0a;
+  border-left: 3px solid #f0c040;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+/* ── Prompts grid ────────────────────────────────────── */
+.cartoon-prompts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.cartoon-prompt-label-img {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.cartoon-prompt-label-vid {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #60a5fa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.cartoon-prompt-text {
+  font-size: 0.7rem;
+  color: #777;
+  line-height: 1.4;
+  margin: 0 0 10px;
+  max-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+/* ── Media buttons ───────────────────────────────────── */
+.cartoon-media-btn {
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background: #1e1e1e;
+  color: #ccc;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.cartoon-media-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+  border-color: #f0c040;
+  color: #f0c040;
+}
+
+.cartoon-media-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Media previews ──────────────────────────────────── */
+.cartoon-media-preview {
+  width: 100%;
+  border-radius: 6px;
+  margin-top: 8px;
+  border: 1px solid #333;
+  max-height: 280px;
+  object-fit: cover;
+}
+
+/* ── Status text ─────────────────────────────────────── */
+.cartoon-status {
+  color: #777;
+  font-size: 0.77rem;
+  margin-top: 8px;
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 700px) {
+  .cartoon-prompts-grid {
+    grid-template-columns: 1fr;
+  }
+  .cartoon-sidebar {
+    width: 100%;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #222;
+  }
+  .cartoon-container {
+    flex-direction: column;
+  }
+}

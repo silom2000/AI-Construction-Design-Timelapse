@@ -72,10 +72,29 @@ export interface IElectronAPI {
   skeletonAssembleVideo: (data: any) => Promise<string>,
   onSkeletonVideoProgress: (callback: (data: any) => void) => void,
   onSkeletonAssemblyProgress: (callback: (data: any) => void) => void,
+  
+  // Cinematic Timelapse
+  timelapseGetEnvironments: () => Promise<string[]>,
+  timelapseGeneratePrompts: (selectionIndex: number, selectedEnv: string) => Promise<any>,
+  timelapseGenerateImage: (imgIndex: number, prompt: string, model?: string, subFolder?: string) => Promise<string>,
+  timelapseGenerateVideo: (videoIndex: number, prompt: string, subFolder?: string) => Promise<string>,
+  timelapseAssemble: (subFolder?: string) => Promise<string>,
+
   // Studio Tabs
   studioGenerateIdeas: (mode: 'health' | 'objects', language: string) => Promise<string[]>,
   studioGenerateScript: (mode: 'health' | 'objects', topic: string, language: string) => Promise<StudioScript>,
   studioAssembleVideo: (data: any) => Promise<string>,
+  saveTextFiles: (files: { filename: string; content: string }[]) => Promise<{ success: boolean; error?: string }>,
+
+  // AI Stories
+  storyCreateFolder: () => Promise<string>,
+  storyGenerateIdeas: (topic: string, language: string) => Promise<any>,
+  storyGenerateScript: (idea: string, language: string) => Promise<any>,
+  storyGenerateImage: (data: any) => Promise<string>,
+  storyGenerateAudio: (data: any) => Promise<string>,
+  storyGenerateVideo: (data: any) => Promise<string>,
+  onStoryVideoProgress: (callback: (data: any) => void) => void,
+  onStoryImageProgress: (callback: (data: any) => void) => void,
 
   // G-Labs Integration
   glabsHealthCheck: () => Promise<{ running: boolean; tasks_pending?: number; tasks_running?: number; error?: string }>,
@@ -84,11 +103,11 @@ export interface IElectronAPI {
   glabsTaskStatus: (taskId: string) => Promise<GLabsTask>,
   glabsGenerateImage: (data: {
     prompt: string; model?: string; aspectRatio?: string;
-    count?: number; section?: string; sceneIndex?: number;
+    count?: number; section?: string; subFolder?: string; sceneIndex?: number;
   }) => Promise<string[]>,
   glabsGenerateVideo: (data: {
-    prompt: string; model?: string; aspectRatio?: string;
-    section?: string; sceneIndex?: number;
+    prompt: string; model?: string; aspectRatio?: string; resolution?: string;
+    section?: string; subFolder?: string; sceneIndex?: number;
   }) => Promise<string>,
   onGLabsTaskProgress: (callback: (data: GLabsProgressData) => void) => void,
   removeGLabsProgressListener: () => void,

@@ -22,9 +22,8 @@ interface SceneState {
 
 export default function SkeletonTab() {
   const [language, setLanguage] = useState<Language>('en');
-  const [imageModel, setImageModel] = useState<'zimage' | 'imagen-4' | 'grok-imagine' | 'klein' | 'freepik-mystic' | 'freepik-flux-dev'>('zimage');
-  const [videoModel, setVideoModel] = useState<"freepik-wan" | "pollinations-ltx2" | "pixverse-v5" | "grok-video">("freepik-wan");
-  const [useKaraoke, setUseKaraoke] = useState(true);
+  const [imageModel, setImageModel] = useState<'imagen4' | 'nano_banana_2' | 'nano_banana_pro'>('imagen4');
+  const [videoModel] = useState<"veo_31_fast" | "freepik-wan" | "pollinations-ltx2" | "pixverse-v5" | "grok-video">("veo_31_fast");
 
   // Phase 1
   const [ideasText, setIdeasText] = useState('');
@@ -40,14 +39,10 @@ export default function SkeletonTab() {
   // Per-scene state
   const [sceneStates, setSceneStates] = useState<SceneState[]>([]);
 
-  // Audio state
-  const [fullAudioUrl, setFullAudioUrl] = useState<string | null>(null);
-  const [sceneAudioUrls, setSceneAudioUrls] = useState<(string | null)[]>([]);
-  const [audioLoading, setAudioLoading] = useState(false);
-
   // Assembly
   const [assembling, setAssembling] = useState(false);
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
+  const [projectFolder, setProjectFolder] = useState('');
 
   // Listen for per-scene video progress
   useEffect(() => {
@@ -142,6 +137,10 @@ export default function SkeletonTab() {
     setScenes([]);
     setSceneStates([]);
     setFinalVideoUrl(null);
+    const now = new Date();
+    const timestamp = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}_${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getFullYear()}`;
+    const folder = `Task_${timestamp}`;
+    setProjectFolder(folder);
     try {
       const { script: s, scenes: sc } = await window.electronAPI.skeletonGenerateScript(ideaTitle.trim(), language, videoModel);
       setScript(s);
@@ -167,7 +166,8 @@ export default function SkeletonTab() {
       const url = await window.electronAPI.skeletonGenerateImage({
         sceneIndex: i,
         imagePrompt: scene.image_prompt,
-        imageModel
+        imageModel,
+        projectFolder
       });
       updateScene(i, { imageUrl: `${url}?t=${Date.now()}`, imageLoading: false });
     } catch (e: any) {
@@ -196,7 +196,7 @@ export default function SkeletonTab() {
         fullScript: script,
         language,
         videoModel,
-        audioUrl: scene.audio_url
+        projectFolder
       });
       updateScene(i, { videoUrl: `${url}?t=${Date.now()}`, videoLoading: false, videoProgress: '' });
     } catch (e: any) {
@@ -204,34 +204,12 @@ export default function SkeletonTab() {
     }
   };
 
-  // ── Phase 3.5: synthesize audio (after images) ───────────
-  const handleGenerateAudio = async () => {
-    if (!script || scenes.length === 0) return;
-    setAudioLoading(true);
-    try {
-      const { fullAudioUrl: fau, sceneAudioUrls: sau } = await window.electronAPI.skeletonGenerateAudio({
-        script,
-        scenes,
-        language
-      });
-      setFullAudioUrl(fau);
-      setSceneAudioUrls(sau);
-      // Also update scenes with audio_url so video generation can pick it up
-      setScenes(prev => prev.map((s, i) => ({ ...s, audio_url: sau[i] || undefined })));
-    } catch (e: any) {
-      alert('Ошибка синтеза аудио: ' + e.message);
-    } finally {
-      setAudioLoading(false);
-    }
-  };
 
   // ── Generate all images sequentially ─────────────────────
   const handleGenerateAllImages = async () => {
     for (let i = 0; i < scenes.length; i++) {
       await handleGenerateImage(i);
     }
-    // Auto-synthesize audio after all images are ready
-    await handleGenerateAudio();
   };
 
   // ── Generate all videos sequentially ─────────────────────
@@ -248,7 +226,7 @@ export default function SkeletonTab() {
     setAssembling(true);
     try {
       const url = await window.electronAPI.skeletonAssembleVideo({
-        useKaraoke,
+        useKaraoke: false,
         ideaTitle: selectedIdea,
         language
       });
@@ -296,12 +274,9 @@ export default function SkeletonTab() {
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               {([
-                { value: 'zimage', label: 'ZImage', desc: 'Быстрая, универсальная' },
-                { value: 'freepik-mystic', label: 'Freepik Mystic', desc: 'Ultra-realistic, luxury' },
-                { value: 'freepik-flux-dev', label: 'Freepik Flux Dev', desc: 'Detailed, photorealistic' },
-                { value: 'imagen-4', label: 'Imagen 4', desc: 'Google, высокое качество' },
-                { value: 'grok-imagine', label: 'Grok Imagine', desc: 'xAI, креативная' },
-                { value: 'klein', label: 'Klein', desc: 'Pollinations, детальная' },
+                { value: 'imagen4', label: 'Imagen 4', desc: 'Google, высокое качество' },
+                { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Улучшенная версия' },
+                { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Профессиональный результат' },
               ] as const).map(m => (
                 <div
                   key={m.value}
@@ -342,42 +317,7 @@ export default function SkeletonTab() {
           </div>
         )}
 
-        {/* Video model selection */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '12px', color: '#aaa', display: 'block', marginBottom: '6px' }}>
-            🎬 Модель видео:
-          </label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {[
-              { value: 'freepik-wan', label: 'Freepik WAN v2.6', desc: 'Высочайшее качество (20/день)' },
-              { value: 'pixverse-v5', label: 'PixVerse V5', desc: 'Оптимально: 125 генераций/день' },
-              { value: 'grok-video', label: 'Grok Video', desc: 'Pollinations, быстро (text-to-video)' },
-              { value: 'pollinations-ltx2', label: 'Pollinations LTX-2', desc: 'Мгновенно, только текст (без референса)' },
-            ].map(m => (
-              <div
-                key={m.value}
-                onClick={() => setVideoModel(m.value as any)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
-                  backgroundColor: videoModel === m.value ? '#1a3a5c' : '#222',
-                  border: videoModel === m.value ? '1px solid #007acc' : '1px solid #444',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <div style={{
-                  width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0,
-                  border: videoModel === m.value ? '4px solid #007acc' : '2px solid #666',
-                  backgroundColor: videoModel === m.value ? '#fff' : 'transparent'
-                }} />
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: videoModel === m.value ? '#fff' : '#ccc' }}>{m.label}</div>
-                  <div style={{ fontSize: '10px', color: '#888' }}>{m.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Video model selection - removed as unified in G-Labs */}
 
         {/* Language selector */}
         <div style={{ marginBottom: '16px' }}>
@@ -408,22 +348,6 @@ export default function SkeletonTab() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Karaoke Settings */}
-        <div style={{ ...card, padding: '10px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '8px' }}>
-            <input
-              type="checkbox"
-              checked={useKaraoke}
-              onChange={(e) => setUseKaraoke(e.target.checked)}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>🎤 Караоке Субтитры</span>
-          </label>
-          <p style={{ fontSize: '10px', color: '#888', margin: '4px 0 0 26px' }}>
-            Ярко-зелёная подсветка слов через Scribe
-          </p>
         </div>
 
         {/* Step 1 */}
@@ -479,33 +403,16 @@ export default function SkeletonTab() {
             {!isLTX2Mode && (
               <button
                 onClick={handleGenerateAllImages}
-                disabled={sceneStates.some(s => s.imageLoading) || audioLoading}
-                style={{ ...btn('#28a745', sceneStates.some(s => s.imageLoading) || audioLoading), width: '100%', justifyContent: 'center', marginBottom: '7px' }}
+                disabled={sceneStates.some(s => s.imageLoading)}
+                style={{ ...btn('#28a745', sceneStates.some(s => s.imageLoading)), width: '100%', justifyContent: 'center', marginBottom: '7px' }}
               >
                 🖼️ Все изображения ({scenes.length} сцен)
               </button>
             )}
-            {/* Audio status badge */}
-            {audioLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', marginBottom: '7px', backgroundColor: '#1a2a1a', border: '1px solid #2a4a2a', borderRadius: '5px', fontSize: '11px', color: '#6c6' }}>
-                <span style={{ width: '10px', height: '10px', border: '2px solid #6c6', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block', flexShrink: 0 }} />
-                🎤 Синтез аудио...
-              </div>
-            )}
-            {!audioLoading && sceneAudioUrls.filter(Boolean).length > 0 && (
-              <div style={{ padding: '4px 10px', marginBottom: '7px', backgroundColor: '#0a1a0a', border: '1px solid #2a4a2a', borderRadius: '5px', fontSize: '11px', color: '#6c6' }}>
-                ✅ Аудио готово ({sceneAudioUrls.filter(Boolean).length}/{scenes.length} сцен)
-                {fullAudioUrl && (
-                  <a href={fullAudioUrl} target="_blank" rel="noreferrer" style={{ marginLeft: '8px', color: '#6af', textDecoration: 'underline', fontSize: '10px' }}>
-                    🔊 Слушать полное аудио
-                  </a>
-                )}
-              </div>
-            )}
             <button
               onClick={handleGenerateAllVideos}
-              disabled={!allImagesReady || sceneStates.some(s => s.videoLoading) || audioLoading}
-              style={{ ...btn('#17a2b8', !allImagesReady || sceneStates.some(s => s.videoLoading) || audioLoading), width: '100%', justifyContent: 'center' }}
+              disabled={!allImagesReady || sceneStates.some(s => s.videoLoading)}
+              style={{ ...btn('#17a2b8', !allImagesReady || sceneStates.some(s => s.videoLoading)), width: '100%', justifyContent: 'center' }}
             >
               🎬 {isLTX2Mode ? 'Генерировать все видео' : 'Все видео'} ({scenes.length} сцен)
             </button>
@@ -551,7 +458,7 @@ export default function SkeletonTab() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
 
         {/* Ideas — clickable cards */}
-        {parsedIdeas.length > 0 && (
+        {parsedIdeas.length > 0 && scenes.length === 0 && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{ fontSize: '13px', color: '#aaa', marginBottom: '10px', fontWeight: 'bold' }}>
               💡 Выберите идею — кликните для генерации сценария:
@@ -641,6 +548,25 @@ export default function SkeletonTab() {
           </div>
         )}
 
+        {/* Selected Idea Header */}
+        {script && selectedIdea && (
+          <div style={{
+            backgroundColor: '#0d2a40', border: '1px solid #007acc',
+            borderRadius: '8px', padding: '12px 16px', marginBottom: '16px',
+            display: 'flex', alignItems: 'center', gap: '12px'
+          }}>
+            <span style={{ fontSize: '24px' }}>💡</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '11px', color: '#7af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                Выбранная тема
+              </div>
+              <div style={{ fontSize: '16px', color: '#fff', fontWeight: 'bold', lineHeight: '1.4' }}>
+                {selectedIdea}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Script */}
         {script && (
           <div style={{ ...card, marginBottom: '16px', border: '1px solid #444' }}>
@@ -659,9 +585,6 @@ export default function SkeletonTab() {
         {/* Scenes grid */}
         {scenes.length > 0 && (
           <>
-            <div style={{ fontSize: '14px', color: '#ccc', marginBottom: '12px', fontWeight: 'bold' }}>
-              🎬 Сцены ({scenes.length}) — модель: {videoModel === 'pollinations-ltx2' ? 'Pollinations LTX-2' : videoModel === 'pixverse-v5' ? 'PixVerse V5' : 'Freepik WAN v2.6'}
-            </div>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
@@ -829,7 +752,7 @@ export default function SkeletonTab() {
             <div style={{ fontSize: '48px' }}>💀</div>
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#666' }}>Skeleton Viral Shorts</div>
             <div style={{ fontSize: '13px', color: '#444', maxWidth: '400px', lineHeight: '1.6' }}>
-              Выберите язык озвучки и нажмите «Сгенерировать 10 идей».<br />
+              Выберите язык озвучки и нажмите «Сгенерировать 5 идей».<br />
               AI создаст вирусный сценарий, изображения и видео<br />
               с голосовой озвучкой через Freepik WAN v2.6.
             </div>

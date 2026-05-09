@@ -1,0 +1,6 @@
+file 'D:/Open_Project/kimi/SkeletonShorts/scene_1_sub.mp4'
+file 'D:/Open_Project/kimi/SkeletonShorts/scene_2_sub.mp4'
+file 'D:/Open_Project/kimi/SkeletonShorts/scene_3_sub.mp4'
+file 'D:/Open_Project/kimi/SkeletonShorts/scene_4_sub.mp4'
+file 'D:/Open_Project/kimi/SkeletonShorts/scene_5_sub.mp4'
+file 'D:/Open_Project/kimi/SkeletonShorts/scene_6_sub.mp4'

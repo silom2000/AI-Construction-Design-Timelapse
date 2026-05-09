@@ -80,4 +80,31 @@ Image/
 Video/
 FinalVideo/
 Music/
-.env
+
+# Generated media output directories
+Stories/Audio/
+Stories/Images/
+Stories/Videos/
+Stories/Story_*/
+Stories/Test_Audio_Project/
+CinematicTimelapse/video_*.mp4
+CinematicTimelapse/Timelapse_*/
+SkeletonShorts/Studio_*/
+SkeletonShorts/Task_*/
+SkeletonShorts/preview/
+
+# FFmpeg binary
+ffmpeg/bin/
+
+# Runtime / cache
+queue.db
+prompt_cache.json
+completed_topics.json
+voice_auth_test.txt
+voiceapi_spec.json
+openapi_spec.json
+spec_analysis.txt
+Audio/test_*.mp3
+
+# Talking health sub-project node_modules
+talking-health-ai-studio/node_modules/

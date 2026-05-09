@@ -178,7 +178,7 @@ export default function GLabsTab() {
     try {
       if (mode === 'image') {
         const urls = await window.electronAPI.glabsGenerateImage({
-          prompt: prompt.trim(),
+          prompt: `${prompt.trim()}. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`,
           model: model || undefined,
           aspectRatio,
           count,
@@ -186,7 +186,7 @@ export default function GLabsTab() {
         setLastResults(urls);
       } else {
         const url = await window.electronAPI.glabsGenerateVideo({
-          prompt: prompt.trim(),
+          prompt: `${prompt.trim()}. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`,
           model: model || undefined,
           aspectRatio,
         });

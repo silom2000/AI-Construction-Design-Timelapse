@@ -1,5 +1,6 @@
 // ============ SKELETON SHORTS — WAN V2.6 720P ============
 const path = require('path');
+const axios = require('axios');
 const fs = require('fs');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
@@ -7,8 +8,8 @@ const { spawn, execSync } = require('child_process');
 const { request } = require('undici');
 const crypto = require('crypto');
 const streamPipeline = promisify(pipeline);
-const freepikKeys = require('./freepik-key-manager.cjs');
 const historyManager = require('./history-manager.cjs');
+const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 const { pipeline: _pipeline } = require('stream');
 
 const LANG_NAMES = {
@@ -20,150 +21,228 @@ const LANG_NAMES = {
     Spanish: 'Spanish', Polish: 'Polish', Italian: 'Italian', Portuguese: 'Portuguese'
 };
 
+// ── 100 Object Categories for diverse idea generation ─────────────────────────
+const OBJECT_CATEGORIES = [
+    // ЕДА И КУХНЯ
+    { theme: 'Food & Kitchen', objects: ['vegetables', 'fruits', 'kitchen utensils', 'spices', 'junk food', 'healthy food', 'breakfast items', 'street food', 'frozen food', 'mixed vegetables vs fruits'] },
+    // ПРЕДМЕТЫ ДОМАШНЕГО ОБИХОДА
+    { theme: 'Household', objects: ['furniture', 'bedroom objects', 'bathroom items', 'cleaning tools', 'electrical appliances', 'doors & windows', 'pillows & blankets', 'storage items', 'lights & fans', 'dustbin contents'] },
+    // ОФИСНАЯ ЖИЗНЬ
+    { theme: 'Office & Work', objects: ['desk objects', 'laptop & accessories', 'stationery', 'printer & scanner', 'office furniture', 'work-from-home setup', 'ID card & access card', 'files & folders', 'pantry items', 'meeting room objects'] },
+    // ТРЕНАЖЕРНЫЙ ЗАЛ
+    { theme: 'Gym & Fitness', objects: ['gym equipment', 'dumbbells & weights', 'cardio machines', 'gym accessories', 'protein supplements', 'fitness tracking devices', 'gym lockers', 'workout clothes', 'yoga equipment', 'post-workout items'] },
+    // ЗДОРОВЬЕ И ТЕЛО
+    { theme: 'Health & Body', objects: ['internal organs', 'bones & muscles', 'immune system parts', 'digestive system', 'heart vs brain', 'hormones', 'blood cells', 'senses (eyes, ears)', 'mental health emotions', 'body parts vs habits'] },
+    // ТЕХНОЛОГИИ
+    { theme: 'Tech & Digital', objects: ['mobile apps', 'phone components', 'social media platforms', 'notifications', 'AI tools', 'gadgets', 'cables & chargers', 'gaming devices', 'smart home devices', 'digital files'] },
+    // ДЕНЬГИ
+    { theme: 'Money & Finance', objects: ['wallet contents', 'credit cards', 'coins & cash', 'bills & expenses', 'savings vs spending', 'investment assets', 'budget categories', 'subscription services', 'salary breakdown', 'shopping items'] },
+    // ШКОЛА И УЧЁБА
+    { theme: 'School & Study', objects: ['school stationery', 'books', 'exam papers', 'classroom objects', 'backpack contents', 'homework materials', 'grades & marks', 'online class tools', 'study apps', 'library books'] },
+    // ПУТЕШЕСТВИЯ
+    { theme: 'Travel & Outdoors', objects: ['luggage items', 'travel accessories', 'vehicle parts', 'road objects', 'tourist items', 'airport objects', 'train station items', 'hotel room items', 'weather elements', 'camping gear'] },
+    // ВЕСЁЛЫЙ И ВИРУСНЫЙ
+    { theme: 'Fun & Viral', objects: ['emojis', 'alphabet letters', 'numbers', 'colors', 'sounds', 'emotions', 'habits', 'daily routines', 'time periods', 'life stages'] }
+];
+
+/** Pick N random categories + specific objects for prompt diversity */
+function getRandomCategories(n = 3) {
+    const shuffled = [...OBJECT_CATEGORIES].sort(() => Math.random() - 0.5);
+    const picked = shuffled.slice(0, n);
+    return picked.map(cat => {
+        const objs = [...cat.objects].sort(() => Math.random() - 0.5).slice(0, 3);
+        return `${cat.theme}: ${objs.join(', ')}`;
+    });
+}
+
 // ------------- Phase 1: Voice API (csv666) -------------
-const synthesizeCsv666Speech = async (input, templateUuid = 'eb21f806-58d1-46db-b346-24ea6540d0eb') => {
-    const apiKey = process.env.VOICEAPI_KEY?.trim();
-    const audioDir = path.join(__dirname, 'Audio');
-    if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir);
 
-    const hashString = `${input}_${templateUuid}`;
-    const inputHash = crypto.createHash('md5').update(hashString).digest('hex').substring(0, 12);
-    const outputPath = path.join(audioDir, `speech_csv666_${inputHash}.mp3`);
-    const mediaUrl = `media:///${outputPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+// ─────────────────────────────────────────────────────────────
+// VoiseAPI (https://voiceapi.csv666.ru) — ASYNC TASK FLOW
+// POST /tasks → {task_id: N} → poll GET /tasks/{id} → download audio
+// ─────────────────────────────────────────────────────────────
 
-    if (fs.existsSync(outputPath)) {
-        console.log(`[Csv666 Speech] Using cached audio: ${outputPath}`);
-        return mediaUrl;
-    }
+// ═══════════════════════════════════════════════════════════
+// VoiseAPI async task flow — CORRECT IMPLEMENTATION
+// POST /tasks → {task_id: N} → poll → download binary MP3
+// ═══════════════════════════════════════════════════════════
+const _voiseApiAxios = require('axios');
 
-    const baseUrl = 'https://voiceapi.csv666.ru';
+async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
+    const apiKey = process.env.VOICEAPI_KEY || process.env.VOICE_AI_KEY;
+    if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set');
 
-    try {
-        console.log(`[Csv666 Speech] Creating task for text: ${input.substring(0, 50)}...`);
-        const { statusCode: cs, body: cb } = await request(`${baseUrl}/tasks`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-API-Key': apiKey
+    const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
+    // ✅ CORRECT AUTH: X-API-Key header (per API docs securitySchemes)
+    const hdrs = {
+        'X-API-Key': apiKey,
+        'Content-Type': 'application/json'
+    };
+
+    // Step 1: Create task
+    const body = {
+        template: {
+            model_id: options.model_id || 'eleven_multilingual_v2',
+            voice_id: voiceId,
+            voice_settings: {
+                stability: options.stability ?? 0.85,
+                similarity_boost: options.similarity_boost ?? 0.75,
+                use_speaker_boost: options.use_speaker_boost !== false,
+                style: options.style ?? 0.0,
+                speed: options.speed ?? 1.0
             },
-            body: JSON.stringify({
-                template_uuid: templateUuid,
-                text: input,
-                chunk_size: 500,
-                pause_settings: { auto_paragraph_pause: false, enabled: false, max_pause_symb: 2000, pause_time: 1 },
-                stress_settings: { enabled: false }
-            })
-        });
+            voice_result_type: 'default'
+        },
+        text: text,
+        task_type: 'default'
+    };
+    if (options.public_owner_id) body.template.public_owner_id = options.public_owner_id;
 
-        const taskText = await cb.text();
-        if (cs !== 200) throw new Error(`Csv666 createTask failed (${cs}): ${taskText}`);
-        const taskData = JSON.parse(taskText);
-        const taskId = taskData.task_id;
+    console.log(`[Voice] POST /tasks voice=${voiceId} text=${text.length}chars`);
+    const cr = await _voiseApiAxios.post(`${VOISE_BASE}/tasks`, body, { headers: hdrs });
+    const taskId = cr.data && (cr.data.task_id || cr.data.id);
+    if (!taskId) throw new Error('[Voice] No task_id: ' + JSON.stringify(cr.data).slice(0, 200));
+    console.log(`[Voice] task_id=${taskId}`);
 
-        // Poll status
-        let status = 'processing';
-        for (let i = 0; i < 60; i++) {
-            await new Promise(r => setTimeout(r, 5000));
-            const { statusCode: ss, body: sb } = await request(`${baseUrl}/tasks/${taskId}/status`, {
-                headers: { 'X-API-Key': apiKey }
-            });
-            const sText = await sb.text();
-            const sData = JSON.parse(sText);
-            status = (sData.status || sData.state || '').toLowerCase();
-            console.log(`[Csv666 Speech] Poll ${i + 1}: status="${status}"`);
+    // Step 2: Poll GET /tasks/{id}/status (NOT /tasks/{id}!)
+    // Statuses: waiting → processing → ending (ready!) → ending_processed
+    for (let n = 0; n < 60; n++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const sr = await _voiseApiAxios.get(`${VOISE_BASE}/tasks/${taskId}/status`, { headers: hdrs });
+        const t = sr.data;
+        const st = ((t.status || '')).toLowerCase();
+        console.log(`[Voice] task=${taskId} status=${st} (${n+1}/60)`);
+        if (st === 'error' || st === 'error_handled') throw new Error('[Voice] Task failed: ' + JSON.stringify(t).slice(0, 200));
 
-            if (status === 'done' || status === 'completed' || status === 'ending') break;
-            if (status === 'failed' || status === 'error') throw new Error(`Csv666 task failed: ${sText}`);
+        // "ending" = result ready
+        if (st === 'ending' || st === 'ending_processed') {
+            console.log(`[Voice] Status "${st}" — downloading /tasks/${taskId}/result`);
+            const ar = await _voiseApiAxios.get(`${VOISE_BASE}/tasks/${taskId}/result`, { responseType: 'arraybuffer', headers: hdrs });
+            const buf = Buffer.from(ar.data);
+            if (buf.length < 100) throw new Error(`[Voice] Too small: ${buf.length}B`);
+            const dir = require('path').dirname(outputPath);
+            if (!require('fs').existsSync(dir)) require('fs').mkdirSync(dir, { recursive: true });
+            require('fs').writeFileSync(outputPath, buf);
+            console.log(`[Voice] Saved: ${outputPath} (${buf.length}B)`);
+            return outputPath;
         }
-
-        // Get result
-        console.log(`[Csv666 Speech] Fetching result for task ${taskId}...`);
-        const { statusCode: rs, body: rb } = await request(`${baseUrl}/tasks/${taskId}/result`, {
-            headers: { 'Accept': 'application/json', 'X-API-Key': apiKey }
-        });
-
-        const chunks = [];
-        for await (const chunk of rb) chunks.push(chunk);
-        const buffer = Buffer.concat(chunks);
-
-        if (rs !== 200) throw new Error(`Csv666 getResult failed (${rs})`);
-
-        // Check if we got JSON or binary MP3
-        if (buffer.slice(0, 3).toString() === 'ID3' || buffer.slice(0, 2).toString('hex') === 'fffb') {
-            console.log(`[Csv666 Speech] Received binary audio directly from result endpoint.`);
-            fs.writeFileSync(outputPath, buffer);
-            console.log(`[Csv666 Speech] Saved: ${outputPath}`);
-            return mediaUrl;
-        }
-
-        let resultData;
-        try {
-            resultData = JSON.parse(buffer.toString());
-        } catch (e) {
-            console.error(`[Csv666 Speech] Failed to parse result as JSON. Buffer preview: ${buffer.slice(0, 50).toString('hex')}`);
-            throw new Error(`Csv666 result not valid JSON or MP3: ${buffer.slice(0, 50).toString()}`);
-        }
-
-        const audioUrl = resultData.audio_url || resultData.result_url || resultData.url;
-        if (!audioUrl) throw new Error(`Csv666 result missing audio URL: ${JSON.stringify(resultData)}`);
-
-        // Download from URL if JSON was returned
-        console.log(`[Csv666 Speech] Downloading audio from: ${audioUrl}`);
-        const { body: ab } = await request(audioUrl);
-        const finalChunks = [];
-        for await (const chunk of ab) finalChunks.push(chunk);
-        fs.writeFileSync(outputPath, Buffer.concat(finalChunks));
-        console.log(`[Csv666 Speech] Saved: ${outputPath}`);
-        return mediaUrl;
-
-    } catch (e) {
-        console.error(`[Csv666 Speech] Error: ${e.message}`);
-        throw e;
+        // waiting / processing — keep polling
     }
+    throw new Error(`[Voice] Timeout: task ${taskId}`);
+}
+
+
+
+
+// ------------- Phase 2: Unified TTS (VoiceAPI) -------------
+const synthesizeUnifiedSpeech = async (input, language = 'en', voice = 'aeb88254-a426-47da-a7d4-f182195f9fab', model = 'csv666', customDir = null) => {
+    // Pick suitable voice based on language
+    let activeVoice = voice;
+    if (language.toLowerCase() === 'russian' || language.toLowerCase() === 'ru') {
+        // "Alex_Ru" (Available Russian template for this key)
+        activeVoice = 'aeb88254-a426-47da-a7d4-f182195f9fab';
+    } else {
+        // "french" (multilingual template, supports English)
+        activeVoice = 'eb21f806-58d1-46db-b346-24ea6540d0eb';
+    }
+    
+    return await synthesizeCsv666Speech(input, activeVoice, language, customDir);
 };
 
-// ------------- Phase 2: Unified TTS (Pollinations) -------------
-const synthesizeUnifiedSpeech = async (input, language = 'en', voice = 'eb21f806-58d1-46db-b346-24ea6540d0eb', model = 'csv666') => {
-    // Force use of csv666 as requested
-    return await synthesizeCsv666Speech(input, voice);
-};
-
-const CHARACTER_ANCHOR = `A full-body realistic humanoid SKELETON character with a semi-transparent human-shaped outer body shell. The character has: A fully exposed skull (NO skin, NO face, NO muscles). Clean, smooth, anatomically accurate skull. Large, round eye sockets with visible eyeballs. Bright yellow irises with dark pupils. Neutral to slightly vacant expression. Visible upper and lower teeth. Smooth cranium with no cracks, damage, decay, or horror elements. The body is a semi-transparent, glass-like human silhouette that clearly reveals the entire internal skeletal structure from head to toe. Skeleton details: Ivory / pale beige bones. Smooth, medical-grade surfaces. Accurate human proportions. Clearly defined rib cage, spine, pelvis, arms, hands, legs, knees, ankles, and feet. All joints, vertebrae, and phalanges visible and anatomically correct. No muscles. No veins. No organs. No skin texture. The style is: High-end medical visualization, Clean, clinical, modern. NOT horror. NOT zombie. NOT cartoon. NOT decayed.`;
+const CHARACTER_ANCHOR = `A full-body realistic humanoid SKELETON character with a semi-transparent human-shaped outer body shell. The character has: A fully exposed skull (NO skin, NO face, NO muscles). Clean, smooth, anatomically accurate skull. Large, round eye sockets with visible eyeballs. Bright yellow irises with dark pupils. Neutral to slightly vacant expression. Visible upper and lower teeth. Smooth cranium with no cracks, damage, decay, or horror elements. The body is a semi-transparent, glass-like human silhouette that clearly reveals the entire internal skeletal structure from head to toe. Skeleton details: Ivory / pale beige bones. Smooth, medical-grade surfaces. Accurate human proportions. Clearly defined rib cage, spine, pelvis, arms, hands, legs, knees, ankles, and feet. All joints, vertebrae, and phalanges visible and anatomically correct. No muscles. No veins. No organs. No skin texture. The style is: High-end medical visualization, Clean, clinical, modern. NOT horror. NOT zombie. NOT cartoon. NOT decayed. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`;
 
 // ── Pollinations helper ───────────────────────────────────────────────────────
-const WORKING_TEXT_MODELS = ['gemini-3-flash', 'gemini-3.1-pro', 'gpt-4o', 'claude-3-5-sonnet-20241022', 'gpt-4-turbo'];
+const WORKING_TEXT_MODELS = ['gemini-3.1-pro-high', 'gemini-3.1-pro', 'gpt-4o', 'gpt-4-turbo'];
 
 const callPollinations = async (messages, jsonMode = false) => {
-    const customKey = process.env.CUSTOM_AI_API_KEY?.trim();
-    const customUrl = process.env.CUSTOM_AI_URL?.trim();
-    const pollKey = process.env.POLLINATIONS_API_KEY?.trim();
-    const pollUrl = 'https://gen.pollinations.ai/v1/chat/completions';
+    const providers = [];
 
-    // Rotation logic: try custom models first, then fallback to Pollinations
-    // Ensure gemini-3-flash is the top priority if custom service is available
-    const WORKING_MODELS = ['gemini-3-flash', 'gemini-3.1-pro', 'gpt-4o', 'claude-3-5-sonnet-20241022', 'gpt-4-turbo'];
-    const modelsToTry = customUrl ? [...WORKING_MODELS, 'openai-large'] : ['openai-large'];
+    // 1. Qwen
+    if (process.env.QWEN_API_KEY) {
+        providers.push({
+            id: 'qwen',
+            url: process.env.QWEN_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions',
+            key: process.env.QWEN_API_KEY,
+            model: 'qwen/qwen3.5-397b-a17b'
+        });
+    }
+
+    // 2. Kimi
+    if (process.env.KIMI_API_KEY) {
+        providers.push({
+            id: 'kimi',
+            url: process.env.KIMI_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions',
+            key: process.env.KIMI_API_KEY,
+            model: 'moonshotai/kimi-k2.5'
+        });
+    }
+
+    // 3. Mimo
+    if (process.env.MIMO_API_KEY) {
+        providers.push({
+            id: 'mimo',
+            url: process.env.MIMO_API_URL || 'https://api.xiaomimimo.com/v1/chat/completions',
+            key: process.env.MIMO_API_KEY,
+            model: 'mimo-v2-pro',
+            isMimo: true
+        });
+    }
+
+    // 4. Custom Local Proxy
+    if (process.env.CUSTOM_AI_URL) {
+        const WORKING_MODELS = ['gemini-3.1-pro-high'];
+        for (const m of WORKING_MODELS) {
+            providers.push({
+                id: 'custom',
+                url: process.env.CUSTOM_AI_URL,
+                key: process.env.CUSTOM_AI_API_KEY,
+                model: m
+            });
+        }
+    }
+
+    // 5. Pollinations Fallback
+    providers.push({
+        id: 'pollinations',
+        url: 'https://gen.pollinations.ai/v1/chat/completions',
+        key: process.env.POLLINATIONS_API_KEY,
+        model: 'openai-large'
+    });
+
+    // Reorder based on DEFAULT_AI_PROVIDER
+    const defaultProvider = process.env.DEFAULT_AI_PROVIDER || 'qwen';
+    providers.sort((a, b) => {
+        if (a.id === defaultProvider && b.id !== defaultProvider) return -1;
+        if (b.id === defaultProvider && a.id !== defaultProvider) return 1;
+        return 0;
+    });
 
     let lastError = null;
-    for (const model of modelsToTry) {
-        // Determine endpoint and key for this model
-        const isCustomModel = WORKING_MODELS.includes(model);
-        const apiUrl = isCustomModel && customUrl ? customUrl : pollUrl;
-        const apiKey = isCustomModel && customUrl ? customKey : pollKey;
+    let proxyDisabled = false;
+
+    for (const p of providers) {
+        if (p.id === 'custom' && proxyDisabled) {
+            continue; // Skip remaining custom models if proxy is disabled
+        }
 
         for (let attempt = 1; attempt <= 2; attempt++) {
             try {
-                console.log(`[AI Call] Trying model=${model} at ${apiUrl} (attempt ${attempt})`);
-                const reqBody = { model, messages };
+                console.log(`[AI Call] Trying provider=${p.id} model=${p.model} at ${p.url} (attempt ${attempt})`);
+                const reqBody = { model: p.model, messages };
                 if (jsonMode) reqBody.response_format = { type: 'json_object' };
 
-                const { statusCode, body: resBody } = await request(apiUrl, {
+                const headers = { 'Content-Type': 'application/json' };
+                if (p.key) {
+                    if (p.isMimo) {
+                        headers['api-key'] = p.key;
+                    } else {
+                        headers['Authorization'] = `Bearer ${p.key}`;
+                    }
+                }
+
+                const { statusCode, body: resBody } = await request(p.url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-                    },
+                    headers,
                     body: JSON.stringify(reqBody)
                 });
 
@@ -172,667 +251,29 @@ const callPollinations = async (messages, jsonMode = false) => {
                     const data = JSON.parse(text);
                     return data.choices?.[0]?.message?.content || '';
                 }
-                console.warn(`[AI Call] model=${model} failed with ${statusCode}: ${text.substring(0, 100)}`);
+                
+                console.warn(`[AI Call] provider=${p.id} model=${p.model} failed with ${statusCode}: ${text.substring(0, 100)}`);
+                
+                if (statusCode === 503 && text.includes('Proxy service is currently disabled')) {
+                     console.warn(`[AI Call] Local Proxy is disabled, skipping remaining local models!`);
+                     proxyDisabled = true;
+                     break; // Break the attempt loop
+                }
+                if (statusCode === 402) {
+                     console.warn(`[AI Call] Insufficient balance for ${p.id}, skipping remaining attempts.`);
+                     break; // Insufficient funds, don't retry
+                }
             } catch (e) {
-                console.error(`[AI Call] Error with model=${model}: ${e.message}`);
+                console.error(`[AI Call] Error with provider=${p.id} model=${p.model}: ${e.message}`);
                 lastError = e;
             }
-            if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+            if (!proxyDisabled && attempt < 2) await new Promise(r => setTimeout(r, 1000));
         }
     }
     throw lastError || new Error('All models exhausted or failed');
 };
 
-// ── Image via Pollinations ────────────────────────────────────────────────────
-const IMAGE_MODELS_FALLBACK = ['imagen-4', 'flux', 'zimage'];
-
-const createImageViaAntigravity = async (prompt, outputPath) => {
-    const customKey = process.env.CUSTOM_AI_API_KEY?.trim();
-    // The user provided URL: http://166.1.60.73:8045/v1
-    // We already have CUSTOM_AI_URL=http://166.1.60.73:8045/v1/chat/completions
-    const customUrl = (process.env.CUSTOM_AI_URL?.trim() || 'http://166.1.60.73:8045/v1/chat/completions').replace('/chat/completions', '');
-    const apiUrl = `${customUrl}/chat/completions`;
-
-    console.log(`[Skeleton Antigravity] model=gemini-3-pro-image prompt="${prompt.substring(0, 50)}..."`);
-
-    try {
-        const { statusCode, body } = await request(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(customKey ? { 'Authorization': `Bearer ${customKey}` } : {})
-            },
-            body: JSON.stringify({
-                model: 'gemini-3-pro-image-preview',
-                extra_body: { "size": "1024x1024" },
-                messages: [{ role: 'user', content: prompt }]
-            })
-        });
-
-        const resText = await body.text();
-        if (statusCode !== 200) throw new Error(`Antigravity API failed (${statusCode}): ${resText}`);
-
-        const data = JSON.parse(resText);
-        const imageUrl = data.choices?.[0]?.message?.content;
-
-        if (!imageUrl || !imageUrl.startsWith('http')) {
-            throw new Error(`Antigravity API returned invalid URL: ${resText.substring(0, 200)}`);
-        }
-
-        console.log(`[Skeleton Antigravity] Downloading 1:1 image: ${imageUrl}`);
-        const tempPath = outputPath.replace('.jpg', '_temp_1_1.jpg');
-        const { body: imageBody } = await request(imageUrl);
-        const chunks = [];
-        for await (const chunk of imageBody) chunks.push(chunk);
-        fs.writeFileSync(tempPath, Buffer.concat(chunks));
-
-        // Now crop 1:1 (1024x1024) to 9:16 (576x1024 center)
-        // 1024 / (16/9) = 576
-        console.log(`[Skeleton Antigravity] Cropping 1:1 → 9:16 (center)...`);
-        return new Promise((resolve, reject) => {
-            const ffmpeg = spawn('ffmpeg', [
-                '-i', tempPath,
-                '-vf', 'crop=576:1024:(in_w-576)/2:0',
-                '-y', outputPath
-            ]);
-            ffmpeg.on('close', code => {
-                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-                if (code === 0) {
-                    console.log(`[Skeleton Antigravity] Saved & Cropped: ${outputPath}`);
-                    resolve(outputPath);
-                } else {
-                    reject(new Error(`FFmpeg cropping failed with code ${code}`));
-                }
-            });
-        });
-
-    } catch (e) {
-        console.error(`[Skeleton Antigravity] Failed: ${e.message}`);
-        throw e;
-    }
-};
-
-const createImageViaFreepik = async (prompt, outputPath, model = 'mystic') => {
-    console.log(`[Skeleton Freepik] model=${model} prompt="${prompt.substring(0, 50)}..."`);
-
-    const isMystic = model === 'mystic';
-    const baseUrl = isMystic
-        ? 'https://api.freepik.com/v1/ai/mystic'
-        : `https://api.freepik.com/v1/ai/text-to-image/${model}`;
-
-    const payload = isMystic ? {
-        prompt,
-        num_images: 1,
-        image: { size: 'portrait_9_16' }
-    } : {
-        prompt,
-        num_images: 1,
-        aspect_ratio: 'portrait_3_4'
-    };
-
-    try {
-        const { text: responseText } = await freepikRequest(baseUrl, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-
-        const data = JSON.parse(responseText);
-        let imageUrl = null;
-        const taskId = data.data?.task_id || data.data?.id || data.task_id || data.id;
-
-        if (taskId) {
-            console.log(`[Skeleton Freepik] Task created: ${taskId}. Polling...`);
-            let completed = false;
-            let attempts = 0;
-            const maxAttempts = 60; // 5 minutes
-
-            while (!completed && attempts < maxAttempts) {
-                attempts++;
-                await new Promise(r => setTimeout(r, 5000));
-
-                const { text: statusText } = await freepikRequest(`${baseUrl}/${taskId}`, {
-                    method: 'GET',
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'application/json'
-                    }
-                });
-                const statusData = JSON.parse(statusText);
-                const d = statusData.data || statusData;
-                const state = (d.status || d.state || '').toUpperCase();
-
-                console.log(`[Skeleton Freepik] Task ${taskId} state: ${state} (${attempts}/${maxAttempts})`);
-
-                if (state === 'COMPLETED' || state === 'SUCCESS') {
-                    imageUrl = d.generated?.[0]?.url || d.generated?.[0] || d.url || (d.images && d.images[0]?.url);
-                    completed = true;
-                } else if (state === 'FAILED' || state === 'ERROR') {
-                    throw new Error(`Freepik task failed: ${state}`);
-                }
-            }
-            if (!imageUrl && !completed) throw new Error('Freepik image generation timeout');
-        } else {
-            // Check if it returned URL directly (some models might)
-            imageUrl = data.data?.[0]?.url || data.url || (data.images && data.images[0]?.url);
-        }
-
-        if (!imageUrl) {
-            throw new Error(`Freepik API returned no image URL: ${responseText.substring(0, 200)}`);
-        }
-
-        console.log(`[Skeleton Freepik] Downloading: ${imageUrl}`);
-        const { body } = await request(imageUrl);
-        const chunks = [];
-        for await (const chunk of body) chunks.push(chunk);
-        fs.writeFileSync(outputPath, Buffer.concat(chunks));
-
-        return outputPath;
-    } catch (e) {
-        console.error(`[Skeleton Freepik] Failed: ${e.message}`);
-        throw e;
-    }
-};
-
-const createImageViaPollinations = async (prompt, outputPath, aspectRatio = '9:16', primaryModel = 'imagen-4') => {
-    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-    const isPortrait = aspectRatio === '9:16';
-    const width = isPortrait ? 720 : 1280;
-    const height = isPortrait ? 1280 : 720;
-
-    // Create a list of models starting with the requested primary model
-    const modelsToTry = [primaryModel, ...IMAGE_MODELS_FALLBACK.filter(m => m !== primaryModel)];
-
-    let lastError = null;
-    for (const model of modelsToTry) {
-        for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-                console.log(`[Skeleton IMG] model=${model} attempt ${attempt}/2`);
-                const sanitizedPrompt = prompt.replace(/%/g, ' percent');
-                const encodedPrompt = encodeURIComponent(sanitizedPrompt);
-                const url = `https://gen.pollinations.ai/image/${encodedPrompt}?model=${model}&width=${width}&height=${height}&seed=${Math.floor(Math.random() * 999999)}&enhance=false`;
-
-                const { statusCode, body } = await request(url, {
-                    method: 'GET',
-                    headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}
-                });
-
-                if (statusCode === 200) {
-                    const chunks = [];
-                    for await (const chunk of body) chunks.push(chunk);
-                    fs.writeFileSync(outputPath, Buffer.concat(chunks));
-                    console.log(`[Skeleton IMG] Saved using model=${model}: ${outputPath}`);
-                    return outputPath;
-                } else {
-                    const errText = await body.text();
-                    console.warn(`[Skeleton IMG] model=${model} failed with ${statusCode}: ${errText.substring(0, 100)}`);
-                    lastError = new Error(`Pollinations IMG ${statusCode}: ${errText}`);
-                }
-            } catch (e) {
-                console.error(`[Skeleton IMG] Error with model=${model}: ${e.message}`);
-                lastError = e;
-            }
-            if (attempt < 2) await new Promise(r => setTimeout(r, 2000));
-        }
-        console.warn(`[Skeleton IMG] Model ${model} exhausted, trying next...`);
-    }
-    throw lastError || new Error('All image models exhausted or failed');
-};
-
-// ── Freepik request with automatic key rotation ───────────────────────────────
-const freepikRequest = async (url, options = {}) => {
-    const totalKeys = freepikKeys.totalKeys();
-    let triedKeys = 0;
-    let lastError = null;
-
-    while (triedKeys < totalKeys) {
-        const apiKey = freepikKeys.current();
-        const keyLabel = `key ${freepikKeys.currentKeyIndex()}/${totalKeys}`;
-
-        try {
-            const { statusCode, body } = await request(url, {
-                ...options,
-                headers: {
-                    ...(options.headers || {}),
-                    'x-freepik-api-key': apiKey,
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'application/json'
-                }
-            });
-            const text = await body.text();
-
-            if (statusCode >= 200 && statusCode < 300 && !freepikKeys.isLimitError(statusCode, text)) {
-                return { statusCode, text };
-            }
-            freepikKeys.rotate(`HTTP ${statusCode}: ${text.substring(0, 60)}`);
-            triedKeys++;
-            lastError = new Error(`Freepik HTTP ${statusCode}: ${text.substring(0, 120)}`);
-        } catch (e) {
-            freepikKeys.rotate(e.message);
-            triedKeys++;
-            lastError = e;
-        }
-    }
-    throw lastError || new Error(`All Freepik keys exhausted`);
-};
-
-// ── Upload image to ImgBB and get URL (Required for PixVerse/LTX via Freepik) ──
-async function uploadToImgBB(base64Image) {
-    const apiKey = process.env.IMGBB_API_KEY;
-    if (!apiKey) throw new Error("IMGBB_API_KEY is missing in .env file.");
-
-    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
-    // ImgBB expects 'image' and 'key' in multipart/form-data
-    const body = Buffer.concat([
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="key"\r\n\r\n${apiKey}\r\n`),
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"\r\n\r\n${base64Image}\r\n`),
-        Buffer.from(`--${boundary}--\r\n`)
-    ]);
-
-    const { statusCode, body: resBody } = await request('https://api.imgbb.com/1/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
-        body
-    });
-
-    const text = await resBody.text();
-    const data = JSON.parse(text);
-    if (statusCode === 200 && data.data && data.data.url) {
-        return data.data.url;
-    } else {
-        throw new Error(`ImgBB Upload Failed: ${data.error?.message || text}`);
-    }
-}
-
-// ── Unified Freepik Video Generation (with auto-retry on FAILED) ──────────────
-async function createVideoViaFreepik(model, prompt, sceneIndex, event, options = {}) {
-    const skeletonDir = path.join(__dirname, 'SkeletonShorts');
-    const imagePath = path.join(skeletonDir, `scene_${sceneIndex + 1}.jpg`);
-
-    // Model endpoints mapping
-    const endpoints = {
-        'pixverse-v5': { create: '/ai/image-to-video/pixverse-v5', get: '/ai/image-to-video/pixverse-v5' },
-        'wan-v2-6-720p': { create: '/ai/image-to-video/wan-v2-6-720p', get: '/ai/image-to-video/wan-v2-6-720p' },
-        'kling-v2-1-pro': { create: '/ai/image-to-video/kling-v2-1-pro', get: '/ai/image-to-video/kling-v2-1' }
-    };
-
-    const MAX_TASK_RETRIES = 3; // How many times to re-submit the task if it FAILs
-    let lastError = null;
-
-    for (let taskAttempt = 1; taskAttempt <= MAX_TASK_RETRIES; taskAttempt++) {
-        // On repeated failures of pixverse-v5, fall back to wan
-        const activeModel = (taskAttempt > 1 && model === 'pixverse-v5') ? 'wan-v2-6-720p' : model;
-        if (taskAttempt > 1) {
-            console.warn(`[Freepik Video] Task attempt ${taskAttempt}/${MAX_TASK_RETRIES} for scene ${sceneIndex + 1} using model=${activeModel}. Previous error: ${lastError?.message}`);
-            await new Promise(r => setTimeout(r, 5000)); // brief pause before retry
-        }
-
-        const endpoint = endpoints[activeModel] || { create: `/ai/image-to-video/${activeModel}`, get: `/ai/image-to-video/${activeModel}` };
-        const createUrl = `https://api.freepik.com/v1${endpoint.create}`;
-        const getUrlBase = `https://api.freepik.com/v1${endpoint.get}`;
-
-        try {
-            let imageUrl = null;
-            // PixVerse and LTX need a public URL
-            if (activeModel === 'pixverse-v5' || activeModel.includes('ltx')) {
-                if (!fs.existsSync(imagePath)) throw new Error(`Reference image not found: ${imagePath}`);
-                console.log(`[Freepik Video] Uploading scene ${sceneIndex + 1} to ImgBB...`);
-                const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
-                imageUrl = await uploadToImgBB(imageBase64);
-            }
-
-            const payload = {
-                prompt: prompt || 'Video from image',
-                duration: activeModel.includes('wan') ? '10' : '5'
-            };
-
-            if (imageUrl) {
-                payload.image_url = imageUrl;
-            } else if (fs.existsSync(imagePath)) {
-                const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
-                payload.image = `data:image/jpeg;base64,${imageBase64}`;
-            }
-
-            if (activeModel === 'pixverse-v5') {
-                payload.aspect_ratio = 'social_story_9_16';
-                payload.resolution = '1080p';
-                payload.duration = 5;
-            } else if (activeModel.includes('wan') || activeModel.includes('ltx') || activeModel.includes('kling')) {
-                payload.size = '720*1280';
-                payload.duration = activeModel.includes('wan') ? '10' : '5';
-            }
-
-            console.log(`[Freepik Video] Creating ${activeModel} task for scene ${sceneIndex + 1}...`);
-            const createResp = await freepikRequest(createUrl, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            const data = JSON.parse(createResp.text);
-            const taskId = data.data?.task_id || data.data?.id || data.task_id || data.id;
-
-            if (!taskId) {
-                throw new Error(`No task ID in response: ${createResp.text.substring(0, 200)}`);
-            }
-            console.log(`[Freepik Video] Task created: ${taskId} (scene ${sceneIndex + 1})`);
-
-            let taskFailed = false;
-            for (let attempt = 1; attempt <= 120; attempt++) {
-                await new Promise(r => setTimeout(r, 5000));
-                let resText;
-                try {
-                    const { statusCode, body } = await request(`${getUrlBase}/${taskId}`, {
-                        method: 'GET',
-                        headers: {
-                            'x-freepik-api-key': freepikKeys.current(),
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    resText = await body.text();
-
-                    if (statusCode === 401 || statusCode === 403) {
-                        freepikKeys.rotate(`Poll 401/403`);
-                        continue;
-                    }
-                } catch (pollErr) {
-                    console.warn(`[Freepik Video] Poll request error (attempt ${attempt}): ${pollErr.message}`);
-                    continue;
-                }
-
-                const resData = JSON.parse(resText);
-                const d = resData.data || resData;
-                const state = (d.status || d.state || '').toUpperCase();
-
-                console.log(`[Freepik Video] Scene ${sceneIndex + 1} task=${taskId} state=${state} (${attempt}/120)`);
-                if (event) event.sender.send('skeleton-video-progress', { sceneIndex, attempt, state, taskAttempt });
-
-                if (state === 'COMPLETED' || state === 'SUCCESS' || state === 'SUCCEEDED') {
-                    const videoUrl = d.generated?.[0]?.url || d.generated?.[0] || d.video?.url || (d.videos && d.videos[0]?.url) || (d.data && d.data.url);
-                    if (!videoUrl) throw new Error(`No video URL in response: ${resText}`);
-
-                    const videoPath = path.join(skeletonDir, `scene_${sceneIndex + 1}.mp4`);
-                    console.log(`[Freepik Video] Downloading scene ${sceneIndex + 1}: ${videoUrl}`);
-                    const { body: vBody } = await request(videoUrl, {
-                        method: 'GET',
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                            'Accept': '*/*',
-                            'Referer': 'https://api.freepik.com/'
-                        }
-                    });
-                    await streamPipeline(vBody, fs.createWriteStream(videoPath));
-                    return videoPath;
-                }
-
-                if (state === 'FAILED' || state === 'ERROR') {
-                    lastError = new Error(`${activeModel} task FAILED (scene ${sceneIndex + 1}): ${JSON.stringify(d.error || d).substring(0, 150)}`);
-                    console.warn(`[Freepik Video] ${lastError.message}. Will retry with new task (attempt ${taskAttempt}/${MAX_TASK_RETRIES})...`);
-                    taskFailed = true;
-                    break; // Break poll loop → retry outer task loop
-                }
-            }
-
-            if (!taskFailed) {
-                throw new Error(`${activeModel} timeout after 10 minutes (scene ${sceneIndex + 1})`);
-            }
-        } catch (e) {
-            lastError = e;
-            console.error(`[Freepik Video] Task attempt ${taskAttempt} error: ${e.message}`);
-        }
-    }
-
-    // All retries exhausted
-    console.error(`[Freepik Video] All ${MAX_TASK_RETRIES} task attempts failed for scene ${sceneIndex + 1}`);
-    throw lastError || new Error(`Freepik video generation exhausted all retries (scene ${sceneIndex + 1})`);
-}
-
-// ── Re-encode video to H.264 for Chromium preview ────────────────────────────
-async function reencodeForPreview(inputPath, sceneIndex) {
-    const skeletonDir = path.join(__dirname, 'SkeletonShorts');
-    const previewDir = path.join(skeletonDir, 'preview');
-    if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
-
-    const previewPath = path.join(previewDir, `scene_${sceneIndex + 1}.mp4`);
-    console.log(`[Preview] Re-encoding scene ${sceneIndex + 1} → H.264 for preview...`);
-
-    return new Promise((resolve) => {
-        const ffmpeg = spawn('ffmpeg', [
-            '-i', inputPath,
-            '-c:v', 'libx264', '-crf', '23', '-preset', 'fast',
-            '-c:a', 'aac', '-b:a', '128k',
-            '-pix_fmt', 'yuv420p',
-            '-movflags', '+faststart',
-            '-y', previewPath
-        ]);
-        ffmpeg.on('close', code => {
-            if (code === 0) {
-                resolve(`media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`);
-            } else {
-                console.error(`[Preview] FFmpeg failed with code ${code}`);
-                resolve(`media:///${inputPath.replace(/\\/g, '/')}?t=${Date.now()}`);
-            }
-        });
-    });
-}
-
-// ── Mux Audio into Video ─────────────────────────────────────────────────────
-async function muxAudioIntoVideo(videoPath, audioPath, outputPath) {
-    return new Promise((resolve, reject) => {
-        try {
-            // 1. Get durations
-            const vDur = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`).toString().trim());
-            const aDur = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`).toString().trim());
-
-            console.log(`[Sync] vDur: ${vDur.toFixed(2)}s, aDur: ${aDur.toFixed(2)}s`);
-
-            const args = ['-i', videoPath, '-i', audioPath];
-
-            if (vDur < aDur - 0.1) {
-                // Video is shorter -> stretch video (slow down)
-                const ratio = aDur / vDur;
-                console.log(`[Sync] Stretching video by factor ${ratio.toFixed(2)}x`);
-                // Force H.264 when re-encoding
-                args.push('-filter_complex', `[0:v]setpts=${ratio}*PTS[v]`, '-map', '[v]', '-map', '1:a', '-c:v', 'libx264', '-crf', '23', '-preset', 'fast', '-pix_fmt', 'yuv420p');
-            } else {
-                // Video is longer or equal -> trim to audio
-                // Force H.264 if needed, OR copy if we're sure it's already compatible
-                // To be safe, let's copy but STILL ensure it's H.264 if we can.
-                // Actually, if it's already H.264 from the source, copy is faster.
-                args.push('-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest');
-            }
-
-            args.push('-c:a', 'aac', '-y', outputPath);
-
-            const ffmpeg = spawn('ffmpeg', args);
-            ffmpeg.on('close', code => {
-                if (code === 0) resolve(outputPath);
-                else reject(new Error(`FFmpeg mux sync failed (code ${code})`));
-            });
-        } catch (e) {
-            reject(e);
-        }
-    });
-}
-
-// ── Pollinations Upload & Video ───────────────────────────────────────────────
-async function uploadFileToPollinations(filePath) {
-    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-    const buffer = fs.readFileSync(filePath);
-    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
-    const body = Buffer.concat([
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${path.basename(filePath)}"\r\nContent-Type: application/octet-stream\r\n\r\n`),
-        buffer,
-        Buffer.from(`\r\n--${boundary}--\r\n`)
-    ]);
-    const { statusCode, body: resBody } = await request('https://gen.pollinations.ai/v1/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}`, ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}) },
-        body
-    });
-    const text = await resBody.text();
-    if (statusCode !== 200) throw new Error(`Upload to Pollinations failed (${statusCode}): ${text}`);
-    return JSON.parse(text).url;
-}
-
-// ── Pollinations WAN with Reference Image (supports image input) ──────────────
-async function createVideoViaPollinationsWAN(prompt, sceneIndex, event) {
-    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-    const skeletonDir = path.join(__dirname, 'SkeletonShorts');
-    const imagePath = path.join(skeletonDir, `scene_${sceneIndex + 1}.jpg`);
-
-    if (!fs.existsSync(imagePath)) {
-        throw new Error(`Reference image not found: ${imagePath}`);
-    }
-
-    const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
-    const imageDataUri = `data:image/jpeg;base64,${imageBase64}`;
-    const encodedPrompt = encodeURIComponent(prompt);
-    const videoUrl = `https://gen.pollinations.ai/video/${encodedPrompt}?model=wan&width=720&height=1280&duration=10&seed=${Math.floor(Math.random() * 999999)}`;
-
-    let lastError = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-            console.log(`[Skeleton WAN img2v] Scene ${sceneIndex + 1} — attempt ${attempt}/3`);
-            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'PROCESSING' });
-
-            const { statusCode, body } = await request(videoUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-                },
-                headersTimeout: 300_000,
-                bodyTimeout: 300_000,
-                body: JSON.stringify({ prompt, image: imageDataUri })
-            });
-
-            if (statusCode !== 200) throw new Error(`WAN failed: ${statusCode}`);
-
-            const videoPath = path.join(skeletonDir, `scene_${sceneIndex + 1}.mp4`);
-            await streamPipeline(body, fs.createWriteStream(videoPath));
-            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'COMPLETED' });
-            return `media:///${videoPath.replace(/\\/g, '/')}`;
-        } catch (e) {
-            lastError = e;
-            if (attempt < 3) await new Promise(r => setTimeout(r, 8000));
-        }
-    }
-    throw lastError;
-}
-
-// ── Grok Video (text-to-video via Pollinations) ─────────────────────────────
-async function createVideoViaPollinationsGrok(prompt, sceneIndex, event) {
-    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-    const imgbbKey = process.env.IMGBB_API_KEY?.trim();
-    const skeletonDir = path.join(__dirname, 'SkeletonShorts');
-    const imagePath = path.join(skeletonDir, `scene_${sceneIndex + 1}.jpg`);
-
-    if (!fs.existsSync(imagePath)) {
-        throw new Error(`Reference image not found: ${imagePath}`);
-    }
-    if (!imgbbKey) {
-        throw new Error(`IMGBB_API_KEY missing in .env — required for Grok Video image hosting`);
-    }
-
-    let lastError = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-            console.log(`[Skeleton Grok Video] Scene ${sceneIndex + 1} — attempt ${attempt}/3`);
-            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'UPLOADING' });
-
-            // Шаг 1: Загружаем на ImgBB → получаем публичный URL
-            const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
-            const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
-            const uploadBody = Buffer.concat([
-                Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="key"\r\n\r\n${imgbbKey}\r\n`),
-                Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"\r\n\r\n${imageBase64}\r\n`),
-                Buffer.from(`--${boundary}--\r\n`)
-            ]);
-            const { statusCode: uploadStatus, body: uploadBody2 } = await request('https://api.imgbb.com/1/upload', {
-                method: 'POST',
-                headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
-                body: uploadBody
-            });
-            const uploadText = await uploadBody2.text();
-            const uploadData = JSON.parse(uploadText);
-            if (uploadStatus !== 200 || !uploadData.data?.url) {
-                throw new Error(`ImgBB upload failed (${uploadStatus}): ${uploadData.error?.message || uploadText.substring(0, 100)}`);
-            }
-            const imagePublicUrl = uploadData.data.url;
-            console.log(`[Skeleton Grok Video] Image hosted at: ${imagePublicUrl}`);
-
-            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'PROCESSING' });
-
-            // Шаг 2: GET /video/{prompt}?model=grok-video&image={publicUrl}
-            const seed = Math.floor(Math.random() * 999999);
-            const encodedPrompt = encodeURIComponent(prompt);
-            const videoUrl = `https://gen.pollinations.ai/video/${encodedPrompt}?model=grok-video&width=720&height=1280&aspectRatio=9:16&seed=${seed}&image=${encodeURIComponent(imagePublicUrl)}`;
-
-            console.log(`[Skeleton Grok Video] Generating video (may take 2-4 min)...`);
-
-            const { statusCode, body } = await request(videoUrl, {
-                method: 'GET',
-                headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {},
-                headersTimeout: 600_000,
-                bodyTimeout: 600_000
-            });
-
-            if (statusCode !== 200) {
-                const errText = await body.text();
-                throw new Error(`Grok Video failed (${statusCode}): ${errText.substring(0, 200)}`);
-            }
-
-            const videoPath = path.join(skeletonDir, `scene_${sceneIndex + 1}.mp4`);
-            await streamPipeline(body, fs.createWriteStream(videoPath));
-            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'COMPLETED' });
-            console.log(`[Skeleton Grok Video] Scene ${sceneIndex + 1} saved: ${videoPath}`);
-            return videoPath;
-
-        } catch (e) {
-            lastError = e;
-            console.warn(`[Skeleton Grok Video] Attempt ${attempt} failed: ${e.message}`);
-            if (attempt < 3) await new Promise(r => setTimeout(r, 15000)); // 15 сек между попытками
-        }
-    }
-    throw lastError;
-}
-
-// createVideoViaFreepikPixVerse is now part of unified createVideoViaFreepik
-
-// ── LTX-2 Text-to-Video (no image support) ─────────────────────────────────────
-async function createVideoViaPollinationsLTX2TextOnly(prompt, sceneIndex, event) {
-    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-    const skeletonDir = path.join(__dirname, 'SkeletonShorts');
-    const encodedPrompt = encodeURIComponent(prompt);
-    const videoUrl = `https://gen.pollinations.ai/video/${encodedPrompt}?model=ltx-2&width=720&height=1280&duration=10&seed=${Math.floor(Math.random() * 999999)}`;
-
-    let lastError = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-            console.log(`[Skeleton LTX2 t2v] Scene ${sceneIndex + 1} — attempt ${attempt}/3`);
-            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'PROCESSING' });
-
-            const { statusCode, body } = await request(videoUrl, {
-                method: 'GET',
-                headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {},
-                headersTimeout: 300_000,
-                bodyTimeout: 300_000
-            });
-
-            if (statusCode !== 200) throw new Error(`LTX2 failed: ${statusCode}`);
-
-            const videoPath = path.join(skeletonDir, `scene_${sceneIndex + 1}.mp4`);
-            await streamPipeline(body, fs.createWriteStream(videoPath));
-            event.sender.send('skeleton-video-progress', { sceneIndex, attempt, maxAttempts: 3, state: 'COMPLETED' });
-            return videoPath;
-        } catch (e) {
-            lastError = e;
-            if (attempt < 3) await new Promise(r => setTimeout(r, 8000));
-        }
-    }
-    throw lastError;
-}
+// `uploadToImgBB`, `createVideoViaFreepikPixVerse`, `createVideoViaPollinationsLTX2TextOnly` and other legacy generation functions were removed in favor of `glabs-handlers.cjs`
 
 // ── Очистка папки Audio перед новой генерацией ───────────────────────────────
 function cleanupAudioDir() {
@@ -858,13 +299,50 @@ function cleanupAudioDir() {
     }
 }
 
+// ── Preview re-encoding helper ────────────────────────────────────────────────
+async function reencodeForPreview(inputPath, sceneIndex) {
+    const skeletonDir = path.join(__dirname, 'SkeletonShorts');
+    const previewDir = path.join(skeletonDir, 'preview');
+    if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
+    const previewPath = path.join(previewDir, `scene_${sceneIndex + 1}.mp4`);
+    return new Promise((resolve) => {
+        const ffmpeg = spawn('ffmpeg', [
+            '-i', inputPath,
+            '-c:v', 'libx264', '-crf', '23', '-preset', 'fast',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-y', previewPath
+        ]);
+        ffmpeg.on('close', code => {
+            const resultPath = code === 0 ? previewPath : inputPath;
+            resolve(`media:///${resultPath.replace(/\\/g, '/')}?t=${Date.now()}`);
+        });
+    });
+}
+
+// ── Audio muxing helper ───────────────────────────────────────────────────────
+async function muxAudioIntoVideo(videoPath, audioPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        const ffmpeg = spawn('ffmpeg', [
+            '-i', videoPath,
+            '-i', audioPath,
+            '-c:v', 'copy',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-shortest', '-y', outputPath
+        ]);
+        ffmpeg.on('close', code => {
+            if (code === 0) resolve(outputPath);
+            else reject(new Error(`muxAudioIntoVideo failed with code ${code}`));
+        });
+    });
+}
+
 function registerSkeletonHandlers(ipcMain) {
     ipcMain.handle('skeleton-generate-ideas', async (event, { language }) => {
         const langName = LANG_NAMES[language] || 'English';
         const completedTopics = historyManager.getTopics(language);
         const prompt = `You are writing narration for a viral YouTube Shorts channel that explains human limits and biological failure.
 REFERENCE STYLE (STRICT): Calm, Clinical but conversational, Slightly ominous, Second-person ("you"), Short sentences, Simple language.
-Generate exactly 10 short-form video ideas (Phase 1) using:
+Generate exactly 5 short-form video ideas (Phase 1) using:
 - "How Long Can You ___?"
 - "What Happens If You ___ Every Day?"
 - "How Much ___ Is TOO Much?"
@@ -878,6 +356,13 @@ Output format: Number. Title (in ${langName}) | Russian Translation | One-senten
         const langName = LANG_NAMES[language] || 'English';
         cleanupAudioDir();
 
+        const extractJSON = (str) => {
+            const start = str.indexOf('{');
+            const end = str.lastIndexOf('}');
+            if (start !== -1 && end !== -1) return str.substring(start, end + 1);
+            return str;
+        };
+
         const scriptPrompt = `Write a script for a viral channel about human limits: "${ideaTitle}".
 REFERENCE STYLE (STRICT): Calm, Clinical, Slightly ominous, Second-person ("you"), Simple language.
 STRUCTURE (STRICT): Exactly 6 segments (Intro + 4 Checkpoints + Final Failure).
@@ -890,12 +375,23 @@ CONTENT PER CHECKPOINT:
 - Use plain language. No medical jargon. No disease names.
 - Every line must be easy to imagine visually.
 
-Output exactly 6 lines (one per segment) separated by double newlines. Language: ${langName}.`;
+Output ONLY a JSON object with a "segments" array containing exactly 6 objects:
+{ "segments": [ { "original": "exact script segment in ${langName}", "translation": "exact Russian translation of this segment" } ] }`;
 
-        const script = await callPollinations([{ role: 'user', content: scriptPrompt }]);
+        const scriptRaw = await callPollinations([{ role: 'user', content: scriptPrompt }], true);
+        const scriptJson = JSON.parse(extractJSON(scriptRaw));
+        
+        let segmentsArray = [];
+        if (Array.isArray(scriptJson)) segmentsArray = scriptJson;
+        else if (scriptJson.segments) segmentsArray = scriptJson.segments;
+        else if (scriptJson.script) segmentsArray = scriptJson.script;
+        else if (scriptJson.ideas) segmentsArray = scriptJson.ideas;
+
+        const scriptForUI = segmentsArray.map(s => `${s.original}\n[🇷🇺 ${s.translation}]`).join('\n\n');
+        const scriptForPrompts = segmentsArray.map(s => s.original).join('\n\n');
 
         const promptsPrompt = `Convert this script into scene-by-scene IMAGE PROMPTS and IMAGE-TO-VIDEO PROMPTS with strict visual consistency.
-Script: ${script}
+Script: ${scriptForPrompts}
 
 Character Hard Lock: Humanoid skeleton in a semi-transparent glass body, yellow eyes.
 
@@ -915,13 +411,6 @@ For EACH scene (exactly 6), generate following JSON:
 
         const promptsRaw = await callPollinations([{ role: 'user', content: promptsPrompt }], true);
 
-        const extractJSON = (str) => {
-            const start = str.indexOf('{');
-            const end = str.lastIndexOf('}');
-            if (start !== -1 && end !== -1) return str.substring(start, end + 1);
-            return str;
-        };
-
         const cleanJSON = extractJSON(promptsRaw);
         let scenes = JSON.parse(cleanJSON).scenes.map(s => ({
             ...s,
@@ -936,51 +425,91 @@ For EACH scene (exactly 6), generate following JSON:
         }));
 
         // Audio is now synthesized separately via 'skeleton-generate-audio'
-        return { script, scenes };
+        return { script: scriptForUI, scenes };
     });
 
     ipcMain.handle('skeleton-generate-audio', async (event, { script, scenes, language }) => {
-        console.log(`[Skeleton] Starting audio synthesis...`);
-        // Using defaults (csv666 + provided UUID)
-        const fullAudioUrl = await synthesizeUnifiedSpeech(script, language);
-        const sceneAudioUrls = [];
-        for (const s of scenes) {
-            const url = await synthesizeUnifiedSpeech(s.script_line, language);
-            sceneAudioUrls.push(url);
-        }
-        return { fullAudioUrl, sceneAudioUrls };
+        console.log('[Skeleton] Audio synthesis is DISABLED (G-Labs handles lip-sync).');
+        return { fullAudioUrl: '', sceneAudioUrls: (scenes || []).map(() => '') };
     });
 
-    ipcMain.handle('skeleton-generate-image', async (event, { sceneIndex, imagePrompt, imageModel }) => {
+    ipcMain.handle('skeleton-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder }) => {
         const skeletonDir = path.join(__dirname, 'SkeletonShorts');
         if (!fs.existsSync(skeletonDir)) fs.mkdirSync(skeletonDir);
         const filePath = path.join(skeletonDir, `scene_${sceneIndex + 1}.jpg`);
 
-        if (imageModel && imageModel.startsWith('freepik-')) {
-            const realModel = imageModel.replace('freepik-', '');
-            await createImageViaFreepik(imagePrompt, filePath, realModel);
-        } else {
-            await createImageViaPollinations(imagePrompt, filePath, '9:16', imageModel || 'imagen-4');
-        }
-
-        return `media:///${filePath.replace(/\\/g, '/')}?t=${Date.now()}`;
+        // We use G-Labs for image generation
+        const cleanModel = imageModel ? imageModel.replace('freepik-', '') : 'imagen4';
+        
+        event.sender.send('skeleton-image-progress', { sceneIndex, status: 'generating' });
+        
+        const savedPaths = await generateImageViaGLabs({
+            prompt: imagePrompt,
+            model: cleanModel,
+            count: 1,
+            sectionDir: skeletonDir,
+            subFolder: projectFolder,
+            sceneIndex: sceneIndex,
+            onProgress: (p) => {
+                event.sender.send('skeleton-image-progress', { sceneIndex, status: p.status, attempt: p.attempt });
+            }
+        });
+        
+        return `media:///${savedPaths[0].replace(/\\/g, '/')}?t=${Date.now()}`;
     });
 
-    ipcMain.handle('skeleton-generate-video', async (event, { sceneIndex, videoPrompt, ltxVideoPrompt, scriptLine, fullScript, language, videoModel, audioUrl }) => {
+    ipcMain.handle('skeleton-generate-video', async (event, { sceneIndex, videoPrompt, ltxVideoPrompt, scriptLine, fullScript, language, videoModel, audioUrl, projectFolder }) => {
         const audioPath = audioUrl ? audioUrl.replace('media:///', '').split('?')[0] : null;
         let videoFile;
 
         try {
-            if (videoModel === 'pollinations-ltx2') {
-                videoFile = await createVideoViaPollinationsLTX2TextOnly(ltxVideoPrompt || videoPrompt, sceneIndex, event);
-            } else if (videoModel === 'grok-video') {
-                videoFile = await createVideoViaPollinationsGrok(videoPrompt, sceneIndex, event);
-            } else {
-                // Default to Freepik for other models (wan, pixverse, kling, etc.)
-                const realModel = videoModel || 'wan-v2-6-720p';
-                const prompt = (realModel === 'pixverse-v5' || realModel.includes('ltx')) ? (ltxVideoPrompt || videoPrompt) : videoPrompt;
-                videoFile = await createVideoViaFreepik(realModel, prompt, sceneIndex, event);
+            // We use G-Labs for video generation
+            const skeletonDir = path.join(__dirname, 'SkeletonShorts');
+            const baseDir = projectFolder ? path.join(skeletonDir, projectFolder) : skeletonDir;
+
+            // Find the scene image — it may have a timestamp suffix (e.g. scene_2_1773499181762.jpg)
+            let imagePath = null;
+            if (fs.existsSync(baseDir)) {
+                const prefix = `scene_${sceneIndex + 1}`;
+                const match = fs.readdirSync(baseDir)
+                    .filter(f => f.startsWith(prefix) && (f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')))
+                    .sort() // pick most recent if multiple
+                    .pop();
+                if (match) imagePath = path.join(baseDir, match);
             }
+            // Fallback: exact name (legacy path)
+            if (!imagePath) {
+                const fallback = path.join(baseDir, `scene_${sceneIndex + 1}.jpg`);
+                if (fs.existsSync(fallback)) imagePath = fallback;
+            }
+
+            const realModel = videoModel || 'veo_31_fast';
+            const langStr = LANG_NAMES[language] || language || 'English';
+            const promptToUse = `${videoPrompt} AUDIO TRACK: A highly emotional, panicked, and intense adult male voice ALMOST SCREAMING in ${langStr}. STRICTLY NO BACKGROUND NOISE, NO MUSIC, NO SOUND EFFECTS, JUST PURE RAW SHOUTING VOICE. Spoken text: "${scriptLine}"`;
+            let referenceImages = [];
+            if (imagePath && fs.existsSync(imagePath)) {
+                console.log(`[Skeleton Video] Using reference image: ${imagePath}`);
+                const imageBase64 = fs.readFileSync(imagePath, { encoding: 'base64' });
+                const ext = imagePath.endsWith('.png') ? 'png' : 'jpeg';
+                referenceImages.push({ data: `data:image/${ext};base64,${imageBase64}` });
+            } else {
+                console.warn(`[Skeleton Video] No reference image found for scene ${sceneIndex + 1} in: ${baseDir}`);
+            }
+            
+            event.sender.send('skeleton-video-progress', { sceneIndex, attempt: 1, maxAttempts: 1, state: 'generating' });
+            
+            videoFile = await generateVideoViaGLabs({
+                prompt: promptToUse,
+                model: realModel,
+                mode: referenceImages.length > 0 ? 'start_image' : 'text_to_video',
+                sectionDir: skeletonDir,
+                subFolder: projectFolder,
+                sceneIndex: sceneIndex,
+                referenceImages: referenceImages,
+                onProgress: (p) => {
+                    event.sender.send('skeleton-video-progress', { sceneIndex, attempt: p.attempt, state: p.status, taskAttempt: 1 });
+                }
+            });
 
             if (audioPath && fs.existsSync(audioPath)) {
                 console.log(`[Skeleton Video] Muxing audio for scene ${sceneIndex + 1}...`);
@@ -1077,33 +606,86 @@ For EACH scene (exactly 6), generate following JSON:
 
     ipcMain.handle('studio-generate-ideas', async (event, { mode, language }) => {
         const langName = LANG_NAMES[language] || 'English';
-        const isRussian = langName === 'Russian';
+
+        // Get random categories for variety + exclusion list to avoid repeats
+        const randomCats = getRandomCategories(3);
+        const historyKey = `studio_${mode}_${language}`;
+        const completedTopics = historyManager.getTopics(historyKey);
+        const exclusionClause = completedTopics.length > 0
+            ? `\nEXCLUSION LIST — DO NOT repeat or rephrase any of these previously generated ideas:\n${completedTopics.slice(-30).join('\n')}\n`
+            : '';
+
+        const randomSeed = Math.floor(Math.random() * 100000);
 
         const prompt = mode === 'health'
-            ? `Provide 5 Topic Ideas for health-niche talking-object AI videos where fruits, vegetables, or healthy foods become anthropomorphic characters inside the human body and explain their benefits in a friendly, educational way.
-               Each topic idea must clearly mention:
-               - The specific health goal (e.g., fat burn, digestion, immunity, energy).
-               - The type of foods involved.
-               - The core outcome viewers will learn.
-               Make the ideas catchy, optimized for YouTube Shorts/Reels, and creator-friendly. 
+            ? `ШАГ 1 — ПОИСК ИДЕИ (Topic Finder) [Seed: ${randomSeed}]
+               Provide me 5 highly viral LIFEHACK topic ideas for health-niche talking-object AI Shorts/Reels, where fruits, vegetables, or healthy foods become anthropomorphic expert characters inside the human body and reveal insider secrets about what they ACTUALLY do.
+
+               FORMAT RULES:
+               - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
+               - Topic must center on ONE mass-interest health goal: fat burn, digestion, immunity, energy, hormones, skin, heart, blood sugar, or sleep.
+               - The food characters are NOT fighting — they are EXPERT INSIDERS sharing secrets.
+               - Each idea must include: Hook line + Food type + Core lifehack angle + Emotional payoff.
+               - Visual-friendly for AI animation, 60–90 second format.
+               ${exclusionClause}
                Target Language: ${langName}.
-               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]`
-            : `Provide 5 highly viral topic ideas for "Talking Objects Conflict" videos (TikTok/Shorts).
-               Theme: Everyday objects, foods, or appliances that are ALIVE and constantly fighting about who is the best and most important.
-               Each idea should be broad, curiosity-driven (e.g., "The Kitchen Ego War", "The Gym Equipment Argument").
+               
+               Output ONLY a JSON object with an "ideas" array: 
+               {"ideas": [{"original": "HOOK: [Hook Line]. TITLE: [Catchy Name]. FOODS: [Items]. HACK: [Secret]. PAYOFF: [Benefit]", "translation": "Полный перевод идеи на русский язык: ХУК: [Hook Line]. НАЗВАНИЕ: [Catchy Name]. ЕДА: [Items]. ЛАЙФХАК: [Secret]. ВЫГОДА: [Benefit]"}]}`
+            : `ШАГ 1 — ПОИСК ИДЕИ (Topic Finder) [Seed: ${randomSeed}]
+               Provide me 5 highly viral LIFEHACK topic ideas for a talking-objects Short/Reel, optimized for Instagram Reels and YouTube Shorts.
+
+               🎯 THIS TIME, USE OBJECTS FROM THESE SPECIFIC CATEGORIES:
+               ${randomCats.map((c, i) => `${i + 1}. ${c}`).join('\n               ')}
+
+               Pick DIFFERENT, UNUSUAL, UNEXPECTED objects from those categories. DO NOT use generic items like "water bottle", "pillow", "toothbrush", "alarm clock" — those are overused. Be CREATIVE and SPECIFIC.
+
+               FORMAT RULES:
+               - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
+               - The hook must sound like the object is revealing a secret, exposing a mistake, or sharing a trick that saves time/money/health.
+               - Topic must center on ONE mass-interest problem: health, money, productivity, sleep, food, habits, or fitness.
+               - The object is not fighting — it's TEACHING. It has an insider secret and can't wait to tell it.
+               - Each idea must include: Hook line + Object name + Core lifehack angle + Emotional payoff.
+               - Visual-friendly for AI animation, 30–60 second format.
+               - ALL 5 ideas must use DIFFERENT objects. Maximum variety!
+               ${exclusionClause}
                Target Language: ${langName}.
-               Output ONLY a JSON array of objects: [{"original": "idea in ${langName}", "russian": "Russian translation"}]`;
+               Output ONLY a JSON object with an "ideas" array: {"ideas": [{"original": "Hook: [Your Hook Line]. Idea: [Your Idea Details]", "translation": "Полный перевод идеи на русский язык: Хук: [Your Hook Line]. Идея: [Your Idea Details]"}]}`;
 
         const raw = await callPollinations([{ role: 'user', content: prompt }], true);
+        console.log(`[Studio Ideas] Categories used: ${randomCats.join(' | ')}`);
         console.log(`[Studio Ideas] Raw AI Result:`, raw);
 
         try {
-            const jsonText = raw.match(/\[[\s\S]*\]/)?.[0] || raw;
+            const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw.match(/\[[\s\S]*\]/)?.[0] || raw;
             const parsed = JSON.parse(jsonText);
-            return (Array.isArray(parsed) ? parsed : []).map(item => ({
+            
+            let items = [];
+            if (Array.isArray(parsed)) {
+                items = parsed;
+            } else if (parsed && Array.isArray(parsed.ideas)) {
+                items = parsed.ideas;
+            } else if (parsed && typeof parsed.original === 'string') {
+                items = [parsed]; // AI only generated one object
+            } else if (parsed && typeof parsed === 'object') {
+                // Fallback: look for the first array value
+                const firstArray = Object.values(parsed).find(Array.isArray);
+                if (firstArray) items = firstArray;
+            }
+
+            const ideas = items.map(item => ({
                 original: typeof item === 'string' ? item : (item.original || ''),
-                russian: isRussian ? '' : (item.russian || item.translation || '')
+                translation: item.translation || item.russian || ''
             }));
+
+            // Save generated ideas to history for future exclusion
+            for (const idea of ideas) {
+                if (idea.original) {
+                    historyManager.addTopic(historyKey, idea.original.substring(0, 100));
+                }
+            }
+
+            return ideas;
         } catch (e) {
             console.error('Failed to parse Studio ideas:', raw, e.message);
             return [];
@@ -1117,48 +699,78 @@ For EACH scene (exactly 6), generate following JSON:
         let userPrompt = "";
 
         if (mode === 'health') {
-            systemInstruction = `You are a world-class AI medical animator and viral scriptwriter.
+            systemInstruction = `You are a world-class AI medical animator and viral health scriptwriter.
             CRITICAL RULES:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
-            3. "imagePrompt" Style: Pixar-style anthropomorphic character, round expressive eyes, smiling mouth with visible lips, soft proportions, child-friendly medical look. Placed inside a highly detailed realistic 3D human organ environment matching the dialogue.
-            4. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), subtle body movement using symbolic tools (scrubbing, melting, hydrating), cinematic 9:16 vertical motion.
-            5. Characters: Friendly fruits/veg performing helpful actions inside organs.`;
+            3. "videoPrompt" MUST contain the EXACT FULL DIALOGUE word-for-word from "line". NO TRUNCATION. NO '...'.
+            4. "imagePrompt" Style: Cute friendly Pixar-style anthropomorphic character, round expressive eyes (warmth/knowledge), smiling mouth with visible lips (ready to reveal secrets), small human-like body. Placed inside a highly detailed realistic 3D human organ environment.
+            5. TEAM EFFECT: Multiple smaller versions of the SAME character visible in background, performing the same action — "team of experts" feel.
+            6. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), subtle body movement using SYMBOLIC TOOLS (scrubbing brush, melting torch, hydrating spray, etc.), cinematic 9:16 vertical motion.
+            7. Characters: Fruit/veg/superfoods acting as EXPERT INSIDERS. They are NOT fighting.`;
 
-            userPrompt = `Generate a 5-scene viral health explainer about "${topic}".
+            userPrompt = `Generate a 7-scene viral health explainer script about "${topic}".
+            STRUCTURE:
+            - COVER SCENE: All characters together. Title overlay: "[TOPIC TITLE]". They say "We are the [TOPIC TITLE]".
+            - HOOK SCENE (Scene 0): Lead character delivers a scroll-stopping opener (e.g., "You've been eating me wrong...").
+            - LIFEHACK SCENES (Scenes 1-4): Each food character speaks ONE line (intro + what it does + tip for better work).
+            - PAYOFF SCENE (Scene 5): Summary line + soft CTA.
+
             Target Language: ${langName}.
             Output JSON format:
             {
-              "intro": "Catchy Title in ${langName}",
+              "intro": "[VIRAL TITLE]",
               "scenes": [
                 {
+                  "id": 0,
+                  "type": "cover",
+                  "character": "All Characters",
+                  "line": "We are the [Topic Title]",
+                  "imagePrompt": "(In English) Pixar-style group shot of all foods [List of foods] holding health tools [List of tools], inside a 3D medical [organ environment], excited to reveal secrets. Title overlay: '[Topic Title]' in bold dynamic 3D letters. High-end medical explainer look.",
+                  "videoPrompt": "(In English) Group lip-sync: 'We are the [Topic Title]'. All characters gesture with their tools, playful bounce, 9:16 framing, energetic opening."
+                },
+                {
                   "id": 1,
-                  "character": "Name in ${langName}",
-                  "line": "Spoken dialogue in ${langName} (Calm, friendly, educational first-person style)",
-                  "organ": "Matching human organ in English",
-                  "instrument": "Symbolic tool (e.g., cleansing brush, melting wand, smoothing roller) in English",
-                  "imagePrompt": "(In English) Cute friendly Pixar-style [character] with expressive eyes and lips, inside a 3D medical [organ] environment, actively [doing action] using [instrument]. Cinematic lighting, high-end medical explainer textures, multiple small versions in background for teamwork feel.",
-                  "videoPrompt": "(In English) Lip-sync for: '[line]'. [character] performs [action] inside [organ] with [instrument]. High emotion, natural animation, vertical 9:16 framing, slow cinematic camera."
+                  "type": "hook",
+                  "character": "Lead [Food Name]",
+                  "line": "[Hook line with emotion tag]",
+                  "imagePrompt": "(In English) Hero Pixar-style [Food] with expressive eyes and lips, [emotion] pose, in background a team of smaller [Food]s working, inside 3D human [organ], dramatic lighting.",
+                  "videoPrompt": "(In English) Lip-sync for hook: '[line]'. Heroic motion, team working in background, 9:16 vertical."
+                },
+                {
+                  "id": 2,
+                  "character": "[Food Name]",
+                  "line": "Hello, I am [Name]. I [action] in your [organ] — and if you [tip], I work better. [emotion tag]",
+                  "organ": "[organ name in English]",
+                  "tool": "[symbolic tool in English]",
+                  "imagePrompt": "(In English) Expert Pixar-style [character] using [tool] on realistic 3D [organ], team of smaller [character]s assisting, medical visualization style, 8k textures.",
+                  "videoPrompt": "(In English) Lip-sync: '[line]'. [character] performs action with [tool] on [organ], animated effects (sparks/bubbles/glow), 9:16 framing."
                 }
+                // ... continue for scenes 3-6 (id 3-6)
               ]
             }`;
         } else {
-            systemInstruction = `You are a viral TikTok comedic scriptwriter specialized in "Talking Objects Conflict".
+            systemInstruction = `You are a viral Short/Reel LIFEHACK scriptwriter specialized in "Talking Objects Revelation".
             CRITICAL RULES:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
-            3. "imagePrompt" Style: Anthropomorphic object with high-drama personality, Pixar-style round expressive eyes, visible lips/mouth for talking, placed in a realistic high-drama environment (e.g., a dark kitchen counter, a messy desk).
-            4. "videoPrompt" Style: Dramatic lip-sync (matching dialogue: ${langName}), high emotion, expressive body language (trembling, jumping, leaning), slow cinematic vertical camera.
-            5. Characters: 3-4 objects ALIVE and fighting/competing about who is best. Ego-driven, slightly aggressive, and punchy.
-            6. Formatting: Each "line" must include an emotion in brackets, e.g., "[Angry] I am the king of this house!"`;
+            3. "videoPrompt" MUST include the EXACT FULL DIALOGUE word-for-word from "line". NO TRUNCATION. NO '...'.
+            4. "imagePrompt" Style: Object must look ALIVE and KNOWLEDGEABLE — like an expert, not a brawler. Pixar-style round expressive eyes, visible lips/mouth for talking, placed in a realistic high-quality environment matching the setting.
+            5. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), expert personality, direct and confident body language, slow cinematic 9:16 vertical camera.
+            6. Characters: Object(s) are alive and acting as insider experts — they know things about themselves that humans don't. This is NOT a fight. This is a REVELATION.
+            7. Each "line" must include an emotion tag: [shocked], [proud], [whispering], [excited], [smug], [revealing].`;
 
-            userPrompt = `Create a 5-scene viral high-conflict script about "${topic}". 
-            Maximum 5 scenes, punchy, fast-paced (45-60s total). 1-2 lines per scene.
-            End with a funny or ironic line.
-            Target Language: ${langName}.
-            Output JSON format:
+            userPrompt = `📌 ШАГ 2 — СЦЕНАРИЙ (Lifehack Script)
+            Create a viral short LIFEHACK script with exactly 5 scenes for "${topic}".
+            
+            SCRIPT RULES:
+            - Scene 1 = HOOK: Object says something that stops the scroll instantly.
+            - Scenes 2–4 = THE LIFEHACK THREAD: 2–3 concrete tips, tricks, or facts delivered fast, with personality. one per scene. Use reactions/gasps between objects.
+            - Scene 5 = PAYOFF + CTA: End with a clear benefit summary OR a cliffhanger.
+
+            FORMAT (Output JSON):
             {
-              "intro": "Funny Dramatic Title in ${langName}",
+              "intro": "Viral Title in ${langName}",
               "scenes": [
                 {
                   "id": 1,
@@ -1180,6 +792,20 @@ For EACH scene (exactly 6), generate following JSON:
         try {
             const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
             const parsed = JSON.parse(jsonText);
+            
+            // Post-processing: Replace [line] placeholders if AI missed them
+            if (parsed.scenes && Array.isArray(parsed.scenes)) {
+                parsed.scenes = parsed.scenes.map(scene => {
+                    if (scene.videoPrompt && scene.videoPrompt.includes('[line]') && scene.line) {
+                        scene.videoPrompt = scene.videoPrompt.replace('[line]', scene.line);
+                    }
+                    if (scene.videoPrompt && scene.videoPrompt.includes('[INSERT ACTUAL DIALOGUE LINE HERE') && scene.line) {
+                        scene.videoPrompt = scene.videoPrompt.replace(/\[INSERT ACTUAL DIALOGUE LINE HERE[^\]]*\]/, scene.line);
+                    }
+                    return scene;
+                });
+            }
+            
             return parsed;
         } catch (e) {
             console.error('Failed to parse Studio script:', raw);
@@ -1338,4 +964,4 @@ function generateAssKaraoke(words) {
     return header + events;
 }
 
-module.exports = { synthesizeUnifiedSpeech, registerSkeletonHandlers, createImageViaPollinations, createImageViaFreepik };
+module.exports = { synthesizeUnifiedSpeech, registerSkeletonHandlers, callPollinations };
