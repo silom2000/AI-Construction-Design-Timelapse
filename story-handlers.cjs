@@ -24,7 +24,7 @@ const crypto = require('crypto');
 // VoiseAPI (https://voiceapi.csv666.ru) — CORRECT ASYNC TASK FLOW
 // POST /tasks → {task_id} → poll GET /tasks/{id} → download binary MP3
 // ─────────────────────────────────────────────────────────────────────────────
-async function storyGenerateVoice(text, language, outputDir) {
+async function storyGenerateVoice(text, language, outputDir, sceneIndex = null) {
     const apiKey = process.env.VOICEAPI_KEY;
     if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set in .env');
 
@@ -32,9 +32,15 @@ async function storyGenerateVoice(text, language, outputDir) {
     const voiceId = process.env.STORY_VOICE_ID || process.env.TEST_VOICE_ID;
     if (!voiceId) throw new Error('[Voice] Set STORY_VOICE_ID or TEST_VOICE_ID in .env');
 
-    // Hash-based filename (same convention as synthesizeUnifiedSpeech → voice_HASH.mp3)
-    const hash = crypto.createHash('md5').update(text).digest('hex').substring(0, 12);
-    const filename = `voice_${hash}.mp3`;
+    // Prefer scene-indexed filename (scene_N.mp3) so assembly can find it reliably.
+    // Fallback to hash-based name for backward compat (no sceneIndex provided).
+    let filename;
+    if (sceneIndex !== null && sceneIndex !== undefined) {
+        filename = `scene_${sceneIndex + 1}.mp3`;
+    } else {
+        const hash = crypto.createHash('md5').update(text).digest('hex').substring(0, 12);
+        filename = `voice_${hash}.mp3`;
+    }
     const dir = outputDir || STORY_DIRS.audio;
     const outputPath = path.join(dir, filename);
 
@@ -42,18 +48,24 @@ async function storyGenerateVoice(text, language, outputDir) {
     if (fs.existsSync(outputPath)) {
         const stat = fs.statSync(outputPath);
         if (stat.size > 1000) {
-            // Read first 4 bytes to check for HTML (invalid audio)
+            // Read first 4 bytes to verify it's real audio (ID3 tag or MPEG sync)
             const fd = fs.openSync(outputPath, 'r');
             const hdr = Buffer.alloc(4);
             fs.readSync(fd, hdr, 0, 4, 0);
             fs.closeSync(fd);
+            const isID3  = hdr[0] === 0x49 && hdr[1] === 0x44 && hdr[2] === 0x33;
+            const isSync = hdr[0] === 0xFF && (hdr[1] & 0xE0) === 0xE0;
             const isHtml = hdr.toString('ascii').startsWith('<');
-            if (!isHtml) {
-                console.log(`[Voice] Using cached: ${outputPath}`);
+            if (isID3 || isSync) {
+                console.log(`[Voice] Using cached: ${outputPath} (${stat.size}B)`);
                 return outputPath;
             }
-            // File is HTML — delete and regenerate
-            console.warn(`[Voice] Cached file is HTML (invalid). Regenerating...`);
+            // File is not valid audio (HTML, JSON error, truncated) — delete and regenerate
+            console.warn(`[Voice] Cached file invalid (isHtml=${isHtml}, size=${stat.size}B). Deleting and regenerating...`);
+            fs.unlinkSync(outputPath);
+        } else {
+            // File too small — definitely invalid, delete it
+            console.warn(`[Voice] Cached file too small (${stat.size}B). Deleting and regenerating...`);
             fs.unlinkSync(outputPath);
         }
     }
@@ -190,18 +202,119 @@ function registerStoryHandlers(ipcMain) {
 
     // 1. Generate Life Journey Story Ideas
     ipcMain.handle('story-generate-ideas', async (event, { topic, language }) => {
+
+        // Country/culture context based on selected language
+        const CULTURE_MAP = {
+            'French': {
+                country: 'Франция',
+                label: 'французской истории и культуры',
+                epochs: `
+- Галльские вожди (50 до н.э., Галлия — сопротивление Риму, Верцингеториг)
+- Рыцари-тамплиеры (1118-1312, Париж/Иерусалим)
+- Столетняя война (1337-1453, Нормандия, Жанна д'Арк)
+- Кардинал Ришелье и мушкетёры (1620-1642, Париж)
+- Версальский двор Людовика XIV (1643-1715, Версаль)
+- Французская революция (1789-1799, Париж, Гильотина)
+- Наполеоновские войны (1799-1815, Европа)
+- Парижская Коммуна (1871, Париж)
+- Французский Иностранный легион (1831+, Алжир/Индокитай)
+- Belle Époque — художники Монмартра (1880-1914, Париж)
+- Первая мировая: окопы Вердена (1916, Франция)
+- Французское Сопротивление (1940-1944, оккупированный Париж)
+- Профессии: булочник в Лионе, виноградарь Бургундии, ткач Лиона, матрос Марселя, угольщик Нор-Па-де-Кале`,
+            },
+            'Russian': {
+                country: 'Россия',
+                label: 'российской и русской истории',
+                epochs: `
+- Киевская Русь (882-1240, Киев/Новгород)
+- Монгольское иго (1237-1480, Русские княжества)
+- Иван Грозный и опричнина (1565-1572, Москва)
+- Смутное время (1598-1613, Москва)
+- Пётр I и строительство Петербурга (1703, Санкт-Петербург)
+- Екатерина Великая (1762-1796, Петербург/Крым)
+- Война с Наполеоном (1812, Москва, Бородино)
+- Декабристы (1825, Петербург)
+- Освобождение крестьян (1861, Центральная Россия)
+- Революция 1917 года (Петроград)
+- Советская индустриализация (1930-е, Урал/Сибирь)
+- Блокада Ленинграда (1941-1944)
+- Космическая гонка (1957-1969, Байконур/Москва)
+- Профессии: кузнец Тулы, рыбак Волги, шахтёр Донбасса, казак, монах Соловецкого монастыря`,
+            },
+            'German': {
+                country: 'Германия',
+                label: 'германской истории и культуры',
+                epochs: `
+- Племена германцев и Рим (9 н.э., битва в Тевтобургском лесу)
+- Священная Римская империя (962-1806, Аахен/Вена)
+- Тевтонский орден (1190-1525, Пруссия/Прибалтика)
+- Мартин Лютер и Реформация (1517, Виттенберг)
+- Тридцатилетняя война (1618-1648, Германия)
+- Пруссия Фридриха Великого (1740-1786, Берлин/Потсдам)
+- Гёте и веймарский классицизм (1775-1832, Веймар)
+- Объединение Германии под Бисмарком (1871, Берлин)
+- Первая мировая: окопы на Западном фронте (1914-1918)
+- Веймарская республика (1919-1933, Берлин)
+- Вторая мировая война (1939-1945)
+- Берлинская стена (1961-1989, Берлин)
+- Профессии: шахтёр Рура, стеклодув Тюрингии, пивовар Баварии, купец Ганзы, печатник Майнца`,
+            },
+            'Spanish': {
+                country: 'Испания',
+                label: 'испанской истории и культуры',
+                epochs: `
+- Аль-Андалус (711-1492, Кордова/Гранада — мавританская Испания)
+- Реконкиста (718-1492, Кастилия/Арагон)
+- Инквизиция (1478-1834, Толедо/Севилья)
+- Конкистадоры (1492-1600, Мексика/Перу/Куба)
+- Золотой век Испании (1492-1659, Мадрид)
+- Непобедимая Армада (1588, Атлантика)
+- Испанские художники (Веласкес, Гойя — Мадрид, 1600-1800)
+- Наполеоновская оккупация (1808-1813, Испания)
+- Потеря колоний (1898, Куба/Филиппины)
+- Гражданская война (1936-1939, Мадрид/Барселона)
+- Франкистская Испания (1939-1975)
+- Профессии: рыбак Галисии, пастух Кастилии, шёлкоткач Гранады, тореадор, матрос из Кадиса, шахтёр Астурии`,
+            },
+            'English': {
+                country: 'Великобритания / США',
+                label: 'британской и американской истории',
+                epochs: `
+- Римская Британия (43-410 н.э., Лондиний)
+- Англосаксы и викинги (793-1066, Нортумбрия/Йорк)
+- Нормандское завоевание (1066, Гастингс)
+- Magna Carta и бароны (1215, Раннимид)
+- Война Роз (1455-1485, Англия)
+- Елизаветинская эпоха (1558-1603, Лондон — Шекспир, пираты)
+- Пуритане и Новый Свет (1620, Mayflower, Плимут)
+- Английская гражданская война (1642-1651, Кромвель)
+- Промышленная революция (1760-1840, Манчестер/Бирмингем)
+- Британская империя (1815-1914, Индия/Африка)
+- Американский Дикий Запад (1865-1890)
+- Первая мировая: окопы Фландрии (1914-1918)
+- Вторая мировая: битва за Британию (1940, Лондон)
+- Профессии: шахтёр Уэльса, ткач Ланкашира, докер Ливерпуля, золотоискатель Клондайка, ковбой Техаса`,
+            },
+        };
+
+        const cultureCtx = CULTURE_MAP[language] || CULTURE_MAP['English'];
+
         // Ideas are ALWAYS displayed in Russian for selection, regardless of narration language
         const systemPrompt = `Ты — мастер исторического сторителлинга для TikTok и YouTube Shorts.
 Создаёшь идеи историй где зритель ПРОЖИВАЕТ чужую жизнь сам, от второго лица ("ты").
 
 ВСЕ ТЕКСТЫ — СТРОГО НА РУССКОМ ЯЗЫКЕ.
 
+ВАЖНО: Язык нарратива — ${language}. Истории должны быть культурно привязаны к ${cultureCtx.country}.
+Персонажи, профессии, места и эпохи должны в ПЕРВУЮ ОЧЕРЕДЬ отражать ${cultureCtx.label}.
+
 ════════════════════════════════════════════════
 ОБРАЗЕЦ КАЧЕСТВЕННОГО ХУКА (учись у этого примера):
 ════════════════════════════════════════════════
 
 ПЛОХОЙ хук (слабый, абстрактный):
-"Ты — воин древнего Рима. Тебя ждут великие испытания и битвы."
+"Ты — воин. Тебя ждут великие испытания и битвы."
 
 ХОРОШИЙ хук (конкретный, физический, с предзнаменованием):
 "Ты родился тамплиером — в каменном замке зимой 1072 года. Твой отец — рыцарь ордена Храма. Твоя судьба была решена ещё до твоего первого крика. Не ты выбирал этот путь — путь выбрал тебя."
@@ -214,29 +327,16 @@ function registerStoryHandlers(ipcMain) {
 - Предзнаменование ("твоя судьба была решена ещё до первого крика")
 
 ════════════════════════════════════════════════
-ЭПОХИ И ПЕРСОНАЖИ (используй разнообразие):
+ПРИОРИТЕТНЫЕ ЭПОХИ И ПРОФЕССИИ ДЛЯ ${cultureCtx.country.toUpperCase()}:
 ════════════════════════════════════════════════
-- Рыцари-тамплиеры (1072-1312, Франция/Иерусалим)
-- Викинги (793-1066, Норвегия/Исландия/Англия)
-- Самураи (794-1868, Япония)
-- Древний Рим (753 до н.э. - 476 н.э.)
-- Монгольская империя (1206-1368, Монголия/Азия)
-- Египетские фараоны (3100-30 до н.э.)
-- Пираты Карибского моря (1650-1730)
-- Крестовые походы (1096-1291)
-- Инквизиция (1184-1834, Испания/Европа)
-- Ренессанс (1300-1600, Италия)
-- Французская революция (1789-1799)
-- Индустриальная Англия (1760-1840)
-- Гражданская война США (1861-1865)
-- Вторая мировая война (1939-1945)
-- Космическая гонка (1957-1969, СССР/США)
+${cultureCtx.epochs}
 
-ИЗБЕГАЙ: общих слов "воин", "герой", "великий". Всегда конкретная роль в конкретном месте и году.`;
+ИЗБЕГАЙ: общих слов "воин", "герой", "великий". Всегда конкретная роль в конкретном месте и году.
+Минимум 4 из 5 идей должны быть привязаны к ${cultureCtx.country} — её городам, профессиям, историческим событиям.`;
 
-        const userPrompt = `Тематический запрос: ${topic || 'Случайная эпоха — выбери самую кинематографическую и малоизвестную'}
+        const userPrompt = `Тематический запрос: ${topic || `Случайная эпоха из истории ${cultureCtx.country} — выбери самую кинематографическую и малоизвестную`}
 
-Сгенерируй 5 идей для POV-историй.
+Сгенерируй 5 идей для POV-историй. Большинство должны отражать историю, культуру и профессии ${cultureCtx.country}.
 
 ТРЕБОВАНИЯ К КАЖДОЙ ИДЕЕ:
 1. Конкретный год и место (не "средневековье" — а "1147 год, Антиохия, Крестовый поход")
@@ -630,8 +730,11 @@ ${ideaContext}
                 throw new Error("No image paths returned from G-Labs generation");
             }
 
-            // Return media:// URL like skeleton-handlers does
-            return `media:///${savedPaths[0].replace(/\\/g, '/')}?t=${Date.now()}`;
+            const imgPath = savedPaths[0];
+            const imgBuffer = fs.readFileSync(imgPath);
+            const imgExt = path.extname(imgPath).toLowerCase();
+            const imgMime = imgExt === '.png' ? 'image/png' : imgExt === '.webp' ? 'image/webp' : 'image/jpeg';
+            return `data:${imgMime};base64,${imgBuffer.toString('base64')}`;
         } catch (error) {
             console.error(`[Stories] Image generation failed for scene ${sceneIndex}:`, error);
             throw error;
@@ -643,8 +746,11 @@ ${ideaContext}
         console.log(`[Stories] storyGenerateVoice: scene=${sceneIndex} lang=${language} folder=${projectFolder || 'default'} text="${text.substring(0, 60)}..."`);
         try {
             const customDir = projectFolder ? path.join(STORY_DIRS.base, projectFolder, 'Audio') : STORY_DIRS.audio;
-            const audioUrl = await storyGenerateVoice(text, language, customDir);
-            return audioUrl;
+            const filePath = await storyGenerateVoice(text, language, customDir, sceneIndex);
+            
+            // Return as base64 data URL to bypass protocol issues on Windows
+            const audioBuffer = fs.readFileSync(filePath);
+            return `data:audio/mpeg;base64,${audioBuffer.toString('base64')}`;
         } catch (e) {
             console.error(`[Stories] Audio generation failed for scene ${sceneIndex}:`, e.message);
             throw e;
@@ -703,65 +809,138 @@ ${ideaContext}
 
     console.log('[Stories] Life Journey Handlers registered ✅');
     ipcMain.handle('story-assemble', async (event, data) => {
-        const { projectFolder, language = 'English' } = data;
+        const { projectFolder } = data;
         try {
             if (!projectFolder) throw new Error("No projectFolder provided for assembly");
 
             const folderPath = path.join(STORY_DIRS.base, projectFolder);
-            const videosDir = path.join(folderPath, 'Videos');
-            
-            if (!fs.existsSync(videosDir)) {
-                throw new Error(`Videos directory not found in: ${folderPath}`);
-            }
+            const videosDir  = path.join(folderPath, 'Videos');
+            const audioDir   = path.join(folderPath, 'Audio');
 
-            console.log(`[Stories] Assembling Story in: ${folderPath}`);
+            if (!fs.existsSync(videosDir)) throw new Error(`Videos directory not found: ${videosDir}`);
 
-            // Gather all final videos (scene_X.mp4) ignoring previews or muxed if needed,
-            // Actually, glabs saves video directly as scene_X... but we mux audio in skeleton shorts.
-            // For stories, audio is synthesized separately and not naturally muxed in glabs generation yet!
-            
-            // Wait, looking at `story-generate-video`:
-            // It generates the video, re-encodes as preview. It does NOT mux the audio. 
-            // So during Assemble, we must mux the audio and video together for each scene,
-            // then concatenate them!
-
-            const audioDir = path.join(folderPath, 'Audio');
             const scriptPath = path.join(folderPath, 'script.json');
-            
-            if (!fs.existsSync(scriptPath)) {
-                throw new Error("script.json missing. Cannot assemble without knowing scene count.");
-            }
+            if (!fs.existsSync(scriptPath)) throw new Error("script.json missing — cannot assemble");
 
-            const scriptData = JSON.parse(fs.readFileSync(scriptPath, 'utf-8'));
-            const scenesCount = scriptData.scenes.length;
+            const scriptData  = JSON.parse(fs.readFileSync(scriptPath, 'utf-8'));
+            const scenes      = scriptData.scenes || [];
+            const scenesCount = scenes.length;
+            if (scenesCount === 0) throw new Error("No scenes found in script.json");
 
             const finalDir = path.join(folderPath, 'FinalOutput');
-            if (!fs.existsSync(finalDir)) fs.mkdirSync(finalDir);
+            if (!fs.existsSync(finalDir)) fs.mkdirSync(finalDir, { recursive: true });
+
+            // Locate ffmpeg binary
+            const FFMPEG_PATH = path.join(__dirname, 'ffmpeg', 'bin', 'ffmpeg.exe');
+            const ffmpegBin   = fs.existsSync(FFMPEG_PATH) ? FFMPEG_PATH : 'ffmpeg';
+
+            console.log(`[Stories] Assembling ${scenesCount} scenes in: ${folderPath}`);
 
             const muxedFiles = [];
 
-            // Mux audio+video for each scene
+            // ── Step 1: Mux audio + video for every scene ─────────────────────
             for (let i = 0; i < scenesCount; i++) {
-                // Find latest video for this scene
-                const videoFiles = fs.readdirSync(videosDir).filter(f => f.startsWith(`scene_${i+1}_preview.mp4`));
-                if (videoFiles.length === 0) throw new Error(`Missing video preview for scene ${i+1}`);
+                const sceneNum = i + 1;
+
+                // Find preview video (scene_N_preview.mp4)
+                const videoFiles = fs.existsSync(videosDir)
+                    ? fs.readdirSync(videosDir).filter(f => f.startsWith(`scene_${sceneNum}_preview`))
+                    : [];
+                if (videoFiles.length === 0) throw new Error(`Missing video for scene ${sceneNum}`);
                 const videoPath = path.join(videosDir, videoFiles[0]);
 
-                // Find audio for this scene. It could be voice_HASH.mp3 in the Audio dir 
-                // Unfortunately we didn't enforce a standard name like `scene_${i+1}.mp3` in synthesis. 
-                // BUT synthesizeUnifiedSpeech has customDir.
-                // It saves as voice_HASH.mp3. We have to map it... Wait, we CAN easily modify synthesizeCsv666Speech 
-                // in skeleton-handlers, OR we can just read the first MP3 that matches the scene by time or something?
-                // Actually, the frontend calls `story-generate-audio`. 
+                // Find audio: prefer scene_N.mp3, fallback to voice_HASH.mp3 (computed from scene line)
+                let audioPath = null;
+                const directAudio = path.join(audioDir, `scene_${sceneNum}.mp3`);
+                if (fs.existsSync(directAudio)) {
+                    audioPath = directAudio;
+                } else if (scenes[i]?.line && fs.existsSync(audioDir)) {
+                    const hash      = crypto.createHash('md5').update(scenes[i].line).digest('hex').substring(0, 12);
+                    const hashAudio = path.join(audioDir, `voice_${hash}.mp3`);
+                    if (fs.existsSync(hashAudio)) audioPath = hashAudio;
+                }
+
+                const muxedPath = path.join(finalDir, `muxed_scene_${sceneNum}.mp4`);
+
+                await new Promise((resolve, reject) => {
+                    const args = ['-y', '-i', videoPath];
+                    if (audioPath) {
+                        args.push('-i', audioPath);
+                        args.push('-map', '0:v:0', '-map', '1:a:0');
+                        args.push('-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest');
+                        console.log(`[Stories] Muxing scene ${sceneNum}: video + audio`);
+                    } else {
+                        args.push('-c:v', 'copy', '-an');
+                        console.warn(`[Stories] Scene ${sceneNum}: no audio found, video only`);
+                    }
+                    args.push('-movflags', '+faststart', muxedPath);
+
+                    const proc = spawn(ffmpegBin, args);
+                    proc.stderr.on('data', d => {
+                        const line = d.toString().split('\n').find(l => l.includes('time=') || l.includes('Error')) || '';
+                        if (line.trim()) console.log(`[ffmpeg mux sc${sceneNum}] ${line.trim()}`);
+                    });
+                    proc.on('close', code => {
+                        if (code === 0) { muxedFiles.push(muxedPath); resolve(); }
+                        else reject(new Error(`ffmpeg mux failed for scene ${sceneNum} (exit ${code})`));
+                    });
+                    proc.on('error', reject);
+                });
+
+                event.sender.send('story-video-progress', {
+                    sceneIndex: i,
+                    status: `Muxed scene ${sceneNum}/${scenesCount}`
+                });
             }
-            
+
+            // ── Step 2: Concat all muxed scenes ───────────────────────────────
+            const concatListPath = path.join(finalDir, 'concat_list.txt');
+            fs.writeFileSync(
+                concatListPath,
+                muxedFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n')
+            );
+
             const finalOutputPath = path.join(finalDir, 'Final_Story.mp4');
-            
-            console.log(`[Stories] Assemble Video stub called for ${projectFolder}`);
+
+            await new Promise((resolve, reject) => {
+                const args = [
+                    '-y',
+                    '-f', 'concat', '-safe', '0',
+                    '-i', concatListPath,
+                    // High quality re-encode for final output (near-lossless)
+                    '-c:v', 'libx264', '-crf', '15', '-preset', 'slow',
+                    '-c:a', 'aac', '-b:a', '256k',
+                    '-pix_fmt', 'yuv420p',
+                    '-movflags', '+faststart',
+                    finalOutputPath
+                ];
+
+                const proc = spawn(ffmpegBin, args);
+                proc.stderr.on('data', d => {
+                    const line = d.toString().split('\n').find(l => l.includes('time=') || l.includes('Error')) || '';
+                    if (line.trim()) {
+                        console.log(`[ffmpeg concat] ${line.trim()}`);
+                        event.sender.send('story-video-progress', { sceneIndex: -1, status: line.trim() });
+                    }
+                });
+                proc.on('close', code => {
+                    if (code === 0) resolve();
+                    else reject(new Error(`ffmpeg concat failed (exit ${code})`));
+                });
+                proc.on('error', reject);
+            });
+
+            // ── Cleanup temp muxed files ───────────────────────────────────────
+            muxedFiles.forEach(f => { try { fs.unlinkSync(f); } catch(e) {} });
+            try { fs.unlinkSync(concatListPath); } catch(e) {}
+
+            const stat = fs.statSync(finalOutputPath);
+            console.log(`[Stories] ✅ Final Story assembled: ${finalOutputPath} (${(stat.size / 1024 / 1024).toFixed(1)} MB)`);
+
             return `media:///${finalOutputPath.replace(/\\/g, '/')}?t=${Date.now()}`;
-            
+
         } catch (error) {
-            console.error("[Stories] Assembly Error: ", error);
+            console.error("[Stories] Assembly Error:", error);
             throw error;
         }
     });

@@ -1,0 +1,74 @@
+{
+  "title": "Живой будильник с горохом",
+  "profession": "Пробуждающий (Knocker-up)",
+  "era": "Лондон, эпоха Промышленной революции (конец XIX века)",
+  "characterProfile": {
+    "faceShape": "thin, wrinkled, sharp jawline",
+    "nose": "slightly pointed nose, slightly red tip",
+    "lips": "thin lips, often pursed in a slight smile",
+    "ears": "small ears partially covered by bonnet",
+    "eyes": "sharp blue eyes, squinting and attentive",
+    "hair": "grey, tucked under a weathered Victorian bonnet",
+    "skinTone": "pale, weathered complexion",
+    "distinguishingFeature": "always carries a long bamboo peashooter",
+    "cartoonStyle": "slightly exaggerated, semi-realistic 3D cartoon, energetic old lady"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "stage": "ХУК",
+      "line": "Думаешь, твой будильник бесит? Представь, как в стекло на третьем этаже метко плюют сушеным горохом!",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, subtle micro-expressions, attentive eyes, light neutral mood, detailed skin texture, worn work clothes. Energetic old lady holding dried peas and a bamboo peashooter on a Victorian cobblestone street. Soft dramatic side lighting, muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. thin wrinkled face, sharp blue eyes, grey hair under Victorian bonnet.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Old lady confidently loading dried peas into a bamboo tube. CHARACTER: Energetic old Victorian lady, thin wrinkled face, bonnet, sharp blue eyes. SETTING: 19th-century London cobblestone street. OPENING: Start with close-up of dried green peas in a wrinkled hand then reveal. CAMERA: slow zoom-in on surprised face. LIGHTING: soft dramatic side lighting. ATMOSPHERE: misty, cold, quiet morning. LAST FRAME: She puts the tube to her lips. QUALITY: 4K render, cartoon stylized, no modern UI elements, period-accurate props."
+    },
+    {
+      "id": 2,
+      "stage": "УТРО",
+      "line": "Три утра. Лондон спит в густом тумане. Ты уже заряжаешь свою трубку свежей порцией снарядов.",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style. Old lady walking in thick London fog, holding her long bamboo peashooter like a rifle. Warm early morning golden light mixing with gaslamp glow. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. thin wrinkled face, sharp blue eyes, slightly pointed nose, weathered Victorian clothes.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 format, semi-realistic cartoon style. SCENE: Old lady walking through heavy fog, blowing into her cold hands. CHARACTER: Thin wrinkled face, sharp blue eyes, Victorian bonnet, carrying bamboo pole. SETTING: Foggy dark Victorian alleyway. OPENING: Start with close-up of old worn boots walking on wet cobblestones then reveal. CAMERA: handheld follow shot of morning routine. LIGHTING: warm early morning golden light. ATMOSPHERE: thick fog, sleeping brick houses, quietness. LAST FRAME: She stops and looks up at a window. QUALITY: 4K render, cartoon stylized, period-accurate props."
+    },
+    {
+      "id": 3,
+      "stage": "ГЛАВНЫЙ ИНСТРУМЕНТ / НАВЫК",
+      "line": "Стрелять горохом нужно ювелирно. Три резких плевка в нужное окно, чтобы случайно не разбудить соседей.",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style. Close-up of wrinkled hands holding a bamboo tube, aiming upwards. Focused task lighting, close-up hands. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. thin wrinkled face, focused sharp blue eyes, grey hair under Victorian bonnet.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 format, semi-realistic cartoon style. SCENE: Pinpoint aiming and shooting dried peas at a glass window. CHARACTER: Focused old lady with thin pursed lips, sharp blue eyes. SETTING: Beneath a tall brick building. OPENING: Start with close-up of bamboo tube being raised then reveal. CAMERA: close-up of skilled hands at work. LIGHTING: focused task lighting, close-up hands. ATMOSPHERE: tense concentration. LAST FRAME: Three peas fly in slow-motion towards the glass. QUALITY: 4K render, cartoon stylized, period-accurate props."
+    },
+    {
+      "id": 4,
+      "stage": "СКРЫТАЯ ТРУДНОСТЬ",
+      "line": "Самое сложное — мерзнуть под ледяным лондонским дождём, пока заспанный клиент не покажет своё недовольное лицо.",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style. Old lady standing in shivering rain, looking up patiently, wet shawl. Overcast flat grey, tired mood. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. pale weathered complexion, sharp blue eyes squinting against rain, small ears under bonnet.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 format, semi-realistic cartoon style. SCENE: Waiting in the freezing rain beneath a tall unlit window. CHARACTER: Tired old lady shivering slightly, red nose tip, wrapped in wet shawl. SETTING: Rainy dark London street with puddles. OPENING: Start with close-up of raindrops hitting a puddle then reveal. CAMERA: wide shot showing scale of problem. LIGHTING: overcast flat grey, tired mood. ATMOSPHERE: cold, miserable, damp. LAST FRAME: A distant angry face finally appears in the window. QUALITY: 4K render, cartoon stylized, period-accurate props."
+    },
+    {
+      "id": 5,
+      "stage": "СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ",
+      "line": "Вчера мистер Томпсон забыл закрыть форточку. Одна горошина прилетела ему прямо в открытый храпящий рот.",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style. Old lady lowering her peashooter with an 'oops' expression, holding back a laugh. Bright warm comedic lighting. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. thin wrinkled face, wide sharp blue eyes, slightly exaggerated comedic reaction.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 format, semi-realistic cartoon style. SCENE: Accidentally shooting a pea into an open snoring window. CHARACTER: Mischievous old lady, thin lips covering a silent laugh. SETTING: Brick building facade with slightly open window. OPENING: Start with close-up of a single pea flying then reveal. CAMERA: fast comedic cut, reaction shot. LIGHTING: bright warm comedic lighting. ATMOSPHERE: lighthearted, funny mistake. LAST FRAME: Coughing sounds heard, she winces playfully. QUALITY: 4K render, cartoon stylized, period-accurate props."
+    },
+    {
+      "id": 6,
+      "stage": "ВЗАИМОДЕЙСТВИЕ",
+      "line": "Полицейский на ночном патруле кивает тебе. Вы двое — единственные хозяева этих тихих тёмных улиц.",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style. Old lady sharing a quiet nodding moment with a Victorian policeman. Warm social ambient light from a gaslamp. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. pale weathered skin, slight friendly smile, sharp blue eyes.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 format, semi-realistic cartoon style. SCENE: Quiet greeting between night workers on an empty street. CHARACTER: Energetic old lady with peashooter, Victorian Bobby policeman in helmet. SETTING: Corner street bathed in warm gaslamp glow. OPENING: Start with close-up of a shiny police badge then reveal. CAMERA: two-shot interaction. LIGHTING: warm social ambient light. ATMOSPHERE: mutual respect, quiet camaraderie. LAST FRAME: Policeman tips his helmet, lady tips her bamboo pole. QUALITY: 4K render, cartoon stylized, period-accurate props."
+    },
+    {
+      "id": 7,
+      "stage": "КОНЕЦ ДНЯ",
+      "line": "Семь утра. Фабричный гудок ревёт. Твоя сумка с горохом пуста. Город проснулся и зашумел.",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style. Old lady exhausted but satisfied, emptying the last dust from her small pouch. Blue hour, end-of-shift exhaustion lighting. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. thin wrinkled face, heavy eyelids but sharp blue eyes, grey hair tucked in bonnet.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 format, semi-realistic cartoon style. SCENE: Shift is over, the city is loud with workers and carts. CHARACTER: Exhausted old lady resting her bamboo pole on the ground. SETTING: Busy industrial street coming to life. OPENING: Start with close-up of an empty fabric pouch then reveal. CAMERA: slow pull-back reveal of empty workspace. LIGHTING: blue hour, end-of-shift exhaustion. ATMOSPHERE: noisy, smoky factory background. LAST FRAME: She turns away, silhouette against the waking city. QUALITY: 4K render, cartoon stylized, period-accurate props."
+    },
+    {
+      "id": 8,
+      "stage": "ВЫВОД",
+      "line": "Ты никогда не опоздаешь. Ведь без тебя Индустриальная революция просто проспала бы свою смену.",
+      "imagePrompt": "stylized 3D animated Knocker-up worker, semi-realistic cartoon style. Close-up portrait of the old lady, proud and smiling subtly, looking at the camera. Golden hour warm, reflective lighting. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render. thin wrinkled face, sharp jawline, sharp blue eyes sparkling, pale weathered complexion.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 format, semi-realistic cartoon style. SCENE: Looking proudly into the camera as smoke rises from factories behind. CHARACTER: Proud old Victorian lady, thin pursed lips forming a warm smile. SETTING: Overlooking a valley of Victorian chimneys. OPENING: Start with close-up of tired but smiling sharp blue eyes then reveal. CAMERA: slow push-in to face, slight smile. LIGHTING: golden hour warm, reflective. ATMOSPHERE: triumphant, epic but intimate. LAST FRAME: A warm, knowing wink to the viewer. QUALITY: 4K render, cartoon stylized, no modern UI elements, period-accurate props."
+    }
+  ]
+}

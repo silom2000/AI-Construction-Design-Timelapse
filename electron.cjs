@@ -1,9 +1,14 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, net } = require('electron');
 const { spawn } = require('child_process');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const path = require('path');
 const isDev = !app.isPackaged;
 require('dotenv').config();
+
+// Must be called before app.whenReady() to enable stream support for custom protocol
+protocol.registerSchemesAsPrivileged([
+    { scheme: 'media', privileges: { secure: true, standard: true, stream: true, supportFetchAPI: true, bypassCSP: true } }
+]);
 const { request } = require('undici');
 const fs = require('fs');
 const { pipeline } = require('stream');
@@ -170,28 +175,61 @@ app.whenReady().then(async () => {
     const { registerTimelapseHandlers } = require('./timelapse-handlers.cjs');
     registerTimelapseHandlers(ipcMain);
 
-    const { protocol } = require('electron');
-    protocol.registerFileProtocol('media', (request, callback) => {
-        let url = request.url;
-        // Strip media:/// or media://
-        url = url.replace(/^media:\/\/[\/]*/, '');
-        
-        // Remove trailing query parameters like ?t=123
-        const queryIndex = url.indexOf('?');
-        if (queryIndex !== -1) {
-            url = url.substring(0, queryIndex);
+    // Use protocol.handle() which properly supports Range requests for video playback
+    protocol.handle('media', async (request) => {
+        try {
+            const { pathToFileURL } = require('url');
+            const url = new URL(request.url);
+            // On Windows, the pathname for media:///D:/... is /D:/...
+            let filePath = decodeURIComponent(url.pathname);
+            
+            // Strip leading slash if it precedes a drive letter (Windows)
+            if (filePath.startsWith('/') && /^[a-zA-Z]:/.test(filePath.substring(1))) {
+                filePath = filePath.substring(1);
+            }
+            
+            // Normalize path for the OS
+            filePath = path.normalize(filePath);
+            
+            if (!fs.existsSync(filePath)) {
+                return new Response('File not found', { status: 404 });
+            }
+
+            const fileUrl = pathToFileURL(filePath).toString();
+
+            // Pass the original request to net.fetch to preserve Range headers for video
+            const response = await net.fetch(fileUrl, {
+                headers: request.headers,
+                method: request.method,
+                bypassCustomProtocolHandlers: true
+            });
+
+            // Map extension to MIME type
+            const ext = path.extname(filePath).toLowerCase();
+            const mimeTypes = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+                '.mp4': 'video/mp4',
+                '.mp3': 'audio/mpeg',
+                '.wav': 'audio/wav'
+            };
+            const mimeType = mimeTypes[ext] || response.headers.get('content-type');
+
+            const newHeaders = new Headers(response.headers);
+            if (mimeType) newHeaders.set('Content-Type', mimeType);
+            newHeaders.set('Access-Control-Allow-Origin', '*');
+
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: newHeaders
+            });
+        } catch (err) {
+            console.error('[media protocol] Error:', err);
+            return new Response('Protocol error', { status: 500 });
         }
-        
-        // Decode URI (handles spaces and special chars)
-        let filePath = decodeURIComponent(url);
-        
-        // On Windows, if path starts with a slash (like /D:/...), remove it
-        if (/^\/[a-zA-Z]:/.test(filePath)) {
-            filePath = filePath.substring(1);
-        }
-        
-        filePath = path.normalize(filePath);
-        callback({ path: filePath });
     });
 
     registerSkeletonHandlers(ipcMain);

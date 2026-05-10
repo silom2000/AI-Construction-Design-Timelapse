@@ -1,0 +1,74 @@
+{
+  "title": "Les Oreilles Géantes",
+  "profession": "Opérateur de localisateur acoustique",
+  "era": "Europe, 1917 (Première Guerre mondiale)",
+  "characterProfile": {
+    "faceShape": "angular thin face",
+    "nose": "long pointed nose",
+    "lips": "thin relaxed lips",
+    "ears": "slightly prominent ears",
+    "eyes": "closed eyes behind vintage dark round glasses",
+    "hair": "messy short brown hair under a military wool cap",
+    "skinTone": "pale complexion",
+    "distinguishingFeature": "large medical stethoscope worn over a 1917 military greatcoat",
+    "cartoonStyle": "slightly exaggerated, semi-realistic 3D cartoon, attentive expression"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "stage": "ХУК",
+      "line": "Imaginez votre bureau : de gigantesques oreilles en métal où vous passez la journée pour écouter le ciel.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, sitting between two massive metallic acoustic horns resembling giant ears, listening intently, 1917 military setting. Soft dramatic side lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Sitting between giant acoustic metallic horns. CHARACTER: Blind precise musician in 1917 uniform with a stethoscope and round dark glasses. SETTING: WWI trench listening post. OPENING: close-up of giant metallic horn surface then reveal. CAMERA: slow zoom-in on surprised face. LIGHTING: soft dramatic side lighting. ATMOSPHERE: misty cold landscape, metallic surfaces reflecting light. LAST FRAME: character looks toward the sky with attentive ears. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    },
+    {
+      "id": 2,
+      "stage": "УТРО",
+      "line": "Aube glaciale en 1917. Pas de radar. Musicien aveugle, vous protégez la ville avec un stéthoscope.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, early morning mist, carefully putting on a military stethoscope while standing next to a massive listening device. Warm early morning golden light. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Preparing the acoustic mirror for the day. CHARACTER: Blind musician in heavy coat adjusting his stethoscope. SETTING: Dawn at the military listening post. OPENING: close-up of hands connecting a rubber tube then reveal. CAMERA: handheld follow shot of morning routine. LIGHTING: warm early morning golden light. ATMOSPHERE: freezing breath visible in the air, morning dew on metal. LAST FRAME: leaning forward to begin listening. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    },
+    {
+      "id": 3,
+      "stage": "ГЛАВНЫЙ ИНСТРУМЕНТ / НАВЫК",
+      "line": "À vingt kilomètres, vous entendez un bourdonnement léger. Vos oreilles reconnaissent le modèle exact du bombardier.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, adjusting precise brass dials on the acoustic locator base with delicate musician hands. Focused task lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Turning precision wheels to track a distant sound. CHARACTER: Blind musician highly focused, tapping fingers in rhythm. SETTING: Inside the acoustic chair mechanism. OPENING: close-up of skilled hands at work on brass wheels then reveal. CAMERA: close-up of skilled hands at work. LIGHTING: focused task lighting. ATMOSPHERE: intense concentration, mechanical gears turning slowly. LAST FRAME: nodding confidently as the rhythm is locked. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    },
+    {
+      "id": 4,
+      "stage": "СКРЫТАЯ ТРУДНОСТЬ",
+      "line": "Des heures de silence absolu. Le vent, un chien lointain, des grillons. Il faut tout ignorer.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, slumped slightly in the operator seat, looking tired, isolated in a vast flat empty field under a bleak sky. Overcast flat grey lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Waiting through endless hours of wind and false sounds. CHARACTER: Tired blind listener resting his head on his hand. SETTING: Vast empty military plain entirely grey. OPENING: close-up of a blowing blade of grass then reveal. CAMERA: wide shot showing scale of problem. LIGHTING: overcast flat grey. ATMOSPHERE: heavy boredom, lonely and isolating environment. LAST FRAME: sighing deeply while still listening. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    },
+    {
+      "id": 5,
+      "stage": "СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ",
+      "line": "Un jour, vous alertez le général pour une attaque imminente. C'était juste un très gros moustique.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, giggling sheepishly and swatting a comically large mosquito away from the huge metal horn. Bright warm comedic lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Mistaking a localized insect for a distant bomber. CHARACTER: Startled blind operator swatting the air near his ear. SETTING: Inside the acoustic horn basin. OPENING: close-up of a mosquito resting on the stethoscope then reveal. CAMERA: fast comedic cut, reaction shot. LIGHTING: bright warm comedic lighting. ATMOSPHERE: lighthearted, ridiculous mistake. LAST FRAME: laughing out loud while rubbing his neck. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    },
+    {
+      "id": 6,
+      "stage": "ВЗАИМОДЕЙСТВИЕ",
+      "line": "Un jeune soldat demande comment vous faites. Vous souriez et imitez le bruit de sa montre.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, sitting with a young curious soldier in a trench, pointing playfully at the soldier's pocket watch. Warm social ambient light. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Explaining his gift to a puzzled recruit. CHARACTER: Smiling friendly listener tapping out a perfect rhythm. SETTING: Trench bunker with a young soldier holding a pocket watch. OPENING: close-up of a brass pocket watch then reveal. CAMERA: two-shot interaction. LIGHTING: warm social ambient light. ATMOSPHERE: cozy conversational moment in the midst of war. LAST FRAME: the young soldier's jaw dropping in amazement. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    },
+    {
+      "id": 7,
+      "stage": "КОНЕЦ ДНЯ",
+      "line": "Le soleil se couche. Vous retirez enfin votre casque lourd. Le monde réel semble incroyablement bruyant.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, removing the heavy stethoscope from his ears, looking exhausted but peaceful, huge silhouetted horns in the background. Blue hour, end-of-shift exhaustion. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: End of a long listening shift. CHARACTER: Exhausted musician rubbing his ears, stepping away from the machine. SETTING: Twilight at the massive empty acoustic station. OPENING: close-up of hands rubbing tired ears then reveal. CAMERA: slow pull-back reveal of empty workspace. LIGHTING: blue hour, end-of-shift exhaustion. ATMOSPHERE: peaceful twilight, heavy relief. LAST FRAME: walking slowly into the misty sunset. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    },
+    {
+      "id": 8,
+      "stage": "ВЫВОД",
+      "line": "Vous ne verrez jamais ce ciel, mais votre oreille absolue a sauvé des milliers de vies innocentes.",
+      "imagePrompt": "stylized 3D animated acoustic locator operator, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, close-up portrait of the blind operator smiling gently, the metallic acoustic devices slightly out of focus behind him, glowing softly. Golden hour warm, reflective. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. angular thin face, long pointed nose, thin relaxed lips, slightly prominent ears, closed eyes behind vintage dark round glasses, messy short brown hair under a military wool cap, pale complexion, large medical stethoscope worn over a 1917 military greatcoat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: A quiet reflective moment honoring his hidden service. CHARACTER: Smiling subtly, looking peacefully upward toward the unseen sky. SETTING: Beautiful sunset over the trench listening post. OPENING: close-up of a gentle, knowing smile then reveal. CAMERA: slow push-in to face, slight smile. LIGHTING: golden hour warm, reflective. ATMOSPHERE: heroic but humble, deeply emotional. LAST FRAME: a final warm, reassuring smile holding on screen. QUALITY: 4K cartoon render, period-accurate props, no modern UI elements."
+    }
+  ]
+}

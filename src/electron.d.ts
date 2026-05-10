@@ -89,7 +89,7 @@ export interface IElectronAPI {
   // AI Stories
   storyCreateFolder: () => Promise<string>,
   storyGenerateIdeas: (topic: string, language: string) => Promise<any>,
-  storyGenerateScript: (idea: string, language: string) => Promise<any>,
+  storyGenerateScript: (params: { idea: any, language: string, projectFolder: string }) => Promise<any>,
   storyGenerateImage: (data: any) => Promise<string>,
   storyGenerateAudio: (data: any) => Promise<string>,
   storyGenerateVideo: (data: any) => Promise<string>,

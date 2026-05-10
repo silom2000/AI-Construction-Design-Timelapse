@@ -1,0 +1,74 @@
+{
+  "title": "Живой гном на зарплате",
+  "profession": "Декоративный садовый отшельник",
+  "era": "Англия, XVIII век",
+  "characterProfile": {
+    "faceShape": "angular, slightly gaunt",
+    "nose": "slightly crooked reddish nose",
+    "lips": "thin, wry smiling lips",
+    "ears": "slightly pointy ears",
+    "eyes": "sharp blue mischievous eyes",
+    "hair": "messy brown hair covered by a fake grey wig",
+    "skinTone": "pale dirt-smudged complexion",
+    "distinguishingFeature": "poorly attached long fake grey beard out of goat hair",
+    "cartoonStyle": "slightly exaggerated, semi-realistic 3D cartoon, expressive micro-expressions"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "stage": "ХУК",
+      "line": "Знаешь, сколько платили живому садовому гному в восемнадцатом веке? Триста фунтов. За полное молчание в пещере.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, young 18th-century peasant looking utterly surprised holding a small bag of coins inside a fake stone grotto. Soft dramatic side lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. Sharp blue mischievous eyes, pale dirt-smudged complexion, poorly attached long fake grey beard.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Peasant looking in shock at a heavy coin pouch in his dirty hands. CHARACTER: 18th-century peasant with a fake grey beard tied on a string, smudged face. SETTING: Inside a damp artificial stone cave. OPENING: close-up of his dirty hand weighing gold coins then reveal. CAMERA: slow zoom-in on surprised face. LIGHTING: soft dramatic side lighting. ATMOSPHERE: dusty air motes, cold damp stone, lonely vibe. LAST FRAME: character looks at camera with surprised expression. QUALITY: 4K cartoon render, period-accurate 18th-century props."
+    },
+    {
+      "id": 2,
+      "stage": "УТРО",
+      "line": "Шесть утра. Ты надеваешь фальшивую бороду из козьей шерсти. Холодно. Лорд требует идеальную философскую скорбь.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, tired facial expression, peasant tying a ridiculous overly long fake goat-hair beard around his chin with a string. Warm early morning golden light illuminating the damp artificial cave entrance. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. Sharp blue mischievous eyes, messy brown hair.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Morning routine of tying on a fake beard. CHARACTER: 18th-century peasant in ragged robes shivering slightly. SETTING: Entrance to an artificial garden grotto, wet grass outside. OPENING: close-up of a string being knotted behind ears then reveal. CAMERA: handheld follow shot of morning routine. LIGHTING: warm early morning golden light. ATMOSPHERE: frosty breath visible in the cold air, dewy morning. LAST FRAME: character exhales frosty breath, looking resigned. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 3,
+      "stage": "ГЛАВНЫЙ ИНСТРУМЕНТ / НАВЫК",
+      "line": "Главный навык — смотреть в одну точку часами. Изображаешь глубокую мысль, пока жадно мечтаешь о пинте эля.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, blank but intense stare, holding a human skull like a philosopher, sitting rigidly on a rock. Focused task lighting, close-up hands holding the skull. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. Sharp blue mischievous eyes, crooked reddish nose.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Posing like a wise philosopher while bored out of his mind. CHARACTER: Peasant in an itchy fake beard and overly dramatic monk robe holding a skull. SETTING: Dim lit artificial grotto with a wooden hourglass. OPENING: close-up of skilled hands turning an hourglass then reveal. CAMERA: close-up of skilled hands at work pulling back to face. LIGHTING: focused task lighting. ATMOSPHERE: dripping water sounds visually implied, heavy boredom. LAST FRAME: character's eyes twitch slightly towards a hidden empty tankard. QUALITY: 4K cartoon render."
+    },
+    {
+      "id": 4,
+      "stage": "СКРЫТАЯ ТРУДНОСТЬ",
+      "line": "Семь лет по контракту запрещено мыться, стричься и говорить. Под этой шерстяной мантией чешутся даже мысли.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, miserable expression, violently scratching inside his heavy dirty robe while trying not to ruin the fake beard posture. Overcast flat grey lighting, tired mood. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. Dirt-smudged skin, thin wry lips grimacing.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Secretly scratching a massive itch under his robe. CHARACTER: Itchy unwashed hermit with bugs subtly buzzing around his fake wig. SETTING: Overgrown garden path near his cave. OPENING: close-up of scratching fingers under a rough wool fabric then reveal. CAMERA: wide shot showing scale of problem. LIGHTING: overcast flat grey, tired mood. ATMOSPHERE: flies buzzing, damp heavy air, uncomfortable textures. LAST FRAME: character freezing mid-scratch as he hears footsteps. QUALITY: 4K cartoon render."
+    },
+    {
+      "id": 5,
+      "stage": "СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ",
+      "line": "Однажды ночью ты сбежал в местный паб. Заказал эль. Но лорд узнал тебя по характерной пещерной грязи.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, deer-in-headlights expression, sitting at a busy 18th-century pub table holding a wooden mug of ale, with fake beard askew and mud dropping on the floor. Bright warm comedic lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. Sharp blue mischievous eyes wide open.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Caught mid-sip in a local tavern. CHARACTER: Disguised hermit with his fake beard pushed up, dirt falling off his sleeves. SETTING: Cozy, loud 18th-century pub with wooden tables. OPENING: close-up of foam on an ale mug then reveal. CAMERA: fast comedic cut, reaction shot. LIGHTING: bright warm comedic lighting. ATMOSPHERE: warm glowing fire, flying spilled ale, comedic tension. LAST FRAME: character slowly puts the mug down in awkward silence. QUALITY: 4K cartoon render."
+    },
+    {
+      "id": 6,
+      "stage": "ВЗАИМОДЕЙСТВИЕ",
+      "line": "Гуляющие аристократы тычут в тебя тросточками. Ждут предсказаний. А ты молча прячешь жареную курицу под камнем.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, stoic 'wise' expression with a hidden smirk, sitting cross-legged as an unseen aristocrat's walking cane pokes his shoulder, foot subtly hiding a cooked chicken leg behind a rock. Warm social ambient light. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Enduring a poke from an aristocrat while hiding food. CHARACTER: Peasant doing his best 'mystical stare', maintaining character perfectly. SETTING: Sunlit aristocratic English garden outside the cave. OPENING: close-up of a fancy walking cane poking a dirty shoulder then reveal. CAMERA: two-shot interaction. LIGHTING: warm social ambient light. ATMOSPHERE: upper-class garden party noises, stiff etiquette. LAST FRAME: character drops a piece of chicken out of his sleeve but covers it with his foot quickly. QUALITY: 4K cartoon render."
+    },
+    {
+      "id": 7,
+      "stage": "КОНЕЦ ДНЯ",
+      "line": "Вечер. Гости ушли. Ты отклеиваешь зудящую бороду в сырой искусственной руине. Завтра снова изображать святого.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, exhausted but relieved expression, peeling off the fake goat-hair beard, rubbing his sore skin. Blue hour, end-of-shift exhaustion. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. Dirt smudged cheeks, angular gaunt face.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Taking off the uniform after a long shift of doing nothing. CHARACTER: Exhausted peasant rubbing his chafed chin, fake beard resting on his knee. SETTING: Dark, moonlit artificial cave interior. OPENING: close-up of string un-tying at the back of head then reveal. CAMERA: slow pull-back reveal of empty workspace. LIGHTING: blue hour, moonlit end-of-shift exhaustion. ATMOSPHERE: crickets chirping, cool night breeze, quiet solitude. LAST FRAME: character tosses the fake beard aside and sighs deeply. QUALITY: 4K cartoon render."
+    },
+    {
+      "id": 8,
+      "stage": "ВЫВОД",
+      "line": "Богачи покупали живых людей для декора своих красивых лужаек. А ты продавал им иллюзию за еду.",
+      "imagePrompt": "stylized 3D animated decorative garden hermit, semi-realistic cartoon style, slightly exaggerated facial features, gentle knowing smile, looking directly at the viewer, tossing a silver coin in the air inside his fake dark grotto. Golden hour warm, reflective lighting sweeping through the cave entrance. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. Sharp blue mischievous eyes, wry smile.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Breaking the fourth wall, reflecting on the absurdity of his job. CHARACTER: Clean-shaven peasant holding his fake beard in one hand, tossing a coin in the other. SETTING: Twilight garden grotto. OPENING: close-up of an 18th century silver coin spinning in the air then reveal. CAMERA: slow push-in to face, slight smile. LIGHTING: golden hour warm, reflective. ATMOSPHERE: dust motes dancing in the last ray of sun, peaceful triumph. LAST FRAME: character gives a tiny subtle wink to the camera. QUALITY: 4K cartoon render."
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "title": "Миллионер из мутной лужи",
+  "profession": "Водолаз за мячами для гольфа",
+  "era": "Современная Флорида, США",
+  "characterProfile": {
+    "faceShape": "square and rugged",
+    "nose": "slightly crooked nose",
+    "lips": "thin determined lips",
+    "ears": "stubby cauliflowered ears",
+    "eyes": "squinting pale blue eyes",
+    "hair": "messy wet blonde hair with receding hairline",
+    "skinTone": "sun-baked weathered tan complexion",
+    "distinguishingFeature": "patched worn wetsuit and short blonde stubble",
+    "cartoonStyle": "slightly exaggerated, semi-realistic 3D cartoon, friendly but tough expression"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "stage": "ХУК",
+      "line": "Куда деваются миллионы мячей от гольфа, утопленных неудачниками? Ты достаёшь их, зарабатывая на этом состояние.",
+      "imagePrompt": "stylized 3D animated golf ball diver worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, subtle micro-expressions, attentive eyes, light neutral mood, detailed skin texture. Mid-30s man holding a single muddy golf ball to the camera. square and rugged face, squinting pale blue eyes, messy wet blonde hair, slightly crooked nose, sun-baked weathered tan complexion, patched worn wetsuit. Soft dramatic side lighting, muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Diver holding up a muddy golf ball. CHARACTER: Mid-30s tough guy in a patched wetsuit, rugged square face, wet blonde hair, holding a golf ball. SETTING: Murky golf course pond edge. OPENING: Start with close-up of the dirty golf ball then reveal the diver's face. CAMERA: slow zoom-in on surprised face. LIGHTING: soft dramatic side lighting. ATMOSPHERE: Swampy damp air, green mossy banks. LAST FRAME: Character holds the ball out with an arched eyebrow. QUALITY: 4K render, cartoon stylized, no modern UI elements, period-accurate props."
+    },
+    {
+      "id": 2,
+      "stage": "УТРО",
+      "line": "Шесть утра во Флориде. Гидрокостюм весь в заплатках от черепах. Впереди — чёрная вода и грязь.",
+      "imagePrompt": "stylized 3D animated golf ball diver worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression. Mid-30s man zipping up a black neoprene wetsuit covered in heavy duct tape patches. square and rugged face, squinting pale blue eyes, short blonde stubble, weathered tan. Setting is beside a murky dark green pond at a golf course. Warm early morning golden light filtering through Spanish moss. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Putting on a heavily patched wetsuit. CHARACTER: Rugged diver with a crooked nose, messy blonde hair, adjusting his diving gear. SETTING: Dewy grass next to a stagnant pond at dawn. OPENING: Start with close-up of taped turtle-bite patches on the suit then reveal. CAMERA: handheld follow shot of morning routine. LIGHTING: warm early morning golden light. ATMOSPHERE: Humid morning mist rolling off the dark water. LAST FRAME: Diver pulling his dive mask down over his eyes. QUALITY: 4K render, cartoon stylized, no modern UI elements."
+    },
+    {
+      "id": 3,
+      "stage": "ГЛАВНЫЙ ИНСТРУМЕНТ / НАВЫК",
+      "line": "Ил настолько густой, что не видно даже рук. Ты собираешь мячи на ощупь, словно слепой пианист.",
+      "imagePrompt": "stylized 3D animated golf ball diver worker underwater, semi-realistic cartoon style. Mid-30s man underwater in total murky darkness. square and rugged face, tight dive mask, breathing bubbles. Close up of gloved hands sinking deep into thick brown mud, fingers feeling round bumps. Focused task lighting from a dim underwater headlamp, close-up hands. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Digging up golf balls blindly in mud. CHARACTER: Diver in a mask, surrounded by brown water, feeling around blindly. SETTING: Pitch black underwater pond floor with thick sludge. OPENING: Start with close-up of skilled hands at work in the mud then reveal the dim outline of the diver. CAMERA: close-up of skilled hands at work. LIGHTING: focused task lighting from a weak flashlight. ATMOSPHERE: Claustrophobic, murky, suspended silt particles. LAST FRAME: Hand successfully pulls three white golf balls from the muck. QUALITY: 4K render, cartoon stylized."
+    },
+    {
+      "id": 4,
+      "stage": "СКРЫТАЯ ТРУДНОСТЬ",
+      "line": "Но главный стресс — не нулевая видимость. Ты в любую секунду можешь столкнуться нос к носу с аллигатором.",
+      "imagePrompt": "stylized 3D animated golf ball diver worker underwater, semi-realistic cartoon style. Mid-30s man looking stressed. square and rugged face, wide pale blue eyes inside diving mask, wet blonde hair. Looming in the murky green background is the faint, terrifying silhouette of a huge alligator snout just inches away. Overcast flat grey lighting, dim underwater green tones, tired and tense mood. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Encountering a massive alligator underwater. CHARACTER: Diver with frozen posture and wide eyes in mask. SETTING: Murky green underwater void. OPENING: Start with close-up of face looking nervously to the side then reveal a scaly snout. CAMERA: wide shot showing scale of problem, the huge alligator beside the small diver. LIGHTING: overcast flat grey, murky green ambient lighting. ATMOSPHERE: Tense, terrifying silence, floating debris. LAST FRAME: Alligator eye subtly opens in the background. QUALITY: 4K render, cartoon stylized."
+    },
+    {
+      "id": 5,
+      "stage": "СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ",
+      "line": "Однажды злой аллигатор решил напасть. Пришлось использовать тяжелый мешок с мячами как щит от зубастых челюстей.",
+      "imagePrompt": "stylized 3D animated golf ball diver worker, semi-realistic cartoon style, slightly exaggerated facial features. Mid-30s diver underwater, gritting his teeth in a comedic struggle. square and rugged face, squinting eyes. He is shoving a large mesh sack bulging with hundreds of white golf balls straight into the open jaws of an annoyed, cartoonish alligator. Bright warm comedic lighting piercing through the water. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Diver blocking an alligator bite with a giant sack of golf balls. CHARACTER: Sweating diver furiously pushing a mesh bag forward. SETTING: Shallow underwater area with weed beds. OPENING: Start with close-up of the mesh bag hitting teeth then reveal the funny struggle. CAMERA: fast comedic cut, reaction shot of the diver sweating. LIGHTING: bright warm comedic lighting. ATMOSPHERE: chaotic, funny struggle, bubbles everywhere. LAST FRAME: Alligator looks confused, chewing on plastic balls. QUALITY: 4K render, cartoon stylized."
+    },
+    {
+      "id": 6,
+      "stage": "ВЗАИМОДЕЙСТВИЕ",
+      "line": "Гольфисты наверху элегантно пьют коктейли, совершенно не подозревая, какая дикая битва идёт прямо под их ногами.",
+      "imagePrompt": "stylized 3D animated split-frame style, semi-realistic cartoon style. Bottom half: Mid-30s diver in muddy water, square rugged face, worn wetsuit, looking up exhaustedly. Top half above water: a clean-cut rich golfer in fancy clothes delicately sipping a pink drink on manicured green grass. Warm social ambient light from the surface above. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Contrast between wealthy golfer and muddy diver. CHARACTER: Diver breaking the surface quietly, eyes peeking out of the duckweed. SETTING: Pristine golf course edge with a murky pond. OPENING: Start with close-up of diver's eyes breaking the water surface then reveal golfer on the shore. CAMERA: two-shot interaction (diver in foreground, golfer blurred in back). LIGHTING: warm social ambient light, sunny topside. ATMOSPHERE: Irony, contrast between luxury and dirty labor. LAST FRAME: Golfer shanks a ball right into the pond with a splash. QUALITY: 4K render, cartoon stylized."
+    },
+    {
+      "id": 7,
+      "stage": "КОНЕЦ ДНЯ",
+      "line": "Закат. Ты вылезаешь из жижи, волоча за собой семьдесят килограммов пластикового золота. Мышцы горят огнём.",
+      "imagePrompt": "stylized 3D animated golf ball diver worker, semi-realistic cartoon style. Mid-30s man heavily exhausted, soaked in dark mud. square and rugged face, slightly crooked nose, dragging a massive dripping mesh sack filled with muddy golf balls onto the grassy bank. Blue hour, end-of-shift exhaustion lighting with deep shadows. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Dragging the massive day's catch onto land. CHARACTER: Exhausted, mud-covered diver leaning backward with all his weight against a heavy sack. SETTING: Twilight at the murky pond's edge. OPENING: Start with close-up of muddy boots gripping the wet grass then reveal the heavy lifting. CAMERA: slow pull-back reveal of empty workspace (pond behind him). LIGHTING: blue hour twilight, exhausted mood. ATMOSPHERE: Quiet, crickets chirping, sheer physical fatigue. LAST FRAME: Diver collapses onto his back next to the giant pile of balls. QUALITY: 4K render, cartoon stylized."
+    },
+    {
+      "id": 8,
+      "stage": "ВЫВОД",
+      "line": "Кто-то видит здесь вонючую лужу с рептилиями. А для тебя это — настоящий прибыльный, грязный клондайк.",
+      "imagePrompt": "stylized 3D animated golf ball diver worker, semi-realistic cartoon style. Close up of mid-30s man. square and rugged face, squinting pale blue eyes, sun-baked weathering, messy wet blonde hair, dirt smudges on cheek. He is holding one perfectly clean, shiny white golf ball in his scarred hand and smiling subtly, satisfied. Golden hour warm, reflective lighting. Muted colors, cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Reflecting on the day's weirdly lucrative haul. CHARACTER: Muddy but satisfied diver rubbing a golf ball clean with his thumb. SETTING: Sun setting behind distant palm trees. OPENING: Start with close-up of dirty thumb cleaning the white ball then reveal his smiling face. CAMERA: slow push-in to face, slight smile. LIGHTING: golden hour warm, reflective lighting. ATMOSPHERE: Peaceful, rewarding, lucrative secret. LAST FRAME: Diver winks at the camera while tossing the clean ball up. QUALITY: 4K render, cartoon stylized."
+    }
+  ]
+}

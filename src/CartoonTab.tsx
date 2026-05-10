@@ -147,6 +147,25 @@ export default function CartoonTab() {
     }
   };
 
+  // ── Regenerate video (same reference image, clears previous result) ────────
+  const handleRegenerateVideo = async (sceneId: number, prompt: string, narrationLine?: string) => {
+    setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidUrl: undefined, vidLoading: true, statusText: 'Regenerating video...' } }));
+    const state = sceneStates[sceneId];
+    try {
+      const url = await (window as any).electronAPI.cartoonGenerateVideo({
+        sceneIndex: sceneId,
+        videoPrompt: prompt,
+        sourceImageUrl: state?.imgUrl,
+        narrationLine: narrationLine || '',
+        projectFolder
+      });
+      setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidLoading: false, vidUrl: url, statusText: undefined } }));
+    } catch (e) {
+      console.error(e);
+      setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidLoading: false, statusText: 'Video regeneration failed' } }));
+    }
+  };
+
   // ── Generate video ─────────────────────────────────────────────────────────
   const handleGenerateVideo = async (sceneId: number, prompt: string, narrationLine?: string) => {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidLoading: true, statusText: 'Generating video...' } }));
@@ -382,6 +401,7 @@ export default function CartoonTab() {
                         src={sceneStates[scene.id]?.imgUrl as string}
                         className="cartoon-media-preview"
                         alt="Scene preview"
+                        onError={(e) => console.error('[CartoonTab] Image failed to load:', sceneStates[scene.id]?.imgUrl, e)}
                       />
                     )}
                   </div>
@@ -397,8 +417,19 @@ export default function CartoonTab() {
                         disabled={sceneStates[scene.id]?.vidLoading || !sceneStates[scene.id]?.imgUrl}
                         title={!sceneStates[scene.id]?.imgUrl ? 'Generate image first' : ''}
                       >
-                        {sceneStates[scene.id]?.vidLoading ? '⏳ Generating...' : '🎥 Generate Video'}
+                        {sceneStates[scene.id]?.vidLoading && !sceneStates[scene.id]?.vidUrl
+                          ? '⏳ Generating...' : '🎥 Generate Video'}
                       </button>
+                      {sceneStates[scene.id]?.vidUrl && (
+                        <button
+                          className="cartoon-media-btn"
+                          onClick={() => handleRegenerateVideo(scene.id, scene.videoPrompt, scene.line)}
+                          disabled={sceneStates[scene.id]?.vidLoading}
+                          style={{ borderColor: '#60a5fa', color: '#60a5fa' }}
+                        >
+                          {sceneStates[scene.id]?.vidLoading ? '⏳ Regenerating...' : '🔄 Regenerate Video'}
+                        </button>
+                      )}
                       <button
                         className="cartoon-media-btn"
                         onClick={() => handleGenerateAudio(scene.id, scene.line)}
@@ -418,9 +449,10 @@ export default function CartoonTab() {
                     )}
                     {sceneStates[scene.id]?.audioUrl && (
                       <audio
-                        src={`media:///${(sceneStates[scene.id]?.audioUrl as string).replace(/\\/g, '/').replace('media:///', '')}`}
+                        src={sceneStates[scene.id]?.audioUrl as string}
                         controls
                         style={{ width: '100%', outline: 'none', marginTop: '6px' }}
+                        onError={(e) => console.error('[CartoonTab] Audio failed to load:', sceneStates[scene.id]?.audioUrl, e)}
                       />
                     )}
                   </div>

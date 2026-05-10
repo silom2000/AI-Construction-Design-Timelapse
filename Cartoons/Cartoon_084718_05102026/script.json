@@ -1,0 +1,74 @@
+{
+  "title": "Нос, который спасал жизни",
+  "profession": "Парфюмер-«нос»",
+  "era": "Грасс, Франция, 1890-е годы",
+  "characterProfile": {
+    "faceShape": "elongated oval",
+    "nose": "prominent aquiline aristocratic nose",
+    "lips": "thin pressed lips",
+    "ears": "neat small ears",
+    "eyes": "intelligent grey focused eyes",
+    "hair": "slightly disheveled curly graying hair",
+    "skinTone": "pale complexion",
+    "distinguishingFeature": "silk cravat and round spectacles",
+    "cartoonStyle": "slightly exaggerated, semi-realistic 3D cartoon, attentive expression"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "stage": "ХУК",
+      "line": "Знаешь, почему лучший парфюмер застраховал нос на миллион франков? Один чих мог стереть целую империю запахов.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, 45-year old man carefully holding his prominent aquiline nose with one finger. Soft dramatic side lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. intelligent grey focused eyes, round spectacles, 1890s silk cravat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Man delicately touching his precious nose with a gloved hand. CHARACTER: 45-year old perfumer, prominent aquiline aristocratic nose, round spectacles, 1890s attire. SETTING: 1890s Parisian office desk. OPENING: close-up of the insured nose then reveal. CAMERA: slow zoom-in on surprised face. LIGHTING: soft dramatic side lighting. ATMOSPHERE: floating dust particles, vintage insurance document on table. LAST FRAME: character looks at camera with wide surprised eyes holding his nose. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 2,
+      "stage": "УТРО",
+      "line": "Семь утра. Кофе пить нельзя, курить строго запрещено. Ты глубоко нюхаешь свежую ткань, чтобы очистить рецепторы.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, taking a deep breath from a crisp white linen cloth. Warm early morning golden light. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. prominent aquiline nose, intelligent grey eyes, messy curly hair.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Morning routine sniffing a plain white cloth instead of drinking coffee. CHARACTER: Perfumer wearing silk nightgown, round spectacles, slightly disheveled curly graying hair. SETTING: Sunlit classical French bedroom, 1890. OPENING: close-up of white fabric then reveal face breathing in. CAMERA: handheld follow shot of morning routine. LIGHTING: warm early morning golden light. ATMOSPHERE: calm, pristine, floating bright dust modes. LAST FRAME: man lowering cloth with a concentrated, awake expression. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 3,
+      "stage": "НАВЫК",
+      "line": "Перед тобой сотни крошечных флаконов на дубовом столе. Ты собираешь аромат дождя из двадцати капель абсолюта.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, highly concentrated facial expression, measuring a single drop of liquid from a tiny glass vial with a glass pipette. Focused task lighting, close-up hands. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. pale complexion, silk cravat, cluttered laboratory.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Dropping exact liquid amounts into a beaker. CHARACTER: Focused perfumer, intelligent grey eyes behind round spectacles, pressed thin lips. SETTING: 1890s perfumery lab in Grasse, hundreds of tiny glass bottles. OPENING: close-up of skilled hands at work holding a delicate glass pipette then reveal. CAMERA: close-up of skilled hands at work. LIGHTING: focused task lighting. ATMOSPHERE: intense concentration, warm glass reflections. LAST FRAME: the single drop hangs in the air mid-fall. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 4,
+      "stage": "СКРЫТАЯ ТРУДНОСТЬ",
+      "line": "Никаких рукопожатий на шумной улице Грасса. Чужой табак, чеснок на пальцах — всё это мгновенно уничтожит новую формулу.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, tired and paranoid mood, awkwardly pulling hands back from a friend offering a handshake on a cobblestone street. Overcast flat grey lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. prominent aquiline nose, worried grey eyes.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Refusing a polite handshake from a smoking gentleman. CHARACTER: Perfumer clutching his hands to his chest defensively, pale complexion, slightly disheveled grey hair. SETTING: 1890s cobblestone street in Grasse, passing horse carts. OPENING: close-up of a stranger's dirty hand reaching out then reveal. CAMERA: wide shot showing scale of problem. LIGHTING: overcast flat grey, tired mood. ATMOSPHERE: foggy, busy street, distinct smoke from stranger's pipe. LAST FRAME: character awkwardly bowing instead of shaking hands. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 5,
+      "stage": "СМЕШНОЙ МОМЕНТ",
+      "line": "За обедом ты сидишь в плотной кожаной маске. Кухарка подала луковый суп, а это верная гибель для носа.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, comedic distress, sitting at a dining table wearing a thick Plague-Doctor-like or bizarre leather nose mask, looking at a steaming bowl of French onion soup. Bright warm comedic lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. round spectacles worn over the mask.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Sitting at dinner table wearing a ridiculous thick leather mask to protect his nose from food odors. CHARACTER: Angry but comical perfumer with a strapped bizarre mask, curly graying hair sticking out. SETTING: Wealthy 1890s French dining room. OPENING: close-up of steaming onion soup then reveal. CAMERA: fast comedic cut, reaction shot. LIGHTING: bright warm comedic lighting. ATMOSPHERE: steam rising from soup, comedic domestic tension. LAST FRAME: man angrily crossing his arms wearing the ridiculous mask. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 6,
+      "stage": "ВЗАИМОДЕЙСТВИЕ",
+      "line": "Главный заказчик требует создать аромат юности для своей невесты. Ты тайком добавляешь каплю полыни для легкой горечи.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, subtle mischievous smile, handing a luxurious crystal perfume bottle to a wealthy aristocrat. Warm social ambient light. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. intelligent grey focused eyes, prominent aquiline nose, silk cravat.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Handing a tiny crystal bottle to a fancy wealthy client. CHARACTER: Perfumer with an intelligent, slightly mischievous glint in his grey eyes, thin pressed lips smiling. SETTING: Luxurious 1890s parlor room. OPENING: close-up of the glowing crystal bottle then reveal. CAMERA: two-shot interaction. LIGHTING: warm social ambient light. ATMOSPHERE: rich fabrics, elegant social dynamic, secret knowledge. LAST FRAME: perfumer winks slightly behind his round spectacles. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 7,
+      "stage": "КОНЕЦ ДНЯ",
+      "line": "За окном темнеет, рабочий день окончен. Ты смываешь гениальность с кожи простым куском вонючего хозяйственного мыла.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, exhausted but calm expression, meticulously washing hands in a copper basin with a rough block of plain soap. Blue hour, end-of-shift exhaustion lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. rolled up sleeves, pale complexion.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Washing hands meticulously in a dark lab to scrub away all floral scents. CHARACTER: Exhausted perfumer, spectacles removed, wet face, messy curly graying hair. SETTING: Darkened laboratory, copper washbasin, 1890s Grasse evening out the window. OPENING: close-up of sudsy hands rubbing a rough soap block then reveal. CAMERA: slow pull-back reveal of empty workspace. LIGHTING: blue hour, end-of-shift exhaustion. ATMOSPHERE: quiet, wet sink, shadows of hundreds of bottles. LAST FRAME: character staring blankly at his clean, scentless hands. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 8,
+      "stage": "ВЫВОД",
+      "line": "Твои духи сведут с ума блестящих графов на роскошных балах. А ты так и не попробуешь жареный лук.",
+      "imagePrompt": "stylized 3D animated perfumer worker, semi-realistic cartoon style, slightly exaggerated facial features, melancholic but proud smile, looking out at the glowing city lights of Grasse from his window. Golden hour warm, reflective lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. prominent aquiline nose catching the light, intelligent grey eyes.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Looking into the camera with a bittersweet, proud realization of his life's sacrifice. CHARACTER: Perfumer, prominent aquiline aristocratic nose, silk cravat, neat appearance returned. SETTING: Lab counter smelling a final masterpiece on a paper strip. OPENING: close-up of face taking a slow, emotional breath then reveal. CAMERA: slow push-in to face, slight smile. LIGHTING: golden hour warm, reflective. ATMOSPHERE: dust motes dancing in warm light, elegant, poetic. LAST FRAME: a proud, slightly sad half-smile lingering. QUALITY: 4K cartoon render, period-accurate props."
+    }
+  ]
+}

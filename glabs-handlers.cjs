@@ -11,7 +11,7 @@ const GLABS_EXE_PATH = process.env.GLABS_EXE_PATH || 'D:\\Open_Project\\G-Labs-A
 // Папки для сохранения результатов по разделам
 const SECTION_DIRS = {
     skeleton: path.join(__dirname, 'SkeletonShorts'),
-    timelapse: path.join(__dirname, 'Images'),
+    timelapse: path.join(__dirname, 'CinematicTimelapse'),
     health: path.join(__dirname, 'SkeletonShorts'),
     objects: path.join(__dirname, 'SkeletonShorts'),
 };
@@ -396,7 +396,10 @@ function registerGLabsHandlers(ipcMain) {
                 const destPath = path.join(baseDir, destName);
 
                 await downloadGLabsFile(fileUrl, destPath);
-                savedPaths.push(`media:///${destPath.replace(/\\/g, '/')}?t=${Date.now()}`);
+                
+                const imgBuffer = fs.readFileSync(destPath);
+                const imgExt = ext === 'png' ? 'image/png' : 'image/jpeg';
+                savedPaths.push(`data:${imgExt};base64,${imgBuffer.toString('base64')}`);
             }
 
             event.sender.send('glabs-task-progress', { taskId, status: 'completed', type: 'image' });

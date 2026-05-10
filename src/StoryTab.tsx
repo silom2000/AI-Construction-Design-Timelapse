@@ -185,11 +185,6 @@ export function StoryTab() {
     }
   };
 
-  const handleAssembleStory = async () => {
-    // We will call assemble logic soon
-    alert("Audio generated properly! Assembly feature coming in next step.");
-  };
-
   const handleGenerateVideo = async (sceneId: number, prompt: string, narrationLine?: string) => {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidLoading: true, statusText: 'Starting video generation...' } }));
     const state = sceneStates[sceneId];

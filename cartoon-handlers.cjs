@@ -432,7 +432,11 @@ ${ideaContext}
                 throw new Error("No image paths returned from G-Labs generation");
             }
 
-            return `media:///${savedPaths[0].replace(/\\/g, '/')}?t=${Date.now()}`;
+            const imgPath = savedPaths[0];
+            const imgBuffer = fs.readFileSync(imgPath);
+            const imgExt = path.extname(imgPath).toLowerCase();
+            const imgMime = imgExt === '.png' ? 'image/png' : imgExt === '.webp' ? 'image/webp' : 'image/jpeg';
+            return `data:${imgMime};base64,${imgBuffer.toString('base64')}`;
         } catch (error) {
             console.error(`[Cartoon] Image generation failed for scene ${sceneIndex}:`, error);
             throw error;
@@ -449,7 +453,10 @@ ${ideaContext}
                 ? path.join(CARTOON_DIRS.base, projectFolder, 'Audio')
                 : CARTOON_DIRS.audio;
             const audioPath = await cartoonGenerateVoice(text, language, customDir);
-            return audioPath;
+            
+            // Return as base64 data URL to bypass protocol issues on Windows
+            const audioBuffer = fs.readFileSync(audioPath);
+            return `data:audio/mpeg;base64,${audioBuffer.toString('base64')}`;
         } catch (e) {
             console.error(`[Cartoon] Audio generation failed for scene ${sceneIndex}:`, e.message);
             throw e;

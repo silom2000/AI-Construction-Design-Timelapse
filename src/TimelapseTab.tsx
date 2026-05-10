@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Play, Image as ImageIcon, Video, CheckCircle, RotateCw, RefreshCw, Download, Zap } from 'lucide-react';
-import './TimelapseTab.css'; // Let's reuse or update the existing css
+import { Play, Image as ImageIcon, Video, CheckCircle, RotateCw, RefreshCw, Download, Zap, Copy, Check } from 'lucide-react';
+import './TimelapseTab.css';
 
 export interface CinematicPromptData {
     contextConfirmation: string;
@@ -16,6 +16,7 @@ export interface CinematicPromptData {
         prompt: string;
         platform: string;
     }[];
+    engineerNotes?: string;
 }
 
 const TimelapseTab: React.FC = () => {
@@ -24,20 +25,17 @@ const TimelapseTab: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // IDLE State
-    const [startCommand, setStartCommand] = useState('');
-
     // SELECTION State
-    const [environments, setEnvironments] = useState<string[]>([]);
+    const [environments, setEnvironments] = useState<{id: number; en: string; ru: string}[]>([]);
 
     // EXECUTION State
     const [promptData, setPromptData] = useState<CinematicPromptData | null>(null);
 
     // Assets State
     const [generatedImages, setGeneratedImages] = useState<(string | null)[]>([null, null, null, null]);
-    const [generatedVideos, setGeneratedVideos] = useState<(string | null)[]>([null, null, null]);
+    const [generatedVideos, setGeneratedVideos] = useState<(string | null)[]>([null, null, null, null]);
     const [generatingImages, setGeneratingImages] = useState<boolean[]>([false, false, false, false]);
-    const [generatingVideos, setGeneratingVideos] = useState<boolean[]>([false, false, false]);
+    const [generatingVideos, setGeneratingVideos] = useState<boolean[]>([false, false, false, false]);
 
     // Assembly State
     const [assembling, setAssembling] = useState(false);
@@ -45,6 +43,7 @@ const TimelapseTab: React.FC = () => {
 
     const [selectedImageModel, setSelectedImageModel] = useState('imagen4');
     const [timelapseID, setTimelapseID] = useState('');
+    const [customIdea, setCustomIdea] = useState('');
 
     const IMAGE_MODELS = [
         { value: 'imagen4', label: 'Imagen 4', desc: 'Google High Quality' },
@@ -53,15 +52,11 @@ const TimelapseTab: React.FC = () => {
     ];
 
     const handleStart = async () => {
-        if (startCommand.toLowerCase().trim() !== 'start') {
-            setError('Please type exactly "start" to begin the cinematic workflow.');
-            return;
-        }
         setError(null);
         setIsGenerating(true);
         try {
             const envs = await window.electronAPI.timelapseGetEnvironments();
-            setEnvironments(envs);
+            setEnvironments(envs as any);
             setPipelineState('SELECTION');
         } catch (err: any) {
             setError(err.message);
@@ -70,8 +65,29 @@ const TimelapseTab: React.FC = () => {
         }
     };
 
+    const handleCustomStart = async () => {
+        if (!customIdea.trim()) return;
+        setError(null);
+        setIsGenerating(true);
+        try {
+            const now = new Date();
+            const tid = `Timelapse_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}_${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getFullYear()}`;
+            setTimelapseID(tid);
+
+            const data = await window.electronAPI.timelapseGenerateCustomPrompts(customIdea);
+            setPromptData(data);
+            setPipelineState('EXECUTION');
+            setGeneratedImages([null, null, null, null]);
+            setGeneratedVideos([null, null, null, null]);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const handleSelectEnvironment = async (index: number) => {
-        if (index < 0 || index > 9) return;
+        if (index < 0 || index > 3) return;
 
         setError(null);
         setIsGenerating(true);
@@ -80,12 +96,12 @@ const TimelapseTab: React.FC = () => {
             const tid = `Timelapse_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}_${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getFullYear()}`;
             setTimelapseID(tid);
 
-            const data = await window.electronAPI.timelapseGeneratePrompts(index + 1, environments[index]);
+            const data = await window.electronAPI.timelapseGeneratePrompts(index + 1, environments[index] as any);
             setPromptData(data);
             setPipelineState('EXECUTION');
             // reset assets
             setGeneratedImages([null, null, null, null]);
-            setGeneratedVideos([null, null, null]);
+            setGeneratedVideos([null, null, null, null]);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -108,21 +124,19 @@ const TimelapseTab: React.FC = () => {
 
     const generateVideo = async (videoIndex: number) => {
         if (!promptData) return;
-        if (!generatedImages[videoIndex]) {
-            setError(`Please generate Image ${videoIndex + 1} first, it acts as the starting frame for Video ${videoIndex + 1}.`);
+        const requiredImageIdx = videoIndex === 3 ? 3 : videoIndex;
+        if (!generatedImages[requiredImageIdx]) {
+            const label = videoIndex === 3
+                ? 'Please generate Image 4 (FULLY FURNISHED) first — it is the starting frame for the Cinematic Tour.'
+                : `Please generate Image ${videoIndex + 1} first, it acts as the starting frame for Video ${videoIndex + 1}.`;
+            setError(label);
             return;
         }
         
         setGeneratingVideos(prev => { const n = [...prev]; n[videoIndex] = true; return n; });
         try {
-            // Video 1 uses Image 1 as start. Video 2 uses Image 2 (or end of Video 1).
-            // Based on the prompt: "Video 1: Image 1 -> Image 2"
-            // We pass the index and the prompt. The backend will figure out the source image mapping.
             const url = await window.electronAPI.timelapseGenerateVideo(videoIndex, promptData.videos[videoIndex].prompt, timelapseID);
             setGeneratedVideos(prev => { const n = [...prev]; n[videoIndex] = url; return n; });
-            
-            // NOTE: If we want strict "Image 1 -> Image 2", the backend script needs to handle the interpolation, 
-            // or we use standard img2video from Image 1 using Pixverse.
         } catch (e: any) {
             setError(`Video ${videoIndex + 1} Error: ${e.message}`);
         } finally {
@@ -132,7 +146,7 @@ const TimelapseTab: React.FC = () => {
 
     const assembleFinal = async () => {
         if (generatedVideos.includes(null)) {
-            setError('Please generate all 3 videos before assembling.');
+            setError('Please generate all 4 videos before assembling.');
             return;
         }
         setAssembling(true);
@@ -147,13 +161,20 @@ const TimelapseTab: React.FC = () => {
         }
     };
 
+    const [copiedIndex, setCopiedIndex] = useState<{type: 'img' | 'vid', idx: number} | null>(null);
+
+    const copyToClipboard = (text: string, type: 'img' | 'vid', idx: number) => {
+        navigator.clipboard.writeText(text);
+        setCopiedIndex({ type, idx });
+        setTimeout(() => setCopiedIndex(null), 2000);
+    };
+
     const resetWorkflow = () => {
         setPipelineState('IDLE');
-        setStartCommand('');
         setEnvironments([]);
         setPromptData(null);
         setGeneratedImages([null, null, null, null]);
-        setGeneratedVideos([null, null, null]);
+        setGeneratedVideos([null, null, null, null]);
         setFinalVideoUrl(null);
         setError(null);
     };
@@ -203,100 +224,109 @@ const TimelapseTab: React.FC = () => {
                 </div>
             )}
 
+            {/* LOADING OVERLAY */}
+            {isGenerating && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'relative', width: '80px', height: '80px', marginBottom: '1.5rem' }}>
+                        <div className="spin" style={{ width: '100%', height: '100%', border: '4px solid rgba(59,130,246,0.1)', borderTop: '4px solid #3b82f6', borderRadius: '50%' }} />
+                    </div>
+                    <h2 style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Генерация пайплайна...</h2>
+                    <p style={{ color: '#64748b', marginTop: '0.5rem' }}>ИИ проектирует архитектурное решение и промпты</p>
+                </div>
+            )}
+
             {/* STATE 1: IDLE */}
             {pipelineState === 'IDLE' && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1.5rem' }}>
-                    <div style={{ textAlign: 'center', maxWidth: '500px' }}>
-                        <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600 }}>STATE 1 — IDLE</h2>
-                        <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
-                            You are interacting with a strict cinematic AI workflow generator. Type "start" to enter Selection Mode.
-                        </p>
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                            <input 
-                                type="text" 
-                                value={startCommand} 
-                                onChange={(e) => setStartCommand(e.target.value)}
-                                placeholder="start"
-                                onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-                                style={{ padding: '0.75rem 1rem', background: '#1e293b', border: '1px solid #334155', color: 'white', borderRadius: '0.5rem', width: '200px', textAlign: 'center', fontSize: '1.2rem', textTransform: 'lowercase' }}
-                            />
-                            <button 
-                                onClick={handleStart} 
-                                disabled={isGenerating}
-                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '0.5rem', fontWeight: 700, cursor: isGenerating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                            >
-                                {isGenerating ? <RefreshCw className="spin" size={20} /> : <Play size={20} />} 
-                                EXECUTE
-                            </button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)', border: '2px solid #3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem', boxShadow: '0 0 40px rgba(59,130,246,0.25)' }}>
+                        <Video size={36} color="#3b82f6" />
+                    </div>
+                    <h2 style={{ margin: '0 0 0.75rem 0', fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.5px', textAlign: 'center', color: '#f1f5f9' }}>Cinematic Timelapse</h2>
+                    <p style={{ margin: '0 0 0.5rem 0', color: '#64748b', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase', textAlign: 'center' }}>AI · CONSTRUCTION · 4-STAGE PIPELINE</p>
+                    <div style={{ width: '48px', height: '2px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', borderRadius: '2px', margin: '1.5rem 0 2rem 0' }} />
+                    <div style={{ width: '100%', maxWidth: '500px', background: 'rgba(15, 23, 42, 0.5)', padding: '2rem', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                        <textarea 
+                            value={customIdea}
+                            onChange={(e) => setCustomIdea(e.target.value)}
+                            placeholder="Опишите вашу идею проекта (например: Бассейн-водопад на краю обрыва, или Роскошная вилла под куполом в лесу...)"
+                            style={{ minHeight: '120px', marginBottom: '1rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '1rem', borderRadius: '0.75rem', fontSize: '0.95rem', width: '100%', resize: 'none', outline: 'none' }}
+                        />
+                        <button onClick={handleCustomStart} disabled={isGenerating || !customIdea.trim()} className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)', marginBottom: '0.5rem' }}>
+                            {isGenerating ? <RefreshCw className="spin" size={20} /> : <Zap size={20} />}
+                            {isGenerating ? 'ГЕНЕРАЦИЯ ПАЙПЛАЙНА...' : 'СОЗДАТЬ ПО МОЕЙ ИДЕЕ'}
+                        </button>
+                        
+                        <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+                            <span style={{ color: '#475569', fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap' }}>ИЛИ ВЫБРАТЬ ИЗ ПРЕДЛОЖЕННЫХ</span>
+                            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
                         </div>
+
+                        <button onClick={handleStart} disabled={isGenerating} className="btn-primary" style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            {isGenerating ? <RefreshCw className="spin" size={18} /> : <RotateCw size={18} />} 
+                            {isGenerating ? 'ГЕНЕРАЦИЯ ВАРИАНТОВ...' : 'ПРЕДЛОЖИТЬ 4 ИДЕИ ОТ ИИ'}
+                        </button>
                     </div>
                 </div>
             )}
 
             {/* STATE 2: SELECTION */}
             {pipelineState === 'SELECTION' && (
-                <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-                    <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600, borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>STATE 2 — SELECTION MODE</h2>
-                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>Select an environment for the cinematic transformation.</p>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                        <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9' }}>Идеи для трансформации</h2>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>Нажмите на карточку, чтобы запустить генерацию промптов</p>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                         {environments.map((env, idx) => (
-                            <button 
-                                key={idx}
-                                onClick={() => handleSelectEnvironment(idx)}
-                                disabled={isGenerating}
-                                style={{ 
-                                    background: '#1e293b', border: '1px solid #334155', padding: '1rem', borderRadius: '0.5rem', 
-                                    color: '#e2e8f0', textAlign: 'left', cursor: isGenerating ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex', gap: '1rem', alignItems: 'flex-start'
-                                }}
-                                onMouseOver={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                                onMouseOut={(e) => e.currentTarget.style.borderColor = '#334155'}
-                            >
-                                <div style={{ background: '#3b82f6', color: 'white', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0 }}>
-                                    {idx + 1}
-                                </div>
-                                <div style={{ lineHeight: '1.4' }}>{env.replace(/^\d+[\.\)]\s*/, '')}</div>
+                            <button key={idx} onClick={() => handleSelectEnvironment(idx)} className="model-chip" style={{ padding: '2rem', textAlign: 'left', display: 'block', background: '#111827', border: '1px solid #1e2937', borderRadius: '1rem' }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '0.5rem' }}>{env.ru}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#475569', fontStyle: 'italic' }}>{env.en}</div>
                             </button>
                         ))}
                     </div>
-                    {isGenerating && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#3b82f6' }}>
-                            <RefreshCw className="spin" size={20} /> Generating Photorealistic Pipeline...
-                        </div>
-                    )}
                 </div>
             )}
 
             {/* STATE 3: EXECUTION */}
             {pipelineState === 'EXECUTION' && promptData && (
-                <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '1rem 1.5rem', borderRadius: '0.5rem', marginBottom: '2rem' }}>
-                        <span style={{ color: '#3b82f6', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '1px' }}>STEP 1 — CONTEXT CONFIRMATION</span>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', paddingBottom: '4rem' }}>
+                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '1rem 1.5rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
+                        <span style={{ color: '#3b82f6', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '1px' }}>CONTEXT CONFIRMATION</span>
                         <p style={{ margin: '0.5rem 0 0 0', fontSize: '1.1rem', color: '#e2e8f0' }}>{promptData.contextConfirmation}</p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '2rem' }}>
+                    {promptData.engineerNotes && (
+                        <div style={{ background: 'rgba(16, 185, 129, 0.05)', borderLeft: '3px solid #10b981', padding: '0.75rem 1.25rem', borderRadius: '0 0.5rem 0.5rem 0', marginBottom: '2rem' }}>
+                            <div style={{ color: '#10b981', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <CheckCircle size={12} /> ENGINEER'S LOG (Tech Specs)
+                            </div>
+                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.5' }}>{promptData.engineerNotes}</p>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                         {/* IMAGES COLUMN */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8' }}>STEP 2 — 4 PHOTOREALISTIC IMAGE PROMPTS</h3>
+                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 2 — 4 PHOTOREALISTIC IMAGE PROMPTS</h3>
                             {promptData.images.map((img, idx) => (
                                 <div key={idx} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '0.5rem', overflow: 'hidden' }}>
                                     <div style={{ padding: '1rem', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ fontWeight: 700, color: '#f8fafc' }}>{img.title}</div>
-                                        <button 
-                                            onClick={() => generateImage(idx)}
-                                            disabled={generatingImages[idx]}
-                                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                                        >
-                                            {generatingImages[idx] ? <RefreshCw className="spin" size={14} /> : <ImageIcon size={14} />} {generatedImages[idx] ? 'REGENERATE' : 'GENERATE'}
+                                        <div style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {img.title}
+                                            <button 
+                                                onClick={() => copyToClipboard(img.prompt, 'img', idx)}
+                                                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.25rem' }}
+                                                title="Copy Prompt"
+                                            >
+                                                {copiedIndex?.type === 'img' && copiedIndex?.idx === idx ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                                            </button>
+                                        </div>
+                                        <button onClick={() => generateImage(idx)} disabled={generatingImages[idx] || (idx > 0 && !generatedImages[idx - 1])} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}>
+                                            {generatingImages[idx] ? <RefreshCw className="spin" size={14} /> : <ImageIcon size={14} />} {hasImage(idx) ? 'REGENERATE' : 'GENERATE'}
                                         </button>
                                     </div>
-                                    <div style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>
-                                        {img.prompt}
-                                        <div style={{ marginTop: '0.5rem', color: '#64748b', fontStyle: 'italic' }}>Platform: {img.platform}</div>
-                                    </div>
+                                    <div className="clamped-prompt" style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>{img.prompt}</div>
                                     {generatedImages[idx] && (
                                         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', background: '#000' }}>
                                             <img src={generatedImages[idx]!} alt={img.title} style={{ maxHeight: '400px', width: 'auto', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '4px' }} />
@@ -308,52 +338,74 @@ const TimelapseTab: React.FC = () => {
 
                         {/* VIDEOS COLUMN */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8' }}>STEP 3 — 3 IMAGE-TO-VIDEO PROMPTS</h3>
+                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 3 — 4 VIDEO PROMPTS (TRANSITIONS)</h3>
                             {promptData.videos.map((vid, idx) => (
                                 <div key={idx} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '0.5rem', overflow: 'hidden' }}>
                                     <div style={{ padding: '1rem', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ fontWeight: 700, color: '#f8fafc' }}>{vid.title}</div>
-                                        <button 
-                                            onClick={() => generateVideo(idx)}
-                                            disabled={generatingVideos[idx] || !generatedImages[idx]}
-                                            style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', cursor: (!generatedImages[idx]) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: (!generatedImages[idx]) ? 0.5 : 1 }}
-                                        >
-                                            {generatingVideos[idx] ? <RefreshCw className="spin" size={14} /> : <Video size={14} />} ANIMATE
+                                        <div style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {vid.title}
+                                            <button 
+                                                onClick={() => copyToClipboard(vid.prompt, 'vid', idx)}
+                                                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.25rem' }}
+                                                title="Copy Prompt"
+                                            >
+                                                {copiedIndex?.type === 'vid' && copiedIndex?.idx === idx ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                                            </button>
+                                        </div>
+                                        <button onClick={() => generateVideo(idx)} disabled={generatingVideos[idx] || !generatedImages[idx === 3 ? 3 : idx]} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: '#8b5cf6' }}>
+                                            {generatingVideos[idx] ? <RefreshCw className="spin" size={14} /> : <Video size={14} />} {generatedVideos[idx] ? 'RE-ANIMATE' : 'ANIMATE'}
                                         </button>
                                     </div>
-                                    <div style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>
-                                        {vid.prompt}
-                                        <div style={{ marginTop: '0.5rem', color: '#64748b', fontStyle: 'italic' }}>Platform: {vid.platform}</div>
-                                    </div>
+                                    <div className="clamped-prompt" style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>{vid.prompt}</div>
                                     {generatedVideos[idx] && (
                                         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', background: '#000' }}>
-                                            <video src={generatedVideos[idx]!} controls loop autoPlay muted style={{ maxHeight: '400px', width: 'auto', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '4px' }} />
+                                            <video src={generatedVideos[idx]!} controls autoPlay loop style={{ maxHeight: '400px', width: 'auto', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '4px' }} />
                                         </div>
                                     )}
                                 </div>
                             ))}
 
-                            {/* ASSEMBLY BLOCK */}
-                            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(145deg, #1e1b4b, #312e81)', borderRadius: '0.5rem', border: '1px solid #4338ca' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Zap size={20} color="#fbbf24" /> FINAL ASSEMBLY</h3>
-                                    <button 
-                                        onClick={assembleFinal}
-                                        disabled={assembling || generatedVideos.includes(null)}
-                                        style={{ background: '#fbbf24', color: '#78350f', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '4px', fontSize: '1rem', fontWeight: 800, cursor: (generatedVideos.includes(null)) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: (generatedVideos.includes(null)) ? 0.5 : 1 }}
-                                    >
-                                        {assembling ? <RefreshCw className="spin" size={18} /> : <CheckCircle size={18} />} ASSEMBLE
-                                    </button>
+                            {/* ASSEMBLY SECTION */}
+                            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)', border: '1px solid #312e81', borderRadius: '1rem', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                    <Zap size={20} color={generatedVideos.every(v => !!v) ? '#fbbf24' : '#475569'} fill={generatedVideos.every(v => !!v) ? '#fbbf24' : 'transparent'} />
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1.1rem', fontWeight: 800 }}>FINAL ASSEMBLY</h3>
                                 </div>
-                                <p style={{ color: '#a5b4fc', fontSize: '0.85rem', marginTop: '0.75rem' }}>Stitches the 3 transition videos together and applies the Bouncy Swing-Pop background music.</p>
                                 
+                                <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                                    {generatedVideos.every(v => !!v) 
+                                        ? 'Все части готовы! Нажмите кнопку для склейки финального ролика.' 
+                                        : 'Сгенерируйте все 4 видео-перехода, чтобы активировать финальную сборку.'}
+                                </p>
+
+                                <button 
+                                    onClick={assembleFinal} 
+                                    disabled={assembling || generatedVideos.includes(null)} 
+                                    className="btn-primary" 
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '1rem', 
+                                        background: generatedVideos.includes(null) ? '#1e293b' : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+                                        color: generatedVideos.includes(null) ? '#475569' : '#fff',
+                                        cursor: (assembling || generatedVideos.includes(null)) ? 'not-allowed' : 'pointer',
+                                        opacity: generatedVideos.includes(null) ? 0.6 : 1,
+                                        boxShadow: generatedVideos.includes(null) ? 'none' : '0 8px 24px rgba(79, 70, 229, 0.3)'
+                                    }}
+                                >
+                                    {assembling ? <RefreshCw className="spin" size={24} /> : <Zap size={24} fill={generatedVideos.includes(null) ? 'none' : 'white'} />} 
+                                    {assembling ? 'ASSEMBLING...' : 'ASSEMBLE FINAL'}
+                                </button>
+
                                 {finalVideoUrl && (
-                                    <div style={{ marginTop: '1.5rem', background: '#000', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                        <video src={finalVideoUrl} controls autoPlay muted loop style={{ maxHeight: '400px', width: 'auto', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '4px' }} />
-                                        <div style={{ marginTop: '1rem' }}>
-                                            <a href={finalVideoUrl} download className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#10b981', color: 'white', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
+                                    <div style={{ marginTop: '2rem', background: '#000', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #312e81' }}>
+                                        <video src={finalVideoUrl} controls autoPlay loop style={{ width: '100%', borderRadius: '0.5rem' }} />
+                                        <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+                                            <a href={finalVideoUrl} download style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#10b981', color: 'white', textDecoration: 'none', borderRadius: '0.5rem', fontWeight: 800, fontSize: '0.9rem' }}>
                                                 <Download size={18} /> DOWNLOAD FINAL
                                             </a>
+                                            <div style={{ fontSize: '0.65rem', color: '#475569', wordBreak: 'break-all', fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '4px', width: '100%' }}>
+                                                {decodeURIComponent(finalVideoUrl.replace('media:///', '').split('?')[0]).replace(/\//g, '\\')}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -364,6 +416,10 @@ const TimelapseTab: React.FC = () => {
             )}
         </div>
     );
+
+    function hasImage(idx: number) {
+        return !!generatedImages[idx];
+    }
 };
 
 export default TimelapseTab;

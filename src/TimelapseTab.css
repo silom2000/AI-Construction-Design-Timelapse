@@ -272,3 +272,18 @@
 .spin {
     animation: spin 1s linear infinite;
 }
+
+.clamped-prompt {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.3s ease;
+}
+
+.clamped-prompt:hover {
+    -webkit-line-clamp: unset;
+    display: block;
+    overflow: visible;
+}

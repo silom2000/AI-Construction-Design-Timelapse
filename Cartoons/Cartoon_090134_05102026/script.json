@@ -1,0 +1,74 @@
+{
+  "title": "Le Pire Métier de Rêve",
+  "profession": "Ermite de jardin ornemental",
+  "era": "Angleterre, 18e siècle",
+  "characterProfile": {
+    "faceShape": "elongated angular",
+    "nose": "crooked prominent nose",
+    "lips": "thin smirk-ready lips",
+    "ears": "slightly pointy ears",
+    "eyes": "cunning blue narrowed eyes",
+    "hair": "incredibly long tangled graying beard and stringy hair",
+    "skinTone": "pale but dirt-smudged complexion",
+    "distinguishingFeature": "fake dirt smudges and extremely long toenails",
+    "cartoonStyle": "slightly exaggerated, semi-realistic 3D cartoon, theatrical lazy vibe"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "stage": "ХУК",
+      "line": "Tu veux gagner sept cents guinées en ne faisant rien ? Facile. Ne te lave jamais.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes, incredibly long tangled graying beard and stringy hair, pale but dirt-smudged complexion. 40-year-old man holding a shiny gold coin while looking filthy. Soft dramatic side lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Hermit staring at gold coin. CHARACTER: 40-year-old dirty man with a massive tangled beard and cunning blue eyes. SETTING: Dark stone cave interior. OPENING: close-up of a perfectly shiny gold coin in a filthy hand then reveal. CAMERA: slow zoom-in on surprised face. LIGHTING: soft dramatic side lighting. ATMOSPHERE: dust motes floating in a single shaft of light. LAST FRAME: character looks at camera with a greedy smirk. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 2,
+      "stage": "УТРО",
+      "line": "Huit heures. Ton lit est une fausse grotte froide. Le maître attend des invités aujourd'hui.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes, incredibly long tangled graying beard and stringy hair. Waking up on a pile of straw in an artificial garden cave. Warm early morning golden light. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Waking up for work. CHARACTER: sleepy hermit in tattered druid-like robes stretching. SETTING: 18th-century artificial garden grotto with mock ruins. OPENING: close-up of a spiderweb then reveal the yawning hermit. CAMERA: handheld follow shot of morning routine. LIGHTING: warm early morning golden light. ATMOSPHERE: damp, chilly, morning fog rolling in. LAST FRAME: hermit exaggeratedly sighing. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 3,
+      "stage": "ГЛАВНЫЙ ИНСТРУМЕНТ / НАВЫК",
+      "line": "Ta seule compétence ? Avoir l’air profondément sage. En réalité, tu penses au délicieux pouding.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes (half-closed in fake meditation), incredibly long tangled graying beard and stringy hair. Sitting cross-legged holding a dusty tome, pretending to read. Focused task lighting, close-up hands. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Faking meditation. CHARACTER: unkempt hermit looking very zen but with a tiny droplet of drool. SETTING: Stone stool inside a mossy faux cave. OPENING: close-up of skilled dirty hands turning an ancient book's page then reveal face. CAMERA: close-up of skilled hands at work. LIGHTING: focused task lighting. ATMOSPHERE: intense quiet, fake spiritual aura. LAST FRAME: eyes shoot open as stomach growls. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 4,
+      "stage": "СКРЫТАЯ ТРУДНОСТЬ",
+      "line": "Le vrai cauchemar ? Ce contrat de sept ans stipule l'interdiction de couper tes ongles d'orteils.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes looking distressed, incredibly long tangled graying beard and stringy hair. Looking down at grotesquely long, curling toenails sticking out of crude sandals. Overcast flat grey lighting, tired mood. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Examining feet in despair. CHARACTER: hunched dirty man in a massive robe. SETTING: Muddy path outside the grotto. OPENING: close-up of terrifyingly long curled toenails then reveal. CAMERA: wide shot showing scale of problem. LIGHTING: overcast flat grey, tired mood. ATMOSPHERE: dreary, uncomfortable, slightly disgusting. LAST FRAME: character struggles to take a step. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 5,
+      "stage": "СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ",
+      "line": "L'aristocrate te présente avec admiration. Dès qu'il tourne le dos, tu grignotes ses précieux biscuits.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes, incredibly long tangled graying beard. Hiding a half-eaten fancy Georgian biscuit behind his back while a blurry Lord poses in the foreground. Bright warm comedic lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Sneaking food during a tour. CHARACTER: dirty hermit trying to chew silently. SETTING: Exterior of the grotto, manicured Georgian garden. OPENING: close-up of a fancy powdered wig (Lord) then reveal the hermit eating. CAMERA: fast comedic cut, reaction shot. LIGHTING: bright warm comedic lighting. ATMOSPHERE: awkward, sunny day, formal meets filthy. LAST FRAME: hermit's cheeks stuffed like a chipmunk. QUALITY: 4K cartoon render, period-accurate props."
+    },
+    {
+      "id": 6,
+      "stage": "ВЗАИМОДЕЙСТВИЕ",
+      "line": "Une riche marquise te supplie d'expliquer le sens de la vie. Tu grognes. Elle adore.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes, incredibly long tangled graying beard. Staring blankly at a highly decorated, powdered wealthy lady leaning in closely. Warm social ambient light. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Giving fake profound advice. CHARACTER: grumpy hermit interacting with a glamorous overdressed marquise. SETTING: Threshold of the wet cave. OPENING: close-up of the marquise's expectant face then reveal the unbothered hermit. CAMERA: two-shot interaction. LIGHTING: warm social ambient light. ATMOSPHERE: socially absurd, stark contrast of classes. LAST FRAME: marquise gasping in awe at his burp. QUALITY: 4K cartoon render."
+    },
+    {
+      "id": 7,
+      "stage": "КОНЕЦ ДНЯ",
+      "line": "Minuit. Le domaine s'endort. Tu lâches enfin ton livre de prières pour une bière cachée.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes, incredibly long tangled graying beard. Relaxing alone, tossing a heavy book aside and pulling out a hidden wooden mug. Blue hour, end-of-shift exhaustion. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Breaking character at night. CHARACTER: exhausted actor shedding his fake holy persona. SETTING: Dark grotto illuminated by a single candle. OPENING: close-up of a heavy book hitting the floor then reveal. CAMERA: slow pull-back reveal of empty workspace. LIGHTING: blue hour, end-of-shift exhaustion. ATMOSPHERE: quiet relief, cool night air, lonely shadows. LAST FRAME: long sip from an old mug, eyes closed. QUALITY: 4K cartoon render."
+    },
+    {
+      "id": 8,
+      "stage": "ВЫВОД",
+      "line": "Tu es un simple nain de jardin humain. Mais dans six ans, tu seras incroyablement riche.",
+      "imagePrompt": "stylized 3D animated ornamental garden hermit worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, cunning blue narrowed eyes, incredibly long tangled graying beard. Smirking at the camera, marking tally strokes on a stone wall. Golden hour warm, reflective. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render.",
+      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: Plotting his wealthy future. CHARACTER: dirty but victorious hermit scratching a mark on the wall. SETTING: Inside the grotto, sunset light pouring in. OPENING: close-up of tally marks on stone then reveal smiling face. CAMERA: slow push-in to face, slight smile. LIGHTING: golden hour warm, reflective. ATMOSPHERE: triumphant, patient, cunning. LAST FRAME: a knowing wink to the viewer. QUALITY: 4K cartoon render."
+    }
+  ]
+}

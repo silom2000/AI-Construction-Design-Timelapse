@@ -455,7 +455,10 @@ For EACH scene (exactly 6), generate following JSON:
             }
         });
         
-        return `media:///${savedPaths[0].replace(/\\/g, '/')}?t=${Date.now()}`;
+        const imgBuffer = fs.readFileSync(savedPaths[0]);
+        const imgExt = path.extname(savedPaths[0]).toLowerCase();
+        const imgMime = imgExt === '.png' ? 'image/png' : imgExt === '.webp' ? 'image/webp' : 'image/jpeg';
+        return `data:${imgMime};base64,${imgBuffer.toString('base64')}`;
     });
 
     ipcMain.handle('skeleton-generate-video', async (event, { sceneIndex, videoPrompt, ltxVideoPrompt, scriptLine, fullScript, language, videoModel, audioUrl, projectFolder }) => {
