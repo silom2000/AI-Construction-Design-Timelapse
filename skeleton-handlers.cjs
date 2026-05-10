@@ -415,13 +415,13 @@ For EACH scene (exactly 6), generate following JSON:
         let scenes = JSON.parse(cleanJSON).scenes.map(s => ({
             ...s,
             // TASK 2: IMAGE PROMPTS (Full character description repeated verbatim per prompt.md)
-            image_prompt: `A full-body realistic humanoid SKELETON character with a semi-transparent human-shaped outer body shell. The character has: A fully exposed skull (NO skin, NO face, NO muscles). Clean, smooth, anatomically accurate skull. Large, round eye sockets with visible eyeballs. Bright yellow irises with dark pupils. Neutral to slightly vacant expression. Visible upper and lower teeth. Smooth cranium with no cracks, damage, decay, or horror elements. The body is a semi-transparent, glass-like human silhouette that clearly reveals the entire internal skeletal structure from head to toe. Skeleton details: Ivory / pale beige bones. Smooth, medical-grade surfaces. Accurate human proportions. Clearly defined rib cage, spine, pelvis, arms, hands, legs, knees, ankles, and feet. All joints, vertebrae, and phalanges visible and anatomically correct. No muscles. No veins. No organs. No skin texture. The style is: High-end medical visualization, Clean, clinical, modern. NOT horror. NOT zombie. NOT cartoon. NOT decayed. Environment: ${s.environment}. Pose: ${s.pose_action}. ${s.visual_detail} Photorealistic cinematic realism, 8k, detailed.`,
+            image_prompt: `A full-body realistic humanoid SKELETON character with a semi-transparent human-shaped outer body shell. The character has: A fully exposed skull (NO skin, NO face, NO muscles). Clean, smooth, anatomically accurate skull. Large, round eye sockets with visible eyeballs. Bright yellow irises with dark pupils. Neutral to slightly vacant expression. Visible upper and lower teeth. Smooth cranium with no cracks, damage, decay, or horror elements. The body is a semi-transparent, glass-like human silhouette that clearly reveals the entire internal skeletal structure from head to toe. Skeleton details: Ivory / pale beige bones. Smooth, medical-grade surfaces. Accurate human proportions. Clearly defined rib cage, spine, pelvis, arms, hands, legs, knees, ankles, and feet. All joints, vertebrae, and phalanges visible and anatomically correct. No muscles. No veins. No organs. No skin texture. The style is: High-end medical visualization, Clean, clinical, modern. NOT horror. NOT zombie. NOT cartoon. NOT decayed. Environment: ${s.environment}. Pose: ${s.pose_action}. ${s.visual_detail} Photorealistic cinematic realism, vibrant saturated colors, high contrast, BOLD LARGE OBJECTS in the background to ground the scene, 8k render, masterpiece quality.`,
 
             // TASK 3: IMAGE-TO-VIDEO PROMPTS
-            video_prompt: `Motion: ${s.motion_detail}. Action: character ${s.pose_action}. Natural movement, high resolution, subtle drift.`,
+            video_prompt: `Cinematic motion: ${s.motion_detail}. Action: character ${s.pose_action}. Cinematic camera move (smooth dolly or slow-motion zoom), vibrant saturated colors, high resolution, masterpiece quality, fluid movement.`,
 
             // LTX-2 SPECIFIC RULES (Prompt.md requirements: Anchor at start, Audio label, Negative prompt)
-            ltx_video_prompt: `STRICTLY NO TEXT, NO SUBTITLES, NO CAPTIONS. ${CHARACTER_ANCHOR} ACTION: ${s.pose_action}. ENVIRONMENT: ${s.environment}. AUDIO NARRATION ONLY (DO NOT SHOW AS TEXT): "${s.script_line}". NEGATIVE PROMPT: human skin, realistic face, muscles, organs, veins, blurry, low quality, watermark, text, subtitles, captions, horror, decay, blood, zombie.`
+            ltx_video_prompt: `STRICTLY NO TEXT, NO SUBTITLES, NO CAPTIONS. ${CHARACTER_ANCHOR} ACTION: ${s.pose_action}. ENVIRONMENT: ${s.environment}. CINEMATIC CAMERA: Smooth tracking or slow-motion zoom. VIBRANT COLORS, HIGH SATURATION. AUDIO NARRATION ONLY (DO NOT SHOW AS TEXT): "${s.script_line}". NEGATIVE PROMPT: human skin, realistic face, muscles, organs, veins, blurry, low quality, watermark, text, subtitles, captions, horror, decay, blood, zombie.`
         }));
 
         // Audio is now synthesized separately via 'skeleton-generate-audio'
@@ -707,9 +707,9 @@ For EACH scene (exactly 6), generate following JSON:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
             3. "videoPrompt" MUST contain the EXACT FULL DIALOGUE word-for-word from "line". NO TRUNCATION. NO '...'.
-            4. "imagePrompt" Style: Cute friendly Pixar-style anthropomorphic character, round expressive eyes (warmth/knowledge), smiling mouth with visible lips (ready to reveal secrets), small human-like body. Placed inside a highly detailed realistic 3D human organ environment.
+            4. "imagePrompt" Style: Cute friendly Pixar-style anthropomorphic character, vibrant saturated colors, high contrast, expressive eyes, smiling mouth with visible lips, small human-like body. Placed inside a highly detailed realistic 3D human organ environment with BOLD LARGE OBJECTS in background.
             5. TEAM EFFECT: Multiple smaller versions of the SAME character visible in background, performing the same action — "team of experts" feel.
-            6. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), subtle body movement using SYMBOLIC TOOLS (scrubbing brush, melting torch, hydrating spray, etc.), cinematic 9:16 vertical motion.
+            6. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), CINEMATIC CAMERA WORK (smooth dolly shots, tracking, or parallax), subtle body movement using SYMBOLIC TOOLS, cinematic 9:16 vertical motion, high saturation.
             7. Characters: Fruit/veg/superfoods acting as EXPERT INSIDERS. They are NOT fighting.`;
 
             userPrompt = `Generate a 7-scene viral health explainer script about "${topic}".
@@ -758,8 +758,8 @@ For EACH scene (exactly 6), generate following JSON:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
             3. "videoPrompt" MUST include the EXACT FULL DIALOGUE word-for-word from "line". NO TRUNCATION. NO '...'.
-            4. "imagePrompt" Style: Object must look ALIVE and KNOWLEDGEABLE — like an expert, not a brawler. Pixar-style round expressive eyes, visible lips/mouth for talking, placed in a realistic high-quality environment matching the setting.
-            5. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), expert personality, direct and confident body language, slow cinematic 9:16 vertical camera.
+            4. "imagePrompt" Style: Object must look ALIVE and KNOWLEDGEABLE, vibrant saturated colors, high contrast. Pixar-style round expressive eyes, visible lips/mouth for talking, placed in a realistic environment with BOLD LARGE OBJECTS in the background to define the scene.
+            5. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), CINEMATIC CAMERA WORK (slow zoom, smooth tracking, or gimbal rotation), expert personality, 9:16 vertical framing, vivid colors.
             6. Characters: Object(s) are alive and acting as insider experts — they know things about themselves that humans don't. This is NOT a fight. This is a REVELATION.
             7. Each "line" must include an emotion tag: [shocked], [proud], [whispering], [excited], [smug], [revealing].`;
 

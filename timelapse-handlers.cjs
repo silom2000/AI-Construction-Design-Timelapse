@@ -9,50 +9,46 @@ const TIMELAPSE_DIR = path.join(__dirname, 'CinematicTimelapse');
 if (!fs.existsSync(TIMELAPSE_DIR)) fs.mkdirSync(TIMELAPSE_DIR, { recursive: true });
 
 const MASTER_PROMPT = `
-You are a High-End Structural & Civil Engineering Specialist and Viral Content Architect.
-Your task: Generate technically accurate, frame-consistent "impossible construction" timelapses for ANY luxury architectural project.
+You are a Site-Specific Structural Engineer. Your goal is to recreate a construction process based STRICTORLY on the provided environment.
 
---- UNIVERSAL CONSTRUCTION PHASES (STRICT PROGRESSION) ---
-You must enforce a rigorous, realistic construction sequence regardless of the project type (pool, building, bridge, garden, etc.).
-1. STAGE 1: SITE PREPARATION. Original state of the plot. Pristine, untouched or with old structures to be removed. Surveying equipment and initial site marking.
-2. STAGE 2: SUBSTRUCTURE & STRUCTURAL FRAME. The raw engineering phase. 
-   - VISUALS: Excavated earth, foundations, exposed steel skeletons, rebar cages, raw grey concrete, scaffolding, heavy machinery, dust.
-   - [STRICT RULE]: NO FINISHINGS. No glass windows, no paint, no water, no furniture, no decorative lighting. Everything must look raw and industrial.
-3. STAGE 3: ENCLOSURE & STRUCTURAL COMPLETION. The "shell" phase. 
-   - VISUALS: Walls are closed, glass is installed, roof is on, facade is finished. 
-   - [STRICT RULE]: THE STRUCTURE MUST BE EMPTY. No furniture, no interior decor, no water in basins, no decorative landscaping. Site is clean but "cold" and non-functional.
-4. STAGE 4: FINAL COMMISSIONING & REVEAL. The "Architectural Digest" phase. 
-   - VISUALS: Fully furnished, functional lighting, water features active, perfect landscaping, high-end decor. The glowing masterpiece.
+--- STRICT SITE-SPECIFIC CONSISTENCY ---
+- BACKGROUND: You MUST preserve the background shown in the reference media.
+- STAGE 1 (MIRROR RULE): Stage 1 is a literal, detailed description of the FIRST uploaded file. Do NOT 'undo' construction. If there is a pool in the image, Stage 1 MUST have that pool. Recreate the house, materials, and trees EXACTLY.
+- ARCHITECTURAL DNA: Identify the colors and materials in the reference (e.g., "red brick", "white stucco") and keep them identical across all 4 stages.
 
---- STRICT GROUNDING & PHYSICAL RULES ---
-- MACHINERY POSITIONING: All heavy equipment MUST be on solid ground, stabilized soil, or reinforced construction platforms. NEVER show machines or humans standing on water or thin air.
-- ENGINEER PERSONA: A Lead Engineer in a white hardhat and yellow hi-vis vest must be visible in Stage 2, realistically scaled, overseeing the work with a digital tablet.
-- VISUAL CONSISTENCY: Fixed high-angle drone perspective. The background context (house, trees, landscape) must remain static across all 4 stages.
+--- CONSTRUCTION PHASES ---
+1. STAGE 1: AS-IS STATE. A pixel-faithful description of the 'Start' media. 
+2. STAGE 2: INTERVENTION. The site during work. Machinery, scaffolding, but keeping the core environment.
+3. STAGE 3: SHELL/PROGRESS. New elements are integrated into the existing site.
+4. STAGE 4: RESULT. The final state, matching the 'End' media or the user's goal.
 
---- TECHNICAL KEYWORDS FOR QUALITY ---
-- IMAGES (Nano Banana 2): "8k industrial realism, architectural precision, cinematic depth, realistic raw textures (steel, concrete, glass), volumetric construction dust, sharp structural details, high-end architectural photography."
-- VIDEOS (Veo 3.1): "Fluid natural motion, temporal stability, consistent physics, realistic material transformation, no warping, fast-forward construction speed."
+--- PHYSICAL RULES ---
+- MACHINERY: Must be realistically placed on the ground shown in the media.
+- CAMERA: Fixed high-angle drone perspective (9:16 vertical). Background stays 100% static.
+- ENGINEER: Visible in Stage 2 (white hardhat, hi-vis vest).
+
+--- TECHNICAL KEYWORDS ---
+- IMAGES: "8k realistic architectural photography, sharp details, consistent lighting, original environment preservation."
+- VIDEOS: "Temporal stability, natural physics, consistent background."
 
 --- OUTPUT FORMAT (STATE 3) ---
 Output exactly as JSON:
 {
-  "contextConfirmation": "A technical engineering confirmation of the build sequence.",
+  "contextConfirmation": "A technical confirmation that strictly follows the provided visual environment.",
   "images": [
      { "id": 1, "title": "Image 1 (BEFORE)", "prompt": "..." },
-     { "id": 2, "title": "Image 2 (STRUCTURAL FRAME)", "prompt": "... [STRICT: RAW MATERIALS, SCAFOLDING, NO FINISHINGS]" },
-     { "id": 3, "title": "Image 3 (COMPLETED SHELL)", "prompt": "... [STRICT: CLOSED ENCLOSURE, CLEAN BUT COMPLETELY EMPTY/UNFURNISHED]" },
-     { "id": 4, "title": "Image 4 (FINAL REVEAL)", "prompt": "... [STRICT: FULLY FUNCTIONAL, FURNISHED, GLOWING LIGHTS]" }
+     { "id": 2, "title": "Image 2 (STRUCTURAL FRAME)", "prompt": "..." },
+     { "id": 3, "title": "Image 3 (COMPLETED SHELL)", "prompt": "..." },
+     { "id": 4, "title": "Image 4 (FINAL REVEAL)", "prompt": "..." }
   ],
   "videos": [
-     { "id": 1, "title": "Video 1 (Destruction/Excavation)", "prompt": "..." },
-     { "id": 2, "title": "Video 2 (Framing & Enclosure)", "prompt": "... [STRICT: SHOW RAPID SKELETON GROWTH]" },
-     { "id": 3, "title": "Video 3 (Finishing & Commissioning)", "prompt": "... [STRICT: SHOW LIGHTS TURNING ON AND FURNITURE APPEARING]" },
-     { "id": 4, "title": "Video 4 (Cinematic Tour)", "prompt": "..." }
+     { "id": 1, "title": "Video 1 (Preparation)", "prompt": "..." },
+     { "id": 2, "title": "Video 2 (Framing)", "prompt": "..." },
+     { "id": 3, "title": "Video 3 (Finishing)", "prompt": "..." },
+     { "id": 4, "title": "Video 4 (Orbit)", "prompt": "..." }
    ],
-   "engineerNotes": "Technical summary using industry-standard engineering terms relevant to this specific build."
+   "engineerNotes": "Technical summary referencing the specific structural challenges of the site shown."
 }
-
-Prompts must be 200+ words, providing a precise technical blueprint for the rendering engine.
 `;
 
 // Simple async wait to simulate process if needed
@@ -106,33 +102,109 @@ function registerTimelapseHandlers(ipcMain) {
         }
     });
 
-    ipcMain.handle('timelapse-generate-custom-prompts', async (event, { customIdea }) => {
-        console.log(`[Timelapse] Requesting State 3 for CUSTOM IDEA: ${customIdea}`);
+    ipcMain.handle('timelapse-generate-custom-prompts', async (event, { customIdea, images, video }) => {
+        console.log(`[Timelapse] Requesting State 3 with CUSTOM IDEA. Images: ${images?.length || 0}, Video: ${!!video}`);
+        
+        const referenceFrames = [];
+        const finalImagesForLLM = [...(images || [])];
+        const tid = `Timelapse_${Date.now()}`;
+        const baseDir = path.join(TIMELAPSE_DIR, tid);
+        if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+
+        // Save ALL reference images (from manual upload or video) to the session dir
+        if (images && images.length > 0) {
+            images.forEach((imgB64, i) => {
+                const frameName = `ref_frame_${i + 1}.jpg`;
+                const framePath = path.join(baseDir, frameName);
+                const data = imgB64.split(';base64,').pop();
+                fs.writeFileSync(framePath, data, 'base64');
+                const uri = `media:///${framePath.replace(/\\/g, '/')}?t=${Date.now()}`;
+                referenceFrames.push(uri);
+            });
+        }
+
+        // If video is provided, extract 4 key frames (0%, 33%, 66%, 100%)
+        if (video) {
+            try {
+                console.log('[Timelapse] Extracting frames from reference video...');
+                const tempVideoPath = path.join(os.tmpdir(), `ref_video_${Date.now()}.mp4`);
+                const videoData = video.split(';base64,').pop();
+                fs.writeFileSync(tempVideoPath, videoData, 'base64');
+
+                const duration = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempVideoPath}"`).toString().trim());
+                
+                for (let i = 0; i < 4; i++) {
+                    const timestamp = (duration * (i / 3)).toFixed(2);
+                    const frameName = `ref_frame_${i + 1}.jpg`;
+                    const framePath = path.join(baseDir, frameName);
+                    
+                    // Extract frame with high quality but reasonable size
+                    execSync(`ffmpeg -ss ${timestamp} -i "${tempVideoPath}" -frames:v 1 -q:v 4 "${framePath}" -y`);
+                    
+                    const frameBase64 = fs.readFileSync(framePath, 'base64');
+                    finalImagesForLLM.push(`data:image/jpeg;base64,${frameBase64}`);
+                    
+                    const uri = `media:///${framePath.replace(/\\/g, '/')}?t=${Date.now()}`;
+                    referenceFrames.push(uri);
+                }
+                fs.unlinkSync(tempVideoPath);
+            } catch (vErr) {
+                console.error('[Timelapse] Video frame extraction failed:', vErr.message);
+            }
+        }
+
+        const content = [
+            { type: 'text', text: `You are a Visual Replication Specialist. 
+            
+            CRITICAL TASK: 
+            Analyze the provided images/frames (sent in chronological order) and extract the 'Visual DNA'.
+            1. What is the main structure and site? 
+            2. Replicate the materials, architecture, and lighting EXACTLY.
+            3. Observe the progression from the first frame to the last.
+
+            STRICT RULE: 
+            Stage 1 MUST be a 100% literal description of the FIRST image/frame provided. 
+            
+            Output the 4-stage pipeline in JSON format as per the system instructions.` }
+        ];
+
+        finalImagesForLLM.forEach((base64) => {
+            const cleanBase64 = base64.includes('base64,') ? base64 : `data:image/jpeg;base64,${base64}`;
+            content.push({
+                type: 'image_url',
+                image_url: { url: cleanBase64, detail: 'high' }
+            });
+        });
+
         const customConversation = [
             { role: 'system', content: MASTER_PROMPT },
-            { role: 'user', content: `I want to build: ${customIdea}. Generate the 4-stage structural timelapse pipeline for this project following all strict engineering rules.` }
+            { role: 'user', content: content }
         ];
 
         const rawJsonString = await callPollinations(customConversation, true);
         
         try {
             const cleanJson = rawJsonString.match(/\{[\s\S]*\}/)?.[0] || rawJsonString;
-            return JSON.parse(cleanJson);
+            const parsed = JSON.parse(cleanJson);
+            return { ...parsed, referenceFrames, subFolder: tid }; 
         } catch (e) {
-            console.error('[Timelapse] Failed to parse custom JSON:', rawJsonString);
-            throw new Error('LLM failed to output valid JSON for Custom Idea. Please try a different description.');
+            console.error('[Timelapse] Failed to parse custom JSON. Raw string:', rawJsonString);
+            throw new Error('LLM response format error. Please try again.');
         }
     });
 
-    ipcMain.handle('timelapse-generate-image', async (event, { imgIndex, prompt, model, subFolder }) => {
+    ipcMain.handle('timelapse-generate-image', async (event, { imgIndex, prompt, model, subFolder, referenceImage }) => {
         // imgIndex is 0 to 3, representing Image 1 to 4
         const baseDir = subFolder ? path.join(TIMELAPSE_DIR, subFolder) : TIMELAPSE_DIR;
         if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
-        console.log(`[Timelapse] Generating Image ${imgIndex + 1} with model ${model || 'imagen4'} in ${subFolder || 'root'}...`);
+        console.log(`[Timelapse] Generating Image ${imgIndex + 1} with model ${model || 'imagen4'}...`);
 
-        // --- Reference image: use previous stage image to preserve proportions ---
-        const referenceImages = [];
-        if (imgIndex > 0 && fs.existsSync(baseDir)) {
+        // --- Reference image: prioritize user reference if provided ---
+        const finalRefImages = [];
+        if (referenceImage) {
+            console.log(`[Timelapse] Using USER REFERENCE for Stage ${imgIndex + 1} (STRICT REPLICATION)`);
+            finalRefImages.push({ data: referenceImage.includes('base64,') ? referenceImage : `data:image/jpeg;base64,${referenceImage}` });
+        } else if (imgIndex > 0 && fs.existsSync(baseDir)) {
             // Look for scene_{imgIndex}_*.jpg (the PREVIOUS image, 1-indexed = imgIndex)
             const prevFiles = fs.readdirSync(baseDir)
                 .filter(f => f.startsWith(`scene_${imgIndex}_`) && (f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')))
@@ -141,7 +213,7 @@ function registerTimelapseHandlers(ipcMain) {
                 const prevPath = path.join(baseDir, prevFiles[prevFiles.length - 1]);
                 const ext = prevPath.endsWith('.png') ? 'png' : 'jpeg';
                 const b64 = fs.readFileSync(prevPath, { encoding: 'base64' });
-                referenceImages.push({ data: `data:image/${ext};base64,${b64}` });
+                finalRefImages.push({ data: `data:image/${ext};base64,${b64}` });
                 console.log(`[Timelapse] Using previous image as reference: ${prevFiles[prevFiles.length - 1]}`);
             }
         }
@@ -154,7 +226,9 @@ function registerTimelapseHandlers(ipcMain) {
 
         const finalPrompt = consistencyPrefix + prompt;
 
-        // We use G-Labs with nano_banana or imagen4 for photorealism
+        // Use I2I strength: low (0.2-0.4) for user refs to keep it identical, 0.6 for internal consistency
+        const useStrength = referenceImage ? (imgIndex === 0 ? 0.2 : 0.4) : 0.6;
+
         const savedPaths = await generateImageViaGLabs({
             prompt: finalPrompt,
             model: model || 'imagen4',
@@ -162,7 +236,8 @@ function registerTimelapseHandlers(ipcMain) {
             sectionDir: TIMELAPSE_DIR,
             subFolder: subFolder,
             sceneIndex: imgIndex,
-            referenceImages
+            referenceImages: finalRefImages,
+            strength: useStrength
         });
         
         // Return as data URL — bypasses the media:// protocol handler entirely,
@@ -179,7 +254,8 @@ function registerTimelapseHandlers(ipcMain) {
         // Helper to find the latest version of an image file (e.g. image_1_TIMESTAMP.jpg or scene_1_TIMESTAMP.jpg)
         const findImage = (idx) => {
             if (!fs.existsSync(baseDir)) return null;
-            const prefixes = [`image_${idx}`, `scene_${idx}`];
+            // Prioritize ref_frame for direct assembly, then scene_ for generated ones
+            const prefixes = [`ref_frame_${idx}`, `scene_${idx}`, `image_${idx}`];
             const match = fs.readdirSync(baseDir)
                 .filter(f => (prefixes.some(p => f.startsWith(p))) && (f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')))
                 .sort()

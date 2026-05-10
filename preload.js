@@ -14,9 +14,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // New Cinematic Timelapse Handlers
   timelapseGetEnvironments: () => ipcRenderer.invoke('timelapse-get-environments'),
   timelapseGeneratePrompts: (selectionIndex, selectedEnv) => ipcRenderer.invoke('timelapse-generate-prompts', { selectionIndex, selectedEnv }),
-  timelapseGenerateCustomPrompts: (customIdea) => ipcRenderer.invoke('timelapse-generate-custom-prompts', { customIdea }),
-  timelapseGenerateImage: (imgIndex, prompt, model, subFolder) => ipcRenderer.invoke('timelapse-generate-image', { imgIndex, prompt, model, subFolder }),
-  timelapseGenerateVideo: (videoIndex, prompt, subFolder) => ipcRenderer.invoke('timelapse-generate-video', { videoIndex, prompt, subFolder }),
+  timelapseGenerateCustomPrompts: (customIdea, images, video) => ipcRenderer.invoke('timelapse-generate-custom-prompts', { customIdea, images, video }),
+  timelapseGenerateImage: (imgIndex, prompt, model, subFolder, referenceImage) => ipcRenderer.invoke('timelapse-generate-image', { imgIndex, prompt, model, subFolder, referenceImage }),
+  timelapseGenerateVideo: (videoIndex, prompt, subFolder, referenceImages) => ipcRenderer.invoke('timelapse-generate-video', { videoIndex, prompt, subFolder, referenceImages }),
   timelapseAssemble: (subFolder) => ipcRenderer.invoke('timelapse-assemble', { subFolder }),
 
 

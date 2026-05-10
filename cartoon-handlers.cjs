@@ -188,16 +188,20 @@ function registerCartoonHandlers(ipcMain) {
 - Банальные профессии без "фишки" (просто "врач лечит людей")
 - Абстрактные хуки без конкретного примера
 - Повторять профессии из очевидного списка без изюминки
+- Брать только современные или только средневековые профессии — нужно МАКСИМАЛЬНОЕ разнообразие эпох и культур.
 
 КРИТЕРИЙ ХОРОШЕЙ ИДЕИ:
-После прочтения хука зритель должен подумать: "Подождите, я этого не знал!"`;
+После прочтения хука зритель должен подумать: "Подождите, я этого не знал!"
+Идеи должны быть УНИКАЛЬНЫМИ и не повторяться в разных генерациях.
+Для обеспечения разнообразия, если тема не задана, выбирай из широкого спектра: от древних цивилизаций (Майя, Индия, Египет) до необычных профессий XIX-XX веков.`;
 
-        const userPrompt = `Тематический запрос: ${topic || 'Случайная профессия — выбери самую интересную и малоизвестную со своей "фишкой"'}
+        const userPrompt = `Тематический запрос: ${topic || 'Случайная УНИКАЛЬНАЯ профессия из любого уголка истории — выбери самую интересную и малоизвестную'}
 
-Сгенерируй РОВНО 2 идеи для мультяшных образовательных роликов о профессиях.
+Сгенерируй РОВНО 2 РАЗНЫЕ идеи для мультяшных образовательных роликов о профессиях.
+Используй случайное зерно креативности, чтобы не повторять предыдущие темы.
 
 ТРЕБОВАНИЯ К КАЖДОЙ ИДЕЕ:
-1. Конкретная профессия с временным периодом (не просто "повар" — а "корабельный кок XVII века" или "современный пчеловод")
+1. Конкретная профессия с временным периодом (например: "Ловец медицинских пиявок XIX века", "Чистильщик слонов в древней Индии", "Оператор пневмопочты 1920-х")
 2. Хук-вопрос или хук-факт: что зритель ТОЧНО не знал об этой профессии
 3. Главный герой — конкретный персонаж (имя + откуда + кем работает)
 4. Неожиданный факт или момент из рабочей жизни
@@ -211,7 +215,7 @@ function registerCartoonHandlers(ipcMain) {
       "profession": "Конкретное название профессии + эпоха/место",
       "era": "Временной период и место (например: 'Лондон, 1887 год' или 'Современная Япония')",
       "character": "Имя и краткое описание главного героя",
-      "hook": "Хук: 2-3 предложения. Что зритель не знал + конкретный пример + почему это важно/смешно/удивительно",
+      "hook": "Хук: 2-3 предложения. Что зритель не знал + почему это важно/смешно/удивительно",
       "profession_fact": "Один самый неожиданный факт об этой профессии (1 предложение)"
     }
   ]
@@ -241,80 +245,84 @@ function registerCartoonHandlers(ipcMain) {
         const systemPrompt = `Ты — сценарист образовательных мультяшных роликов TikTok.
 
 ФОРМАТ: 64 секунды = 8 частей по 8 секунд.
-Каждая часть = 14-18 слов нарратива МАКСИМУМ.
+Каждая часть = СТРОГО 17-20 слов нарратива.
 Язык нарратива: ${langName}
 
 ════════════════════════════════════════════════
 СТИЛЬ ПОВЕСТВОВАНИЯ:
 ════════════════════════════════════════════════
-- Тёплый, наблюдательный, слегка юмористический
+- Тёплый, наблюдательный, СИЛЬНО вовлекающий, динамичный
 - Обращение на "ты" — зритель=наблюдатель, видит всё изнутри
 - Конкретные детали ("в 4 утра", "37 ножей", "17 кг рыбы") > абстракции
-- Каждая часть заканчивается незакрытым вопросом ИЛИ удивительным фактом
-- Часть 8 — финальный вывод или неожиданная мораль
+- Сцена 1: Мощный ХУК и обещание раскрыть секрет в конце ("Досмотри до конца, чтобы узнать, почему...")
+- Сцена 8: Финальный вывод с призывом к действию или вопросом зрителю
+- Каждая сцена должна заканчиваться на интригующей ноте
 
 СТРУКТУРА 8 ЧАСТЕЙ:
-1. ХУК: вопрос или факт который никто не знает о профессии
-2. УТРО: как начинается рабочий день (конкретно)
-3. ГЛАВНЫЙ ИНСТРУМЕНТ / НАВЫК: то, чему учатся годами
-4. СКРЫТАЯ ТРУДНОСТЬ: то, чего не видно снаружи
-5. СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ: реальная история или типичная ситуация
-6. ВЗАИМОДЕЙСТВИЕ с людьми или миром: самый запоминающийся момент
-7. КОНЕЦ ДНЯ: что остаётся когда все уходят домой
-8. ВЫВОД: почему эта профессия важна / неожиданная мораль для зрителя
+1. ХУК + ОБЕЩАНИЕ: вопрос или факт, который никто не знает + призыв досмотреть до конца.
+2. УТРО: как начинается рабочий день (конкретно, детали, атмосфера).
+3. ГЛАВНЫЙ ИНСТРУМЕНТ: то, чему учатся годами, описание процесса.
+4. СКРЫТАЯ ТРУДНОСТЬ: то, чего не видно снаружи, эмоциональный накал.
+5. СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ: реальная история или типичный случай.
+6. ВЗАИМОДЕЙСТВИЕ: самый запоминающийся момент с миром/людьми.
+7. КОНЕЦ ДНЯ: что остаётся, когда все уходят, момент тишины.
+8. ФИНАЛ: обещанный секрет + неожиданная мораль + подпишись/вопрос.
 
 ЗАПРЕЩЕНО:
 - Банальные фразы ("эта профессия очень важна")
-- Длинные предложения (> 10 слов без паузы)
+- Короткие предложения (< 15 слов)
 - Пафос и морализаторство
 
 ════════════════════════════════════════════════
 СТИЛЬ ИЗОБРАЖЕНИЙ (3D cartoon animated):
 ════════════════════════════════════════════════
 Основа стиля для КАЖДОГО imagePrompt:
-"stylized 3D animated [ПРОФЕССИЯ] worker, semi-realistic cartoon style, slightly exaggerated facial features,
-natural relaxed facial expression, subtle micro-expressions, attentive eyes, light neutral mood, detailed skin texture,
-worn work clothes, [КОНКРЕТНАЯ РАБОЧАЯ ОБСТАНОВКА], soft natural or overcast lighting, muted colors,
-cinematic composition, shallow depth of field, ultra detailed textures, observational storytelling,
-vertical TikTok framing, handheld camera feel, subtle realistic movement, grounded everyday mood, 4k render"
+"highly detailed stylized 3D animated [ПРОФЕССИЯ] worker, semi-realistic Pixar-style masterpiece, 
+EXTREMELY VIBRANT SATURATED COLORS, high contrast, rich color palette, expressive facial features, 
+natural relaxed facial expression, subtle micro-expressions, attentive eyes, detailed skin texture,
+worn work clothes, [КОНКРЕТНАЯ РАБОЧАЯ ОБСТАНОВКА], 
+BOLD DOMINANT LARGE OBJECTS in the composition to ground the scene, monumental scale elements,
+cinematic dramatic lighting, sharp focus, ultra detailed textures, observational storytelling,
+vertical TikTok framing, professional camera work, 8k render, breathtaking visuals"
 
 ВАЖНО для imagePrompt:
 - Возраст персонажа соответствует сцене
 - Детали костюма/инструментов ТОЧНО соответствуют эпохе и профессии
-- Рабочая среда конкретная и узнаваемая
-- Освещение рабочее (утро = мягкий свет, ночь = искусственный свет)
+- Рабочая среда конкретная и узнаваемая, с КРУПНЫМИ объектами на переднем или заднем плане
+- Освещение максимально яркое и насыщенное (утро = пылающее золото, ночь = глубокий неоновый индиго)
 - Черты лица персонажа ОДИНАКОВЫ во всех 8 сценах (из characterProfile)
 
 ВЫБОР LIGHTING по сцене:
-- Сцена 1 (хук) → soft dramatic side lighting
-- Сцена 2 (утро) → warm early morning golden light
-- Сцена 3 (навык) → focused task lighting, close-up hands
-- Сцена 4 (трудность) → overcast flat grey, tired mood
-- Сцена 5 (смешной момент) → bright warm comedic lighting
-- Сцена 6 (взаимодействие) → warm social ambient light
-- Сцена 7 (конец дня) → blue hour, end-of-shift exhaustion
-- Сцена 8 (вывод) → golden hour warm, reflective
+- Сцена 1 (хук) → vibrant dramatic side lighting with rich shadows
+- Сцена 2 (утро) → intense golden hour glow, high saturation
+- Сцена 3 (навык) → bright cinematic task lighting, vibrant highlights
+- Сцена 4 (трудность) → rich moody overcast with deep blues and textures
+- Сцена 5 (смешной момент) → vibrant high-key comedic lighting, saturated colors
+- Сцена 6 (взаимодействие) → rich warm social atmosphere, glowing colors
+- Сцена 7 (конец дня) → deep cinematic blue hour, neon-like highlights
+- Сцена 8 (вывод) → vibrant sunset glow, long saturated shadows
 
 ════════════════════════════════════════════════
 СТИЛЬ ВИДЕО (3D cartoon animated):
 ════════════════════════════════════════════════
 Основа для КАЖДОГО videoPrompt:
-"8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style.
+"8-second cinematic stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic EXTREMELY VIBRANT cartoon style.
 SCENE: [ДЕЙСТВИЕ]. CHARACTER: [ПЕРСОНАЖ + ДЕТАЛИ]. SETTING: [ОБСТАНОВКА].
+BOLD VISUALS: Include prominent LARGE DOMINANT OBJECTS in the composition for better AI understanding.
 OPENING: Start with close-up of [рука/инструмент/лицо] then reveal.
-CAMERA: [ВЫБЕРИ]. LIGHTING: [ВЫБЕРИ]. ATMOSPHERE: [ДЕТАЛИ ОКРУЖЕНИЯ].
-LAST FRAME: [НЕЗАКРЫТЫЙ ВИЗУАЛЬНЫЙ МОМЕНТ].
-QUALITY: 4K render, cartoon stylized, no modern UI elements, period-accurate props."
+CAMERA: [ВЫБЕРИ — CINEMATIC WORK]. LIGHTING: [ВЫБЕРИ — ULTRA VIBRANT]. ATMOSPHERE: [RICH, DEEP, SATURATED].
+LAST FRAME: [ИНТРИГУЮЩИЙ ВИЗУАЛЬНЫЙ МОМЕНТ].
+QUALITY: 8K masterpiece render, high saturation, vivid colors, period-accurate props, fluid professional movement."
 
-CAMERA по сцене:
-- Сцена 1 → slow zoom-in on surprised face
-- Сцена 2 → handheld follow shot of morning routine
-- Сцена 3 → close-up of skilled hands at work
-- Сцена 4 → wide shot showing scale of problem
-- Сцена 5 → fast comedic cut, reaction shot
-- Сцена 6 → two-shot interaction
-- Сцена 7 → slow pull-back reveal of empty workspace
-- Сцена 8 → slow push-in to face, slight smile`;
+CAMERA по сцене (CINEMATIC MOVEMENTS):
+- Сцена 1 → Cinematic slow-motion zoom-in, focusing on expressive eyes
+- Сцена 2 → Smooth tracking shot (dolly move) following the character
+- Сцена 3 → Dynamic macro close-up with shallow depth-of-field parallax
+- Сцена 4 → Wide cinematic sweep showing the monumental scale of the task
+- Сцена 5 → Fast whip-pan to reaction, comedic timing, vibrant motion
+- Сцена 6 → Rotating gimbal shot around the characters for depth
+- Сцена 7 → Atmospheric pull-back with cinematic fog/particles, wide angle
+- Сцена 8 → Heroic low-angle push-in, bright sunset flare, epic feel`;
 
         const ideaTitle     = idea?.title           || (typeof idea === 'string' ? idea : '');
         const ideaHook      = idea?.hook            || '';
@@ -349,8 +357,10 @@ ${ideaContext}
 
 ТРЕБОВАНИЯ:
 - Язык нарратива: СТРОГО ${langName}
-- 14-18 слов на строку
-- Юмор и удивление > пафос
+- СТРОГО 17-20 слов на строку
+- Юмор, удивление и МОЩНЫЙ ИНТРИГУЮЩИЙ ХУК > пафос
+- Обязательно в Сцене 1: призыв смотреть до конца ("Досмотри до конца, чтобы узнать..."). 
+- Обязательно в Сцене 8: обещанный секрет/финал + призыв к подписке/вопрос.
 - Конкретные детали из реальной профессии
 
 Выведи JSON:
@@ -367,15 +377,15 @@ ${ideaContext}
     "hair": "short curly dark hair",
     "skinTone": "warm tan complexion",
     "distinguishingFeature": "flour dust on cheek",
-    "cartoonStyle": "slightly exaggerated, semi-realistic 3D cartoon, friendly expression"
+    "cartoonStyle": "vibrant, highly detailed, semi-realistic 3D Pixar-style"
   },
   "scenes": [
     {
       "id": 1,
       "stage": "ХУК",
-      "line": "нарратив на ${langName} — 14-18 слов, факт + удивление",
-      "imagePrompt": "stylized 3D animated [профессия] worker, semi-realistic cartoon style, slightly exaggerated facial features, natural relaxed facial expression, [ОПИСАНИЕ СЦЕНЫ — возраст, действие, детали]. Soft dramatic side lighting. Muted colors, cinematic composition, shallow depth of field, vertical TikTok framing, handheld camera feel, 4k render. warm brown wide eyes, flour dust on cheek.",
-      "videoPrompt": "8-second stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic cartoon style. SCENE: [ДЕЙСТВИЕ]. CHARACTER: [ОПИСАНИЕ]. SETTING: [МЕСТО]. OPENING: close-up of [деталь] then reveal. CAMERA: slow zoom-in on surprised face. LIGHTING: soft dramatic side lighting. ATMOSPHERE: [детали]. LAST FRAME: character looks at camera with surprised expression. QUALITY: 4K cartoon render, period-accurate props."
+      "line": "нарратив на ${langName} — СТРОГО 17-20 слов, мощный хук + призыв смотреть до конца",
+      "imagePrompt": "highly detailed stylized 3D animated [профессия] worker, semi-realistic Pixar-style masterpiece, vibrant saturated colors, [ОПИСАНИЕ СЦЕНЫ — возраст, действие, детали]. BOLD LARGE OBJECTS in the background. Vibrant dramatic side lighting. Cinematic composition, vertical TikTok framing, 8k render. warm brown wide eyes, flour dust on cheek.",
+      "videoPrompt": "8-second cinematic stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic vibrant cartoon style. SCENE: [ДЕЙСТВИЕ]. CHARACTER: [ОПИСАНИЕ]. SETTING: [МЕСТО]. BOLD VISUALS: Large [объект] in focus. OPENING: close-up then reveal. CAMERA: cinematic slow-motion zoom-in. LIGHTING: vibrant dramatic lighting. ATMOSPHERE: rich and saturated. LAST FRAME: character looks at camera with mysterious smile. QUALITY: 8K masterpiece render."
     }
   ]
 }
@@ -469,16 +479,20 @@ ${ideaContext}
     ipcMain.handle('cartoon-generate-video', async (event, { sceneIndex, videoPrompt, sourceImageUrl, narrationLine, projectFolder }) => {
         console.log(`[Cartoon] Generate video: scene=${sceneIndex} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
 
-        const imagePath = sourceImageUrl ? sourceImageUrl.replace('media:///', '').split('?')[0] : null;
-
         let referenceImages = [];
-        if (imagePath && fs.existsSync(imagePath)) {
-            const ext = imagePath.endsWith('.png') ? 'png' : 'jpeg';
-            const imageBase64 = fs.readFileSync(imagePath).toString('base64');
-            referenceImages.push({ data: `data:image/${ext};base64,${imageBase64}` });
-            console.log(`[Cartoon] Using reference image: ${imagePath}`);
+        if (sourceImageUrl && sourceImageUrl.startsWith('data:image')) {
+            referenceImages.push({ data: sourceImageUrl });
+            console.log(`[Cartoon] Using base64 reference image for scene ${sceneIndex}`);
         } else {
-            console.log(`[Cartoon] No reference image found, using text-to-video mode`);
+            const imagePath = sourceImageUrl ? sourceImageUrl.replace('media:///', '').split('?')[0] : null;
+            if (imagePath && fs.existsSync(imagePath)) {
+                const ext = imagePath.endsWith('.png') ? 'png' : 'jpeg';
+                const imageBase64 = fs.readFileSync(imagePath).toString('base64');
+                referenceImages.push({ data: `data:image/${ext};base64,${imageBase64}` });
+                console.log(`[Cartoon] Using file reference image: ${imagePath}`);
+            } else {
+                console.log(`[Cartoon] No reference image found for scene ${sceneIndex}, using text-to-video mode`);
+            }
         }
 
         const sectionDir = projectFolder

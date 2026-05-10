@@ -44,6 +44,9 @@ const TimelapseTab: React.FC = () => {
     const [selectedImageModel, setSelectedImageModel] = useState('imagen4');
     const [timelapseID, setTimelapseID] = useState('');
     const [customIdea, setCustomIdea] = useState('');
+    const [referenceImages, setReferenceImages] = useState<(string | null)[]>([null, null, null, null]); // [stage1, stage2, stage3, stage4]
+    const [referenceVideo, setReferenceVideo] = useState<string | null>(null);
+    const [useReferencesAsFinal, setUseReferencesAsFinal] = useState(false);
 
     const IMAGE_MODELS = [
         { value: 'imagen4', label: 'Imagen 4', desc: 'Google High Quality' },
@@ -66,24 +69,79 @@ const TimelapseTab: React.FC = () => {
     };
 
     const handleCustomStart = async () => {
-        if (!customIdea.trim()) return;
+        if (!customIdea.trim() && !referenceImages.some(img => !!img) && !referenceVideo) return;
         setError(null);
         setIsGenerating(true);
         try {
             const now = new Date();
-            const tid = `Timelapse_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}_${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getFullYear()}`;
-            setTimelapseID(tid);
+            const data = await window.electronAPI.timelapseGenerateCustomPrompts(
+                customIdea, 
+                referenceImages.filter(img => !!img),
+                referenceVideo
+            );
+            
+            if (data.subFolder) {
+                setTimelapseID(data.subFolder);
+            }
 
-            const data = await window.electronAPI.timelapseGenerateCustomPrompts(customIdea);
             setPromptData(data);
             setPipelineState('EXECUTION');
-            setGeneratedImages([null, null, null, null]);
+            
+            if (useReferencesAsFinal) {
+                let mapped: (string|null)[] = [null, null, null, null];
+                if (data.referenceFrames && data.referenceFrames.length === 4) {
+                    mapped = data.referenceFrames;
+                } else {
+                    mapped = [...referenceImages];
+                }
+                setGeneratedImages(mapped);
+            } else {
+                setGeneratedImages([null, null, null, null]);
+            }
             setGeneratedVideos([null, null, null, null]);
         } catch (err: any) {
             setError(err.message);
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const handleVideoUpload = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'video/*';
+        input.onchange = (e: any) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target?.result as string;
+                setReferenceVideo(base64);
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    };
+
+    const handleImageUpload = (index: number) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e: any) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target?.result as string;
+                setReferenceImages(prev => {
+                    const next = [...prev];
+                    next[index] = base64;
+                    return next;
+                });
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
     };
 
     const handleSelectEnvironment = async (index: number) => {
@@ -113,7 +171,19 @@ const TimelapseTab: React.FC = () => {
         if (!promptData) return;
         setGeneratingImages(prev => { const n = [...prev]; n[imgIndex] = true; return n; });
         try {
-            const url = await window.electronAPI.timelapseGenerateImage(imgIndex, promptData.images[imgIndex].prompt, selectedImageModel, timelapseID);
+            // Pass the corresponding reference image if it exists
+            // Stage 1 (index 0) uses referenceImages[0], Stage 4 (index 3) uses referenceImages[2]
+            let refImg = null;
+            if (imgIndex === 0) refImg = referenceImages[0];
+            if (imgIndex === 3) refImg = referenceImages[2];
+
+            const url = await window.electronAPI.timelapseGenerateImage(
+                imgIndex, 
+                promptData.images[imgIndex].prompt, 
+                selectedImageModel, 
+                timelapseID,
+                refImg
+            );
             setGeneratedImages(prev => { const n = [...prev]; n[imgIndex] = url; return n; });
         } catch (e: any) {
             setError(`Image ${imgIndex + 1} Error: ${e.message}`);
@@ -135,7 +205,13 @@ const TimelapseTab: React.FC = () => {
         
         setGeneratingVideos(prev => { const n = [...prev]; n[videoIndex] = true; return n; });
         try {
-            const url = await window.electronAPI.timelapseGenerateVideo(videoIndex, promptData.videos[videoIndex].prompt, timelapseID);
+            const refImgs = referenceImages.filter(img => !!img);
+            const url = await window.electronAPI.timelapseGenerateVideo(
+                videoIndex, 
+                promptData.videos[videoIndex].prompt, 
+                timelapseID,
+                refImgs
+            );
             setGeneratedVideos(prev => { const n = [...prev]; n[videoIndex] = url; return n; });
         } catch (e: any) {
             setError(`Video ${videoIndex + 1} Error: ${e.message}`);
@@ -244,17 +320,49 @@ const TimelapseTab: React.FC = () => {
                     <h2 style={{ margin: '0 0 0.75rem 0', fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.5px', textAlign: 'center', color: '#f1f5f9' }}>Cinematic Timelapse</h2>
                     <p style={{ margin: '0 0 0.5rem 0', color: '#64748b', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase', textAlign: 'center' }}>AI · CONSTRUCTION · 4-STAGE PIPELINE</p>
                     <div style={{ width: '48px', height: '2px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', borderRadius: '2px', margin: '1.5rem 0 2rem 0' }} />
-                    <div style={{ width: '100%', maxWidth: '500px', background: 'rgba(15, 23, 42, 0.5)', padding: '2rem', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                    <div style={{ width: '100%', maxWidth: '700px', background: 'rgba(15, 23, 42, 0.5)', padding: '2rem', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                            {['STAGE 1', 'STAGE 2', 'STAGE 3', 'STAGE 4'].map((label, idx) => (
+                                <div key={idx} onClick={() => handleImageUpload(idx)} style={{ aspectRatio: '1', background: 'rgba(0,0,0,0.3)', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', transition: 'all 0.2s' }}>
+                                    {referenceImages[idx] ? (
+                                        <img src={referenceImages[idx]!} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <>
+                                            <ImageIcon size={14} color="#475569" />
+                                            <span style={{ fontSize: '0.45rem', color: '#475569', fontWeight: 800, marginTop: '0.2rem', textAlign: 'center' }}>{label}</span>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                            <div onClick={handleVideoUpload} style={{ aspectRatio: '1', background: 'rgba(30, 58, 95, 0.3)', border: '2px dashed #3b82f6', borderRadius: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative' }}>
+                                {referenceVideo ? (
+                                    <video src={referenceVideo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+                                ) : (
+                                    <>
+                                        <Video size={14} color="#3b82f6" />
+                                        <span style={{ fontSize: '0.45rem', color: '#3b82f6', fontWeight: 800, marginTop: '0.2rem', textAlign: 'center' }}>VIDEO REF</span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
                         <textarea 
                             value={customIdea}
                             onChange={(e) => setCustomIdea(e.target.value)}
-                            placeholder="Опишите вашу идею проекта (например: Бассейн-водопад на краю обрыва, или Роскошная вилла под куполом в лесу...)"
-                            style={{ minHeight: '120px', marginBottom: '1rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '1rem', borderRadius: '0.75rem', fontSize: '0.95rem', width: '100%', resize: 'none', outline: 'none' }}
+                            placeholder="Опишите вашу идею или загрузите референсы выше..."
+                            style={{ minHeight: '80px', marginBottom: '1rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '1rem', borderRadius: '0.75rem', fontSize: '0.95rem', width: '100%', resize: 'none', outline: 'none' }}
                         />
-                        <button onClick={handleCustomStart} disabled={isGenerating || !customIdea.trim()} className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)', marginBottom: '0.5rem' }}>
+                        <button onClick={handleCustomStart} disabled={isGenerating || (!customIdea.trim() && !referenceImages.some(img => !!img) && !referenceVideo)} className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)', marginBottom: '1rem' }}>
                             {isGenerating ? <RefreshCw className="spin" size={20} /> : <Zap size={20} />}
-                            {isGenerating ? 'ГЕНЕРАЦИЯ ПАЙПЛАЙНА...' : 'СОЗДАТЬ ПО МОЕЙ ИДЕЕ'}
+                            {isGenerating ? 'АНАЛИЗ МЕДИА И ГЕНЕРАЦИЯ...' : 'СОЗДАТЬ ПО МОИМ ДАННЫМ'}
                         </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.75rem', border: '1px solid rgba(59, 130, 246, 0.2)', cursor: 'pointer' }} onClick={() => setUseReferencesAsFinal(!useReferencesAsFinal)}>
+                            <div style={{ width: '40px', height: '20px', background: useReferencesAsFinal ? '#3b82f6' : '#1e293b', borderRadius: '20px', position: 'relative', transition: 'all 0.3s' }}>
+                                <div style={{ width: '16px', height: '16px', background: '#fff', borderRadius: '50%', position: 'absolute', top: '2px', left: useReferencesAsFinal ? '22px' : '2px', transition: 'all 0.3s' }} />
+                            </div>
+                            <span style={{ fontSize: '0.85rem', color: useReferencesAsFinal ? '#fff' : '#64748b', fontWeight: 600 }}>ИСПОЛЬЗОВАТЬ МОИ МЕДИА КАК ФИНАЛЬНЫЕ КАДРЫ</span>
+                        </div>
                         
                         <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
@@ -322,14 +430,27 @@ const TimelapseTab: React.FC = () => {
                                                 {copiedIndex?.type === 'img' && copiedIndex?.idx === idx ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
                                             </button>
                                         </div>
-                                        <button onClick={() => generateImage(idx)} disabled={generatingImages[idx] || (idx > 0 && !generatedImages[idx - 1])} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}>
-                                            {generatingImages[idx] ? <RefreshCw className="spin" size={14} /> : <ImageIcon size={14} />} {hasImage(idx) ? 'REGENERATE' : 'GENERATE'}
+                                        <button 
+                                            onClick={() => generateImage(idx)} 
+                                            disabled={generatingImages[idx] || (idx > 0 && !generatedImages[idx - 1])} 
+                                            className="btn-primary" 
+                                            style={{ 
+                                                padding: '0.4rem 0.8rem', 
+                                                fontSize: '0.75rem',
+                                                background: generatedImages[idx] && useReferencesAsFinal ? '#059669' : undefined 
+                                            }}
+                                        >
+                                            {generatingImages[idx] ? <RefreshCw className="spin" size={14} /> : <ImageIcon size={14} />} 
+                                            {generatedImages[idx] && useReferencesAsFinal ? 'REFERENCE LOADED' : (hasImage(idx) ? 'REGENERATE' : 'GENERATE')}
                                         </button>
                                     </div>
                                     <div className="clamped-prompt" style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>{img.prompt}</div>
                                     {generatedImages[idx] && (
-                                        <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', background: '#000' }}>
+                                        <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', background: '#000', position: 'relative' }}>
                                             <img src={generatedImages[idx]!} alt={img.title} style={{ maxHeight: '400px', width: 'auto', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '4px' }} />
+                                            {useReferencesAsFinal && (
+                                                <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: '#059669', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 800 }}>ORIGINAL FRAME</div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

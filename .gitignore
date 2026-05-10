@@ -108,3 +108,6 @@ Audio/test_*.mp3
 
 # Talking health sub-project node_modules
 talking-health-ai-studio/node_modules/
+
+# Cartoon generated assets
+Cartoons/
