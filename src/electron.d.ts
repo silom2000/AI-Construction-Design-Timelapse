@@ -76,8 +76,9 @@ export interface IElectronAPI {
   // Cinematic Timelapse
   timelapseGetEnvironments: () => Promise<string[]>,
   timelapseGeneratePrompts: (selectionIndex: number, selectedEnv: string) => Promise<any>,
-  timelapseGenerateImage: (imgIndex: number, prompt: string, model?: string, subFolder?: string) => Promise<string>,
-  timelapseGenerateVideo: (videoIndex: number, prompt: string, subFolder?: string) => Promise<string>,
+  timelapseGenerateCustomPrompts: (customIdea: string, images: (string | null)[], video: string | null) => Promise<any>,
+  timelapseGenerateImage: (imgIndex: number, prompt: string, model?: string, subFolder?: string, referenceImage?: string | null) => Promise<string>,
+  timelapseGenerateVideo: (videoIndex: number, prompt: string, subFolder?: string, referenceImages?: (string | null)[]) => Promise<string>,
   timelapseAssemble: (subFolder?: string) => Promise<string>,
 
   // Studio Tabs

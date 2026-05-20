@@ -6,6 +6,10 @@ function registerExportHandlers() {
     ipcMain.handle('save-text-files', (event, files) => {
         try {
             files.forEach(file => {
+                if (path.isAbsolute(file.filename) || file.filename !== path.basename(file.filename)) {
+                    throw new Error(`Invalid filename: ${file.filename}`);
+                }
+
                 const filePath = path.join(__dirname, file.filename);
                 fs.writeFileSync(filePath, file.content, 'utf8');
                 console.log(`[Export] Saved: ${filePath}`);

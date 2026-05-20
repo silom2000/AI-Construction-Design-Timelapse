@@ -45,6 +45,63 @@ const OBJECT_CATEGORIES = [
     { theme: 'Fun & Viral', objects: ['emojis', 'alphabet letters', 'numbers', 'colors', 'sounds', 'emotions', 'habits', 'daily routines', 'time periods', 'life stages'] }
 ];
 
+// ── Pixar Cinematic Image Prompt Variants ─────────────────────────────────────
+const PIXAR_IMAGE_VARIANTS = [
+    {
+        id: 'A', name: 'Heroic Drama',
+        template: (character) => `heroic Pixar anthropomorphic object ${character}, physically still the original object, expressive eyes and mouth attached directly to the object surface, no human head or body, extreme low angle hero shot, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, single hard spotlight from above, deep object-surface shadows, cinematic 2.39:1 crop ratio, lens distortion at edges, teal shadows + warm highlights color grading, action-movie energy, about to reveal a lifehack`
+    },
+    {
+        id: 'B', name: 'Discovery Moment',
+        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, huge shocked eyes wide open, mouth on the object surface, eyebrows raised to maximum, split-second freeze-frame energy, motion lines around the object, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, dramatic backlighting, rim light halo effect, fisheye lens distortion`
+    },
+    {
+        id: 'C', name: 'Noir Moody',
+        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, in moody cinematic scene, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, noir lighting — single neon light source (blue or orange), rain reflections on surface below, low angle shot looking up, determined confident object expression, shadow play on background wall, film grain overlay, dramatic 2.39:1 widescreen composition`
+    },
+    {
+        id: 'D', name: 'Fun Chaos',
+        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, in chaotic funny action scene, placed in a highly detailed, busy contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, extreme fisheye lens, dutch tilt 15 degrees, bright saturated colors, cartoon speed lines, depth layering, mischievous grin expression, eyebrow raised`
+    }
+];
+
+// ── Pixar Base Image Prompt (appended to every variant) ───────────────────────
+const PIXAR_IMAGE_BASE = `Pixar 3D animation style, ultra-cinematic lighting, moderate depth of field with a clear and detailed background environment, physically-based rendering, 8K, award-winning CGI, bold graphic shadows, teal-orange color grade, NOT: fog, blurry background, dramatic depth of field, blank background, storm clouds, human, person, man, woman, girl, boy, full human body, human head, human face, realistic human face, human skin, portrait of a person, selfie, hands, arms, legs, feet, morphing into human, flat lighting, centered symmetrical boring composition, white background, soft pastel mood, static feel, eye-level midshot`;
+
+const TALKING_OBJECT_IMAGE_LOCK = `ABSOLUTE OBJECTWARS VISUAL LOCK: show ONLY the speaking physical object as the main character. It must remain the real object named in CHARACTER, with expressive cartoon eyes and a lip-sync-ready mouth placed directly on the object's surface. Do not add a human presenter, human owner, human face, human head, realistic person, full human body, skin, hands, arms, legs, or feet. The object explains a practical TikTok lifehack to viewers through expression and pose-like object tilt; any environment may contain only non-human props.`;
+
+// ── VEO Video Motion Variants ─────────────────────────────────────────────────
+const PIXAR_VIDEO_VARIANTS = [
+    {
+        id: 'A', name: 'Hyper-Dynamic Multi-Cut',
+        template: `CAMERA MOVEMENT: HYPER-DYNAMIC CONTINUOUS SEQUENCE over 8 seconds. 0-2s: FAST CRASH ZOOM into extreme close-up of the object's mouth speaking. 2-5s: RAPID WHIP PAN into a fast 180-degree ORBIT around the object, tracking its motion with slight Dutch tilt. 5-8s: SNAP ZOOM OUT to a low-angle hero shot. Hyper-kinetic continuous camera movement without hard cuts. Subject's expressive face and mouth MUST remain visible for accurate lip-sync.`
+    },
+    {
+        id: 'B', name: 'Cinematic Montage',
+        template: `CAMERA MOVEMENT: CINEMATIC CONTINUOUS FLOW over 8 seconds. 0-3s: MACRO CLOSE-UP panning slowly across the object's face. 3-6s: SMOOTH FAST DOLLY PUSH-OUT to reveal the surrounding environment. 6-8s: CONTINUOUS SWOOPING DRONE-STYLE SHIFT to a dynamic angle while keeping the object's face in view. Subject bounces slightly (breathing life). Continuous flow without hard cuts to maintain perfect lip-sync.`
+    },
+    {
+        id: 'C', name: 'Action & Rack Focus',
+        template: `CAMERA MOVEMENT: HIGH-ENERGY RACK FOCUS AND DOLLY over 8 seconds. 0-2s: Subject is blurred in foreground, rapid RACK FOCUS to reveal the face sharply. 2-5s: FAST DOLLY ZOOM (Vertigo effect) expanding the background while subject stays fixed. 5-8s: RAPID SPIRALING ZOOM moving closer to the object's expressive eyes and mouth. Intense continuous visual storytelling without hard cuts. Face stays visible for lip-sync.`
+    },
+    {
+        id: 'D', name: 'TikTok Viral Cuts',
+        template: `CAMERA MOVEMENT: FAST-PACED VIRAL MOVEMENT over 8 seconds. 0-2s: EXTREME CLOSE-UP front-facing on the speaking mouth, maximum impact. 2-4s: SNAP ZOOM OUT to a mid-shot with slight handheld camera breathing. 4-6s: RAPID CRANE UP to a high-angle looking down at the face. 6-8s: CRASH ZOOM back into the object's face. Constant continuous camera movement, high-tension pacing without hard cuts. Face remains visible for lip-sync.`
+    }
+];
+
+// ── Video Base Motion & Safety (appended to every variant) ─────────────────────
+const PIXAR_VIDEO_STYLE = `STYLE: Pixar 3D animation style, anthropomorphic character, award-winning CGI, vibrant colors, physically-based rendering.`;
+const PIXAR_VIDEO_MOTION = `ENERGY: high-tension buildup — feels like something is about to explode, cinematic music-video pacing.
+ENDING (last 1s): slow push-in continues + slight rack focus shift.`;
+const PIXAR_VIDEO_NEGATIVE = `NEGATIVE PROMPT: human, person, man, woman, girl, boy, full human body, human head, human face, human skin, realistic human, hands, arms, legs, feet, real life footage, blurry, low quality, watermark, text, subtitles, captions, on-screen dialogue, burned-in captions, karaoke text, speech bubbles, quote text, horror, decay, blood, zombie, morphing into human.`;
+const PIXAR_VIDEO_SAFETY = `NOT: static locked camera, no movement, boring zoom only, lifeless scene, everything still.`;
+
+/** Pick a variant by rotating through the array based on scene index */
+function pickVariant(variants, sceneIndex) {
+    return variants[sceneIndex % variants.length];
+}
+
 /** Pick N random categories + specific objects for prompt diversity */
 function getRandomCategories(n = 3) {
     const shuffled = [...OBJECT_CATEGORIES].sort(() => Math.random() - 0.5);
@@ -183,7 +240,7 @@ const callPollinations = async (messages, jsonMode = false) => {
             id: 'mimo',
             url: process.env.MIMO_API_URL || 'https://api.xiaomimimo.com/v1/chat/completions',
             key: process.env.MIMO_API_KEY,
-            model: 'mimo-v2-pro',
+            model: 'mimo-v2.5-pro',
             isMimo: true
         });
     }
@@ -486,9 +543,18 @@ For EACH scene (exactly 6), generate following JSON:
                 if (fs.existsSync(fallback)) imagePath = fallback;
             }
 
-            const realModel = videoModel || 'veo_31_fast';
+            const realModel = videoModel || 'veo_31_lite';
             const langStr = LANG_NAMES[language] || language || 'English';
-            const promptToUse = `${videoPrompt} AUDIO TRACK: A highly emotional, panicked, and intense adult male voice ALMOST SCREAMING in ${langStr}. STRICTLY NO BACKGROUND NOISE, NO MUSIC, NO SOUND EFFECTS, JUST PURE RAW SHOUTING VOICE. Spoken text: "${scriptLine}"`;
+            
+            // If the prompt already has structured metadata (from Studio mode), use it as is.
+            // Otherwise (Skeleton mode), append the default intense voice.
+            let promptToUse = videoPrompt;
+            if (!videoPrompt.includes('CHARACTER:') && !videoPrompt.includes('NEGATIVE PROMPT:')) {
+                promptToUse = `${videoPrompt} AUDIO TRACK: A highly emotional, panicked, and intense adult male voice ALMOST SCREAMING in ${langStr}. STRICTLY NO BACKGROUND NOISE, NO MUSIC, NO SOUND EFFECTS, JUST PURE RAW SHOUTING VOICE. Spoken text: "${scriptLine}"`;
+            } else if (!videoPrompt.includes('AUDIO TRACK:')) {
+                // Ensure audio track is present for lip-sync if not already there
+                promptToUse += ` AUDIO TRACK: Professional character voice speaking exactly: "${scriptLine}". LIP-SYNC: Accurate mouth movement.`;
+            }
             let referenceImages = [];
             if (imagePath && fs.existsSync(imagePath)) {
                 console.log(`[Skeleton Video] Using reference image: ${imagePath}`);
@@ -707,19 +773,24 @@ For EACH scene (exactly 6), generate following JSON:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
             3. "videoPrompt" MUST contain the EXACT FULL DIALOGUE word-for-word from "line". NO TRUNCATION. NO '...'.
-            4. "imagePrompt" Style: Cute friendly Pixar-style anthropomorphic character, vibrant saturated colors, high contrast, expressive eyes, smiling mouth with visible lips, small human-like body. Placed inside a highly detailed realistic 3D human organ environment with BOLD LARGE OBJECTS in background.
-            5. TEAM EFFECT: Multiple smaller versions of the SAME character visible in background, performing the same action — "team of experts" feel.
-            6. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), CINEMATIC CAMERA WORK (smooth dolly shots, tracking, or parallax), subtle body movement using SYMBOLIC TOOLS, cinematic 9:16 vertical motion, high saturation.
-            7. Characters: Fruit/veg/superfoods acting as EXPERT INSIDERS. They are NOT fighting.`;
+            4. IMAGE STYLE (PIXAR CINEMATIC): Pixar 3D animation style, ultra-cinematic lighting, dramatic depth of field, subject fills 70% of frame, physically-based rendering, 8K, award-winning CGI, bold graphic shadows, teal-orange color grade.
+               - Variant A (Heroic): Standing triumphantly, low angle, dramatic clouds, hard spotlight.
+               - Variant B (Discovery): Shocked eyes, jaw dropped, motion lines, confetti, fisheye, backlighting.
+               - Variant C (Noir): Moody neon, rain reflections, volumetric fog, low angle, shadow play.
+               - Variant D (Chaos): Funny action, dutch tilt 15, speed lines, explosion of objects.
+            5. VIDEO MOTION (PIXAR DYNAMIC):
+               - Variant A (Energetic): FAST CRASH ZOOM in, camera shakes, SMOOTH ORBIT 180, speed ramp.
+               - Variant B (Cinematic Reveal): EXTREME CLOSE detail, slow PULL BACK dolly, world builds.
+               - Variant C (Dramatic Rise): Floor level (worm's eye), slow CRANE UP to eye level, hero moment.
+               - Variant D (TikTok Hook): INSTANT CUT (100% face), camera BREATHES, reaction at 2s, SMASH ZOOM.
+            6. ABSOLUTE RULES: NO HUMAN HEADS, NO HUMAN SKIN, NO HUMAN FACES. The character MUST REMAINS THE PHYSICAL FRUIT/VEGETABLE.
+            7. The CTA SCENE (Scene 5) MUST be delivered with warmth, care, and love, explicitly inviting the viewer to subscribe AND leave a comment for a healthier life.
+            8. The PAYOFF SCENE (Scene 6) MUST provide a final summary and warm closing.`;
 
             userPrompt = `Generate a 7-scene viral health explainer script about "${topic}".
-            STRUCTURE:
-            - COVER SCENE: All characters together. Title overlay: "[TOPIC TITLE]". They say "We are the [TOPIC TITLE]".
-            - HOOK SCENE (Scene 0): Lead character delivers a scroll-stopping opener (e.g., "You've been eating me wrong...").
-            - LIFEHACK SCENES (Scenes 1-4): Each food character speaks ONE line (intro + what it does + tip for better work).
-            - PAYOFF SCENE (Scene 5): Summary line + soft CTA.
+            For each scene, choose a Variant (A, B, C, or D) for image and video that fits the mood. 
+            Rotate variants to ensure diversity (e.g., Scene 1 = A, Scene 2 = B, etc.).
 
-            Target Language: ${langName}.
             Output JSON format:
             {
               "intro": "[VIRAL TITLE]",
@@ -729,27 +800,11 @@ For EACH scene (exactly 6), generate following JSON:
                   "type": "cover",
                   "character": "All Characters",
                   "line": "We are the [Topic Title]",
-                  "imagePrompt": "(In English) Pixar-style group shot of all foods [List of foods] holding health tools [List of tools], inside a 3D medical [organ environment], excited to reveal secrets. Title overlay: '[Topic Title]' in bold dynamic 3D letters. High-end medical explainer look.",
-                  "videoPrompt": "(In English) Group lip-sync: 'We are the [Topic Title]'. All characters gesture with their tools, playful bounce, 9:16 framing, energetic opening."
-                },
-                {
-                  "id": 1,
-                  "type": "hook",
-                  "character": "Lead [Food Name]",
-                  "line": "[Hook line with emotion tag]",
-                  "imagePrompt": "(In English) Hero Pixar-style [Food] with expressive eyes and lips, [emotion] pose, in background a team of smaller [Food]s working, inside 3D human [organ], dramatic lighting.",
-                  "videoPrompt": "(In English) Lip-sync for hook: '[line]'. Heroic motion, team working in background, 9:16 vertical."
-                },
-                {
-                  "id": 2,
-                  "character": "[Food Name]",
-                  "line": "Hello, I am [Name]. I [action] in your [organ] — and if you [tip], I work better. [emotion tag]",
-                  "organ": "[organ name in English]",
-                  "tool": "[symbolic tool in English]",
-                  "imagePrompt": "(In English) Expert Pixar-style [character] using [tool] on realistic 3D [organ], team of smaller [character]s assisting, medical visualization style, 8k textures.",
-                  "videoPrompt": "(In English) Lip-sync: '[line]'. [character] performs action with [tool] on [organ], animated effects (sparks/bubbles/glow), 9:16 framing."
+                  "imageVariant": "A",
+                  "videoVariant": "A",
+                  "imagePrompt": "(In English) Briefly describe the scene character and action, the variant template will be applied automatically.",
+                  "videoPrompt": "(In English) Briefly describe the character motion, the variant template will be applied automatically. LIP-SYNC: \"[line]\""
                 }
-                // ... continue for scenes 3-6 (id 3-6)
               ]
             }`;
         } else {
@@ -757,31 +812,35 @@ For EACH scene (exactly 6), generate following JSON:
             CRITICAL RULES:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
-            3. "videoPrompt" MUST include the EXACT FULL DIALOGUE word-for-word from "line". NO TRUNCATION. NO '...'.
-            4. "imagePrompt" Style: Object must look ALIVE and KNOWLEDGEABLE, vibrant saturated colors, high contrast. Pixar-style round expressive eyes, visible lips/mouth for talking, placed in a realistic environment with BOLD LARGE OBJECTS in the background to define the scene.
-            5. "videoPrompt" Style: Professional lip-sync animation (matching dialogue: ${langName}), CINEMATIC CAMERA WORK (slow zoom, smooth tracking, or gimbal rotation), expert personality, 9:16 vertical framing, vivid colors.
-            6. Characters: Object(s) are alive and acting as insider experts — they know things about themselves that humans don't. This is NOT a fight. This is a REVELATION.
-            7. Each "line" must include an emotion tag: [shocked], [proud], [whispering], [excited], [smug], [revealing].`;
+            3. "videoPrompt" MUST include the EXACT FULL DIALOGUE word-for-word from "line" using the placeholder [line].
+            4. IMAGE STYLE (PIXAR CINEMATIC): Use Pixar 3D animation style, ultra-cinematic lighting, dramatic depth of field, teal-orange color grade.
+               - Variants: A (Heroic), B (Discovery), C (Noir), D (Chaos).
+               - The visual subject is always a talking physical object, not a person wearing an object costume.
+               - Put expressive eyes and a lip-sync mouth directly on the object's surface.
+               - Show object tilt, bounce, lean, or object-specific motion instead of human body posing.
+            5. VIDEO MOTION (PIXAR DYNAMIC):
+               - Variants: A (Energetic), B (Reveal), C (Rise), D (TikTok Hook).
+            6. ABSOLUTE RULES: NO PEOPLE IN FRAME. NO HUMAN HEADS. NO HUMAN SKIN. NO HUMAN FACES. NO HUMAN BODY. NO HANDS, ARMS, LEGS, OR FEET. Object MUST stay as the physical object.
+            7. Each "line" must include an emotion tag: [shocked], [proud], etc.
+            8. The CTA SCENE (Scene 5) MUST be delivered with deep respect and warmth, explicitly inviting the viewer to subscribe AND leave a comment for more lifehack secrets and benefits.
+            9. The FINAL PAYOFF (Scene 6) ends the video on a high note.
+            10. ABSOLUTE VIDEO VISUAL RULE: Never show spoken dialogue as visible text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, or any written words inside video frames. Voice/audio only.`;
 
-            userPrompt = `📌 ШАГ 2 — СЦЕНАРИЙ (Lifehack Script)
-            Create a viral short LIFEHACK script with exactly 5 scenes for "${topic}".
-            
-            SCRIPT RULES:
-            - Scene 1 = HOOK: Object says something that stops the scroll instantly.
-            - Scenes 2–4 = THE LIFEHACK THREAD: 2–3 concrete tips, tricks, or facts delivered fast, with personality. one per scene. Use reactions/gasps between objects.
-            - Scene 5 = PAYOFF + CTA: End with a clear benefit summary OR a cliffhanger.
+            userPrompt = `Create a viral short LIFEHACK script with exactly 6 scenes for "${topic}".
+            Rotate Variants (A, B, C, D) for each scene.
 
-            FORMAT (Output JSON):
+            Output JSON:
             {
-              "intro": "Viral Title in ${langName}",
+              "intro": "Viral Title",
               "scenes": [
                 {
                   "id": 1,
-                  "character": "Object Name in ${langName}",
-                  "line": "Spoken dialogue in ${langName} including [emotion in brackets]",
-                  "emotion": "Dominant emotion (Angry, Mocking, Laughing, Shouting) in English",
-                  "imagePrompt": "(In English) Dramatic anthropomorphic Pixar-style [character] with round expressive eyes and lips, showing [emotion], high drama spotlighting, professional cinematic render, 8k textures.",
-                  "videoPrompt": "(In English) High-drama lip-sync animation for: '[line]'. [character] expresses [emotion] with intense body language, slow cinematic camera zoom, 9:16 vertical framing."
+                  "character": "Object Name",
+                  "line": "Dialogue [emotion]",
+                  "imageVariant": "B",
+                  "videoVariant": "B",
+                  "imagePrompt": "In English: the named physical object only, alive with eyes and mouth on the object surface, revealing the lifehack in a non-human environment. No people, no human face/body/skin/hands/legs.",
+                  "videoPrompt": "In English: object-only motion. LIP-SYNC: \"[line]\". No people, no human face/body/skin/hands/legs."
                 }
               ]
             }`;
@@ -796,15 +855,37 @@ For EACH scene (exactly 6), generate following JSON:
             const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
             const parsed = JSON.parse(jsonText);
             
-            // Post-processing: Replace [line] placeholders if AI missed them
+            // Post-processing: Replace [line] placeholders and inject Pixar Cinematic templates
             if (parsed.scenes && Array.isArray(parsed.scenes)) {
-                parsed.scenes = parsed.scenes.map(scene => {
+                parsed.scenes = parsed.scenes.map((scene, idx) => {
+                    // 1. Dialogue Injection
                     if (scene.videoPrompt && scene.videoPrompt.includes('[line]') && scene.line) {
                         scene.videoPrompt = scene.videoPrompt.replace('[line]', scene.line);
                     }
                     if (scene.videoPrompt && scene.videoPrompt.includes('[INSERT ACTUAL DIALOGUE LINE HERE') && scene.line) {
                         scene.videoPrompt = scene.videoPrompt.replace(/\[INSERT ACTUAL DIALOGUE LINE HERE[^\]]*\]/, scene.line);
                     }
+
+                    // 2. Pixar Image Variant Injection
+                    const imgVarId = scene.imageVariant || pickVariant(PIXAR_IMAGE_VARIANTS, idx).id;
+                    const imgVar = PIXAR_IMAGE_VARIANTS.find(v => v.id === imgVarId) || PIXAR_IMAGE_VARIANTS[0];
+                    const baseDesc = scene.imagePrompt || scene.character || 'character';
+                    const characterIdentity = scene.character || 'Pixar object';
+                    const objectLock = mode === 'objects'
+                        ? ` CHARACTER: ${characterIdentity}. ${TALKING_OBJECT_IMAGE_LOCK}`
+                        : '';
+                    scene.imagePrompt = `${imgVar.template(baseDesc)}.${objectLock} STYLE: ${PIXAR_IMAGE_BASE}`;
+
+                    // 3. Pixar Video Variant Injection
+                    const vidVarId = scene.videoVariant || pickVariant(PIXAR_VIDEO_VARIANTS, idx).id;
+                    const vidVar = PIXAR_VIDEO_VARIANTS.find(v => v.id === vidVarId) || PIXAR_VIDEO_VARIANTS[0];
+                    const vidMotionDesc = scene.videoPrompt || '';
+                    // Construct strong video prompt: Style FIRST, then Identity, then Motion, then Audio
+                    scene.video_prompt = `${PIXAR_VIDEO_STYLE} CHARACTER: ${characterIdentity}. ${vidVar.template} ${vidMotionDesc} ${PIXAR_VIDEO_MOTION} VISUAL RULE: Do not render any visible written words in the video. Do not show the spoken dialogue as text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, labels, or text overlays. AUDIO TRACK: A professional character voice speaking in ${langName} language exactly: "${scene.line}". LIP-SYNC: Accurate mouth movement. ${PIXAR_VIDEO_NEGATIVE} ${PIXAR_VIDEO_SAFETY} ABSOLUTE RULE: The character MUST stay as ${characterIdentity} at all times. Show only the physical object with eyes and mouth on its surface. NO people in frame. NO human body parts. NO human morphing.`;
+                    
+                    // Legacy field support
+                    scene.videoPrompt = scene.video_prompt;
+
                     return scene;
                 });
             }

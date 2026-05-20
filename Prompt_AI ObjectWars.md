@@ -40,6 +40,10 @@ Based on the script above, create a detailed text-to-image prompt for each chara
 
 CHARACTER REQUIREMENTS:
 - Object must look ALIVE and KNOWLEDGEABLE — like an expert, not a brawler
+- ABSOLUTE VISUAL LOCK: the character is the physical object itself, not a human, not a person in a costume, not a mascot with a human body
+- NO PEOPLE IN FRAME: no human faces, heads, skin, hands, arms, legs, feet, silhouettes, presenters, owners, or background humans
+- Put the expressive eyes and lip-sync-ready mouth directly on the object's own surface/material
+- Use object-specific posing: tilt, lean, bounce, wobble, lid opening, cable bending, screen glow, fabric folding, steam puff, etc. Do NOT use human body posing
 - Facial expression must match the lifehack moment: excited to reveal, proud of knowing, whispering a secret, shocked at human ignorance
 - Clearly visible expressive mouth, lips, or anthropomorphic talking feature optimized for lip-sync animation
 - Eyes should convey intelligence, warmth, or mischief — NOT anger
@@ -54,11 +58,12 @@ EACH PROMPT MUST INCLUDE:
 1. Object appearance + material + color
 2. Facial structure + mouth/lip placement
 3. Dominant emotion for this character
-4. Signature pose (pointing finger, leaning in to whisper, arms crossed smugly, etc.)
+4. Signature object pose/motion (tilting toward camera, leaning on its edge, wobbling proudly, lid half-open like whispering, screen glowing smugly, etc.)
 5. Camera angle (close-up for secrets, medium for dialogue)
 6. Lighting (warm studio / dramatic spotlight / soft kitchen light)
 7. Background environment matching the setting
 8. Ultra-high detail, render-ready
+9. Negative prompt: no human, no person, no human face, no human head, no human skin, no hands, no arms, no legs, no feet, no human body, no presenter, no realistic portrait
 
 OUTPUT: Separate clearly labeled prompts for every character, ready for direct use in image-generation or video tools. 
 ABSOLUTE PROMPT RULES: STERNLY FOLLOW the text for lip-sync. NO MUSIC allowed. NO independent translations; use strictly the language specified in the prompt.

@@ -19,13 +19,30 @@ const { registerSkeletonHandlers, synthesizeUnifiedSpeech } = require('./skeleto
 const { registerGLabsHandlers } = require('./glabs-handlers.cjs');
 const { registerStoryHandlers } = require('./story-handlers.cjs');
 const { registerCartoonHandlers } = require('./cartoon-handlers.cjs');
-// const freepikKeys = require('./freepik-key-manager.cjs');
 const { registerExportHandlers } = require('./export-handlers.cjs');
 
 // ── Новые модули (П.1, П.3, П.4, П.5) ──────────────────────────────────────
 const { queueManager, STATUS, TASK_TYPE } = require('./queue-manager.cjs');
 const { validateAllKeys } = require('./api-validator.cjs');
 const promptCache = require('./prompt-cache.cjs');
+
+function isPathInside(filePath, allowedRoot) {
+    const relative = path.relative(allowedRoot, filePath);
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+const MEDIA_ROOTS = [
+    'Stories',
+    'SkeletonShorts',
+    'CinematicTimelapse',
+    'Cartoons',
+    'Audio',
+    'Images',
+    'Image',
+    'Video',
+    'FinalVideo',
+    'Music',
+].map((dir) => path.resolve(__dirname, dir));
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -188,8 +205,12 @@ app.whenReady().then(async () => {
                 filePath = filePath.substring(1);
             }
             
-            // Normalize path for the OS
-            filePath = path.normalize(filePath);
+            // Normalize path for the OS and keep media:// scoped to generated assets.
+            filePath = path.resolve(path.normalize(filePath));
+
+            if (!MEDIA_ROOTS.some((root) => isPathInside(filePath, root))) {
+                return new Response('Forbidden', { status: 403 });
+            }
             
             if (!fs.existsSync(filePath)) {
                 return new Response('File not found', { status: 404 });
@@ -249,4 +270,3 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
-

@@ -169,17 +169,7 @@ fs.writeFileSync('/path/to/output.mp3', buf);
 
 ## Поиск голосов и public_owner_id
 
-```bash
-# Поиск голоса по имени
-node list_voices.cjs "Rachel"
-
-# Список всех голосов
-node list_voices.cjs
-
-# Результат включает voice_id и public_owner_id
-```
-
-Или через API:
+Через API:
 ```
 GET /shared-voices?page=0&page_size=30&search={voice_id}
 Headers: X-API-Key: {key}
@@ -189,14 +179,8 @@ Headers: X-API-Key: {key}
 
 ## Тестирование
 
-```bash
-# Быстрый тест через debug_voice.cjs
-node debug_voice.cjs
-
-# Убедитесь что в .env есть:
-# VOICEAPI_KEY=...
-# TEST_VOICE_ID=...
-```
+Используйте генерацию озвучки из приложения. Убедитесь, что в `.env` есть
+`VOICEAPI_KEY` и `STORY_VOICE_ID` или `TEST_VOICE_ID`.
 
 ---
 

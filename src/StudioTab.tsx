@@ -33,7 +33,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [topic, setTopic] = useState('');
     const [lang, setLang] = useState('Russian');
     const [imageModel, setImageModel] = useState<string>('freepik-mystic');
-    const [videoModel] = useState<string>('veo_31_fast');
+    const [videoModel] = useState<string>('veo_31_lite');
     const [script, setScript] = useState<StudioScript | null>(null);
 
     const [isLoading, setIsLoading] = useState(false);
@@ -99,14 +99,14 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         } : null);
     };
 
-    const generateImage = async (sceneId: number) => {
+    const generateImage = async (sceneIndex: number, sceneId: number) => {
         const scene = script?.scenes.find(s => s.id === sceneId);
         if (!scene) return;
         updateScene(sceneId, { status: 'generating_images' });
         try {
             const imageUrl = await window.electronAPI.skeletonGenerateImage({
-                sceneIndex: sceneId,
-                imagePrompt: `STRICT VERTICAL 9:16 PORTRAIT. ${scene.imagePrompt}. 3D Disney Pixar style. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`,
+                sceneIndex: sceneIndex,
+                imagePrompt: `STRICT VERTICAL 9:16 PORTRAIT ORIENTATION. ${scene.imagePrompt}`,
                 imageModel: imageModel as any,
                 projectFolder
             });
@@ -117,7 +117,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         }
     };
 
-    const animateScene = async (sceneId: number) => {
+    const animateScene = async (sceneIndex: number, sceneId: number) => {
         const scene = script?.scenes.find(s => s.id === sceneId);
         if (!scene || !scene.selectedImage) {
             alert('Сначала сгенерируйте изображение!');
@@ -127,7 +127,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         updateScene(sceneId, { status: 'generating_video' });
         try {
             const videoUrl = await window.electronAPI.skeletonGenerateVideo({
-                sceneIndex: sceneId,
+                sceneIndex: sceneIndex,
                 videoPrompt: scene.videoPrompt,
                 scriptLine: scene.line,
                 language: lang,
@@ -386,10 +386,10 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                             </div>
 
                                             <div className="scene-actions">
-                                                <button onClick={() => generateImage(scene.id)} disabled={scene.status !== 'idle'} className="action-btn secondary">
+                                                <button onClick={() => generateImage(idx, scene.id)} disabled={scene.status !== 'idle'} className="action-btn secondary">
                                                     {scene.status === 'generating_images' ? <RefreshCw className="spin" /> : <ImageIcon size={16} />} GENERATE ACTOR
                                                 </button>
-                                                <button onClick={() => animateScene(scene.id)} disabled={scene.status !== 'idle'} className="action-btn primary">
+                                                <button onClick={() => animateScene(idx, scene.id)} disabled={scene.status !== 'idle'} className="action-btn primary">
                                                     {scene.status === 'generating_video' ? <RefreshCw className="spin" /> : <Zap size={16} />} ANIMATE SCENE
                                                 </button>
                                             </div>
@@ -411,7 +411,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                             ) : scene.selectedImage ? (
                                                 <div className="preview-container group">
                                                     <img src={scene.selectedImage} className="preview-9-16" alt="Actor preview" />
-                                                    <button onClick={() => animateScene(scene.id)} className="overlay-animate-btn">
+                                                    <button onClick={() => animateScene(idx, scene.id)} className="overlay-animate-btn">
                                                         ANIMATE NOW
                                                     </button>
                                                 </div>

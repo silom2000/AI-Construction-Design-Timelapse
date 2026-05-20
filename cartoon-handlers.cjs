@@ -19,6 +19,7 @@ const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handle
 const { spawn } = require('child_process');
 const axios = require('axios');
 const crypto = require('crypto');
+const historyManager = require('./history-manager.cjs');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VoiseAPI TTS — same pattern as story-handlers.cjs
@@ -195,8 +196,15 @@ function registerCartoonHandlers(ipcMain) {
 Идеи должны быть УНИКАЛЬНЫМИ и не повторяться в разных генерациях.
 Для обеспечения разнообразия, если тема не задана, выбирай из широкого спектра: от древних цивилизаций (Майя, Индия, Египет) до необычных профессий XIX-XX веков.`;
 
-        const userPrompt = `Тематический запрос: ${topic || 'Случайная УНИКАЛЬНАЯ профессия из любого уголка истории — выбери самую интересную и малоизвестную'}
+        const historyKey = `cartoon_${language || 'en'}`;
+        const completedTopics = historyManager.getTopics(historyKey);
+        let completedText = '';
+        if (completedTopics && completedTopics.length > 0) {
+            completedText = `\nУЖЕ БЫЛИ СГЕНЕРИРОВАНЫ И ЗАПРЕЩЕНЫ (НЕ ПОВТОРЯЙ ИХ):\n- ${completedTopics.slice(-40).join('\n- ')}\n`;
+        }
 
+        const userPrompt = `Тематический запрос: ${topic || 'Случайная УНИКАЛЬНАЯ профессия из любого уголка истории — выбери самую интересную и малоизвестную'}
+${completedText}
 Сгенерируй РОВНО 2 РАЗНЫЕ идеи для мультяшных образовательных роликов о профессиях.
 Используй случайное зерно креативности, чтобы не повторять предыдущие темы.
 
@@ -330,6 +338,11 @@ CAMERA по сцене (CINEMATIC MOVEMENTS):
         const ideaCharacter = idea?.character       || '';
         const ideaProfession= idea?.profession      || '';
         const ideaFact      = idea?.profession_fact || '';
+
+        if (ideaProfession) {
+            const historyKey = `cartoon_${language || 'en'}`;
+            historyManager.addTopic(historyKey, ideaProfession);
+        }
 
         const ideaContext = [
             ideaTitle      ? `Название: ${ideaTitle}`         : '',
@@ -501,7 +514,7 @@ ${ideaContext}
 
         const options = {
             prompt: videoPrompt,
-            model: 'veo_31_fast',
+            model: 'veo_31_lite',
             aspectRatio: '9:16',
             sectionDir,
             subFolder: 'Videos',

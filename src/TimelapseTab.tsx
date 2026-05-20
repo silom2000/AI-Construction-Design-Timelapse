@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Image as ImageIcon, Video, CheckCircle, RotateCw, RefreshCw, Download, Zap, Copy, Check } from 'lucide-react';
+import { Image as ImageIcon, Video, CheckCircle, RotateCw, RefreshCw, Download, Zap, Copy, Check } from 'lucide-react';
 import './TimelapseTab.css';
 
 export interface CinematicPromptData {
@@ -73,7 +73,6 @@ const TimelapseTab: React.FC = () => {
         setError(null);
         setIsGenerating(true);
         try {
-            const now = new Date();
             const data = await window.electronAPI.timelapseGenerateCustomPrompts(
                 customIdea, 
                 referenceImages.filter(img => !!img),

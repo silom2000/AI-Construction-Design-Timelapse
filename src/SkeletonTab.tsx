@@ -23,7 +23,7 @@ interface SceneState {
 export default function SkeletonTab() {
   const [language, setLanguage] = useState<Language>('en');
   const [imageModel, setImageModel] = useState<'imagen4' | 'nano_banana_2' | 'nano_banana_pro'>('imagen4');
-  const [videoModel] = useState<"veo_31_fast" | "freepik-wan" | "pollinations-ltx2" | "pixverse-v5" | "grok-video">("veo_31_fast");
+  const [videoModel] = useState<"veo_31_lite" | "freepik-wan" | "pollinations-ltx2" | "pixverse-v5" | "grok-video">("veo_31_lite");
 
   // Phase 1
   const [ideasText, setIdeasText] = useState('');

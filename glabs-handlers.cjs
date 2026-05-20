@@ -235,7 +235,7 @@ const generateVideoViaGLabs = async (options = {}) => {
     return gLabsTaskQueue.enqueue('video', async () => {
         const {
             prompt,
-            model = 'veo_31_fast',
+            model = 'veo_31_lite',
             aspectRatio = '9:16',
             resolution = '720p',
             sectionDir = path.join(__dirname, 'Images'),
@@ -410,7 +410,7 @@ function registerGLabsHandlers(ipcMain) {
     // 6. Генерация видео через G-Labs
     ipcMain.handle('glabs-generate-video', async (event, {
         prompt,
-        model = 'veo_31_fast',
+        model = 'veo_31_lite',
         aspectRatio = '9:16',
         section = 'skeleton',
         subFolder = '',

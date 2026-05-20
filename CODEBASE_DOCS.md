@@ -55,7 +55,6 @@ d:/Open_Project/kimi/
 | `VOISE_API_BASE` | Базовый URL VoiseAPI (default: https://voiceapi.csv666.ru) | skeleton-handlers |
 | `GLABS_API_KEY` | Ключ G-Labs API для изображений/видео | glabs-handlers |
 | `GLABS_WEBHOOK_URL` | URL вебхука G-Labs (default: http://127.0.0.1:8765) | glabs-handlers |
-| `FREEPIK_API_KEY` | Ключ Freepik (для WAN видео) | skeleton-handlers |
 | `POLLINATIONS_API_KEY` | Ключ Pollinations для генерации текста | skeleton-handlers |
 | `CUSTOM_AI_API_KEY` | Ключ локального AI (http://127.0.0.1:8045) | skeleton-handlers |
 | `CUSTOM_AI_URL` | URL локального AI сервера | skeleton-handlers |
@@ -171,7 +170,7 @@ projectFolder: string         // 'Story_HHMMSS_DDMMYYYY'
 
 5. handleGenerateVideo(sceneId, prompt)
    → storyGenerateVideo({sceneIndex, videoPrompt, sourceImageUrl, projectFolder})
-   → [backend] generateVideoViaGLabs (model: veo_31_fast, режим I2V)
+   → [backend] generateVideoViaGLabs (model: veo_31_lite, режим I2V)
    → reencodeForPreview (ffmpeg H.264)
    → Возвращает media:///path?t=timestamp
 ```
@@ -293,7 +292,7 @@ STORY_DIRS = {
 ```typescript
 language: Language    // 'en' | 'fr' | 'de' | 'es' | 'it'
 imageModel: 'imagen4' | 'nano_banana_2' | 'nano_banana_pro'
-videoModel: 'veo_31_fast' | 'freepik-wan' | 'pollinations-ltx2' | 'pixverse-v5' | 'grok-video'
+videoModel: 'veo_31_lite' | 'freepik-wan' | 'pollinations-ltx2' | 'pixverse-v5' | 'grok-video'
 parsedIdeas: { num, title, desc, ru? }[]
 selectedIdea: string
 script: string          // текстовый сценарий
@@ -323,7 +322,7 @@ projectFolder: string   // 'Task_HHMMSS_DDMMYYYY'
 4. handleGenerateVideo(i)
    → skeletonGenerateVideo({sceneIndex, videoPrompt, ltxVideoPrompt, ...})
    → [backend] В зависимости от videoModel:
-     - veo_31_fast: Google Veo через G-Labs
+     - veo_31_lite: Google Veo через G-Labs
      - freepik-wan: Freepik WAN v2.6
      - pollinations-ltx2: LTX-2 text-to-video (без изображения)
      - pixverse-v5: Pixverse
@@ -385,7 +384,7 @@ mode: 'health' | 'objects'  // передаётся как prop
 topic: string
 lang: string                 // Russian | English | Polish | German | French | Spanish
 imageModel: string           // default 'freepik-mystic'
-videoModel: string           // default 'veo_31_fast'
+videoModel: string           // default 'veo_31_lite'
 script: StudioScript | null
 projectFolder: string        // 'Studio_HHMMSS_DDMMYYYY'
 ```
@@ -567,7 +566,7 @@ const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handle
 
 ### generateVideoViaGLabs({ prompt, model, aspectRatio, sectionDir, subFolder, sceneIndex, mode, referenceImages, onProgress })
 - Генерация видео через G-Labs API
-- `model`: `'veo_31_fast'` | etc.
+- `model`: `'veo_31_lite'` | etc.
 - `mode`: `'start_image'` (I2V) | `'text_to_video'` (T2V)
 - `referenceImages`: `[{ data: 'data:image/jpeg;base64,...' }]`
 - Возвращает `string` — абсолютный путь к видеофайлу

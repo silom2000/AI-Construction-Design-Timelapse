@@ -1,7 +1,8 @@
 const { ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
+const os = require('os');
+const { spawn, execSync } = require('child_process');
 const { callPollinations } = require('./skeleton-handlers.cjs'); // Reuse the LLM caller
 const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 
@@ -31,6 +32,24 @@ You are a Site-Specific Structural Engineer. Your goal is to recreate a construc
 - IMAGES: "8k realistic architectural photography, sharp details, consistent lighting, original environment preservation."
 - VIDEOS: "Temporal stability, natural physics, consistent background."
 
+--- OUTPUT FORMAT (STATE 2) ---
+When the user asks for ideas, output exactly this JSON object:
+{
+  "environments": [
+    {
+      "id": 1,
+      "ru": "Полноценная русская карточка идеи: объект, место, трансформация, визуальный вау-эффект и финальный результат.",
+      "en": "Full English idea card: location, object, transformation, cinematic hook, and final result."
+    }
+  ]
+}
+
+STATE 2 rules:
+- Generate exactly 4 rich video-project ideas, not short prompts.
+- Each idea must be a different construction/design transformation.
+- Each "ru" and "en" field must be 2-3 vivid sentences, suitable for displaying as a card.
+- Do not output image prompts, video prompts, stage prompts, or the STATE 3 schema in STATE 2.
+
 --- OUTPUT FORMAT (STATE 3) ---
 Output exactly as JSON:
 {
@@ -54,13 +73,35 @@ Output exactly as JSON:
 // Simple async wait to simulate process if needed
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+function normalizeEnvironmentIdeas(parsed) {
+    const source = Array.isArray(parsed) ? parsed : parsed?.environments;
+    if (!Array.isArray(source)) return null;
+
+    return source.slice(0, 4).map((item, index) => {
+        if (typeof item === 'string') {
+            return { id: index + 1, ru: item, en: item };
+        }
+
+        const ru = item.ru || item.russian || item.title_ru || item.title || item.name || '';
+        const en = item.en || item.english || item.title_en || item.description || ru;
+        return {
+            id: item.id || index + 1,
+            ru: String(ru).trim(),
+            en: String(en).trim(),
+        };
+    }).filter((item) => item.ru && item.en);
+}
+
 function registerTimelapseHandlers(ipcMain) {
     let conversationHistory = [];
 
     ipcMain.handle('timelapse-get-environments', async () => {
         conversationHistory = [
             { role: 'system', content: MASTER_PROMPT },
-            { role: 'user', content: 'start' }
+            {
+                role: 'user',
+                content: 'STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards. Return only JSON in the STATE 2 format.'
+            }
         ];
 
         console.log('[Timelapse] Requesting State 2 Environments...');
@@ -71,13 +112,8 @@ function registerTimelapseHandlers(ipcMain) {
         try {
             const cleanJson = response.match(/\[[\s\S]*\]/)?.[0] || response.match(/\{[\s\S]*\}/)?.[0] || response;
             const parsed = JSON.parse(cleanJson);
-            
-            // If it's a direct array
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed.slice(0, 4);
-            
-            // If it's an object containing an array (common in JSON mode)
-            const possibleArray = Object.values(parsed).find(v => Array.isArray(v));
-            if (possibleArray && possibleArray.length > 0) return possibleArray.slice(0, 4);
+            const ideas = normalizeEnvironmentIdeas(parsed);
+            if (ideas && ideas.length === 4) return ideas;
         } catch (e) {
             console.warn('[Timelapse] JSON parse failed, falling back to line parse:', e.message);
         }
@@ -88,7 +124,10 @@ function registerTimelapseHandlers(ipcMain) {
 
     ipcMain.handle('timelapse-generate-prompts', async (event, { selectionIndex, selectedEnv }) => {
         console.log(`[Timelapse] Requesting State 3 for Env #${selectionIndex}`);
-        conversationHistory.push({ role: 'user', content: `I select option ${selectionIndex}` });
+        conversationHistory.push({
+            role: 'user',
+            content: `STATE 3: I select option ${selectionIndex}. Selected idea: ${JSON.stringify(selectedEnv)}. Return only JSON in the STATE 3 format.`
+        });
 
         const rawJsonString = await callPollinations(conversationHistory, true);
         conversationHistory.push({ role: 'assistant', content: rawJsonString });
@@ -276,7 +315,7 @@ function registerTimelapseHandlers(ipcMain) {
             const startB64 = fs.readFileSync(startImgPath, { encoding: 'base64' });
             const generatedVideoPath = await generateVideoViaGLabs({
                 prompt: `CINEMATIC TOUR. SLOW SMOOTH CAMERA MOVEMENT. ${prompt}`,
-                model: 'veo_31_fast',
+                model: 'veo_31_lite',
                 sectionDir: TIMELAPSE_DIR,
                 subFolder: subFolder,
                 sceneIndex: videoIndex,
@@ -309,7 +348,7 @@ function registerTimelapseHandlers(ipcMain) {
         // Mode `start_end_image` enables smooth transition between two frames
         const generatedVideoPath = await generateVideoViaGLabs({
             prompt: `STATIC CAMERA. TIMELAPSE TRANSITION. ${prompt}`,
-            model: 'veo_31_fast', 
+            model: 'veo_31_lite', 
             sectionDir: TIMELAPSE_DIR,
             subFolder: subFolder,
             sceneIndex: videoIndex,

@@ -785,7 +785,7 @@ ${ideaContext}
 
         const options = {
             prompt: enhancedPrompt,
-            model: 'veo_31_fast',
+            model: 'veo_31_lite',
             aspectRatio: '9:16',
             sectionDir,
             subFolder: 'Videos',

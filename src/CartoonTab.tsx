@@ -104,11 +104,11 @@ export default function CartoonTab() {
   };
 
   // ── Generate image ─────────────────────────────────────────────────────────
-  const handleGenerateImage = async (sceneId: number, prompt: string) => {
+  const handleGenerateImage = async (sceneIndex: number, sceneId: number, prompt: string) => {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: true, statusText: 'Generating image...' } }));
     try {
       const url = await (window as any).electronAPI.cartoonGenerateImage({
-        sceneIndex: sceneId, imagePrompt: prompt, imageModel, projectFolder
+        sceneIndex: sceneIndex, imagePrompt: prompt, imageModel, projectFolder
       });
       const imgUrl = Array.isArray(url) ? url[0] : url;
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: false, imgUrl, statusText: undefined } }));
@@ -119,11 +119,11 @@ export default function CartoonTab() {
   };
 
   // ── Regenerate image ───────────────────────────────────────────────────────
-  const handleRegenerateImage = async (sceneId: number, prompt: string) => {
+  const handleRegenerateImage = async (sceneIndex: number, sceneId: number, prompt: string) => {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgUrl: undefined, imgLoading: true, statusText: 'Regenerating image...' } }));
     try {
       const url = await (window as any).electronAPI.cartoonGenerateImage({
-        sceneIndex: sceneId, imagePrompt: prompt, imageModel, projectFolder
+        sceneIndex: sceneIndex, imagePrompt: prompt, imageModel, projectFolder
       });
       const imgUrl = Array.isArray(url) ? url[0] : url;
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: false, imgUrl, statusText: undefined } }));
@@ -134,11 +134,11 @@ export default function CartoonTab() {
   };
 
   // ── Generate audio ─────────────────────────────────────────────────────────
-  const handleGenerateAudio = async (sceneId: number, text: string) => {
+  const handleGenerateAudio = async (sceneIndex: number, sceneId: number, text: string) => {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], audioLoading: true, statusText: 'Synthesizing voice...' } }));
     try {
       const audioPath = await (window as any).electronAPI.cartoonGenerateAudio({
-        sceneIndex: sceneId, text, language, projectFolder
+        sceneIndex: sceneIndex, text, language, projectFolder
       });
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], audioLoading: false, audioUrl: audioPath, statusText: undefined } }));
     } catch (e) {
@@ -148,12 +148,12 @@ export default function CartoonTab() {
   };
 
   // ── Regenerate video (same reference image, clears previous result) ────────
-  const handleRegenerateVideo = async (sceneId: number, prompt: string, narrationLine?: string) => {
+  const handleRegenerateVideo = async (sceneIndex: number, sceneId: number, prompt: string, narrationLine?: string) => {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidUrl: undefined, vidLoading: true, statusText: 'Regenerating video...' } }));
     const state = sceneStates[sceneId];
     try {
       const url = await (window as any).electronAPI.cartoonGenerateVideo({
-        sceneIndex: sceneId,
+        sceneIndex: sceneIndex,
         videoPrompt: prompt,
         sourceImageUrl: state?.imgUrl,
         narrationLine: narrationLine || '',
@@ -167,12 +167,12 @@ export default function CartoonTab() {
   };
 
   // ── Generate video ─────────────────────────────────────────────────────────
-  const handleGenerateVideo = async (sceneId: number, prompt: string, narrationLine?: string) => {
+  const handleGenerateVideo = async (sceneIndex: number, sceneId: number, prompt: string, narrationLine?: string) => {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidLoading: true, statusText: 'Generating video...' } }));
     const state = sceneStates[sceneId];
     try {
       const url = await (window as any).electronAPI.cartoonGenerateVideo({
-        sceneIndex: sceneId,
+        sceneIndex: sceneIndex,
         videoPrompt: prompt,
         sourceImageUrl: state?.imgUrl,
         narrationLine: narrationLine || '',
@@ -361,7 +361,7 @@ export default function CartoonTab() {
             )}
 
             {/* Scenes */}
-            {script.scenes.map(scene => (
+            {script.scenes.map((scene, idx) => (
               <div key={scene.id} className="cartoon-scene">
                 <div className="cartoon-scene-header">
                   <span className="cartoon-scene-badge">
@@ -379,7 +379,7 @@ export default function CartoonTab() {
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                       <button
                         className="cartoon-media-btn"
-                        onClick={() => handleGenerateImage(scene.id, scene.imagePrompt)}
+                        onClick={() => handleGenerateImage(idx, scene.id, scene.imagePrompt)}
                         disabled={sceneStates[scene.id]?.imgLoading}
                       >
                         {sceneStates[scene.id]?.imgLoading && !sceneStates[scene.id]?.imgUrl
@@ -388,7 +388,7 @@ export default function CartoonTab() {
                       {sceneStates[scene.id]?.imgUrl && (
                         <button
                           className="cartoon-media-btn"
-                          onClick={() => handleRegenerateImage(scene.id, scene.imagePrompt)}
+                          onClick={() => handleRegenerateImage(idx, scene.id, scene.imagePrompt)}
                           disabled={sceneStates[scene.id]?.imgLoading}
                           style={{ borderColor: '#f0c040', color: '#f0c040' }}
                         >
@@ -413,7 +413,7 @@ export default function CartoonTab() {
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                       <button
                         className="cartoon-media-btn"
-                        onClick={() => handleGenerateVideo(scene.id, scene.videoPrompt, scene.line)}
+                        onClick={() => handleGenerateVideo(idx, scene.id, scene.videoPrompt, scene.line)}
                         disabled={sceneStates[scene.id]?.vidLoading || !sceneStates[scene.id]?.imgUrl}
                         title={!sceneStates[scene.id]?.imgUrl ? 'Generate image first' : ''}
                       >
@@ -423,7 +423,7 @@ export default function CartoonTab() {
                       {sceneStates[scene.id]?.vidUrl && (
                         <button
                           className="cartoon-media-btn"
-                          onClick={() => handleRegenerateVideo(scene.id, scene.videoPrompt, scene.line)}
+                          onClick={() => handleRegenerateVideo(idx, scene.id, scene.videoPrompt, scene.line)}
                           disabled={sceneStates[scene.id]?.vidLoading}
                           style={{ borderColor: '#60a5fa', color: '#60a5fa' }}
                         >
@@ -432,7 +432,7 @@ export default function CartoonTab() {
                       )}
                       <button
                         className="cartoon-media-btn"
-                        onClick={() => handleGenerateAudio(scene.id, scene.line)}
+                        onClick={() => handleGenerateAudio(idx, scene.id, scene.line)}
                         disabled={sceneStates[scene.id]?.audioLoading}
                         style={{ borderColor: '#4ade80', color: '#4ade80' }}
                       >
