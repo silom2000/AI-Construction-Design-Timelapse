@@ -262,19 +262,19 @@ ${completedText}
 - Тёплый, наблюдательный, СИЛЬНО вовлекающий, динамичный
 - Обращение на "ты" — зритель=наблюдатель, видит всё изнутри
 - Конкретные детали ("в 4 утра", "37 ножей", "17 кг рыбы") > абстракции
-- Сцена 1: Мощный ХУК и обещание раскрыть секрет в конце ("Досмотри до конца, чтобы узнать, почему...")
+- Сцена 1: Мощный ХУК и обещание раскрыть секрет в конце
 - Сцена 8: Финальный вывод с призывом к действию или вопросом зрителю
 - Каждая сцена должна заканчиваться на интригующей ноте
 
 СТРУКТУРА 8 ЧАСТЕЙ:
-1. ХУК + ОБЕЩАНИЕ: вопрос или факт, который никто не знает + призыв досмотреть до конца.
-2. УТРО: как начинается рабочий день (конкретно, детали, атмосфера).
-3. ГЛАВНЫЙ ИНСТРУМЕНТ: то, чему учатся годами, описание процесса.
-4. СКРЫТАЯ ТРУДНОСТЬ: то, чего не видно снаружи, эмоциональный накал.
-5. СМЕШНОЙ / НЕОЖИДАННЫЙ МОМЕНТ: реальная история или типичный случай.
-6. ВЗАИМОДЕЙСТВИЕ: самый запоминающийся момент с миром/людьми.
-7. КОНЕЦ ДНЯ: что остаётся, когда все уходят, момент тишины.
-8. ФИНАЛ: обещанный секрет + неожиданная мораль + подпишись/вопрос.
+1. ХУК + ОБЕЩАНИЕ — voiceType: narrator (диктор за кадром, герой смотрит в камеру или совершает действие)
+2. УТРО — voiceType: narrator (диктор описывает рабочий день)
+3. ГЛАВНЫЙ ИНСТРУМЕНТ — voiceType: narrator или hero (если герой объясняет свой инструмент)
+4. СКРЫТАЯ ТРУДНОСТЬ — voiceType: narrator или hero (монолог героя о трудностях)
+5. СМЕШНОЙ МОМЕНТ — voiceType: dialogue (герой + другой персонаж — диалог)
+6. ВЗАИМОДЕЙСТВИЕ — voiceType: dialogue (герой + клиент/ученик/собеседник — диалог)
+7. КОНЕЦ ДНЯ — voiceType: narrator (атмосфера, тишина, диктор)
+8. ФИНАЛ — voiceType: hero (герой смотрит в камеру, говорит напрямую зрителю)
 
 ЗАПРЕЩЕНО:
 - Банальные фразы ("эта профессия очень важна")
@@ -311,9 +311,9 @@ vertical TikTok framing, professional camera work, 8k render, breathtaking visua
 - Сцена 8 (вывод) → vibrant sunset glow, long saturated shadows
 
 ════════════════════════════════════════════════
-СТИЛЬ ВИДЕО (3D cartoon animated):
+СТИЛЬ ВИДЕО (VEO3 — нативный аудио внутри видео):
 ════════════════════════════════════════════════
-Основа для КАЖДОГО videoPrompt:
+Основа для КАЖДОГО videoPrompt — ТОЛЬКО ВИЗУАЛЬНАЯ ЧАСТЬ (без аудио секции, аудио добавляется отдельно):
 "8-second cinematic stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic EXTREMELY VIBRANT cartoon style.
 SCENE: [ДЕЙСТВИЕ]. CHARACTER: [ПЕРСОНАЖ + ДЕТАЛИ]. SETTING: [ОБСТАНОВКА].
 BOLD VISUALS: Include prominent LARGE DOMINANT OBJECTS in the composition for better AI understanding.
@@ -356,31 +356,34 @@ CAMERA по сцене (CINEMATIC MOVEMENTS):
         const userPrompt = `ИДЕЯ ДЛЯ МУЛЬТЯШНОЙ ИСТОРИИ О ПРОФЕССИИ:
 ${ideaContext}
 
-ТВОЯ ЗАДАЧА: Написать 8 нарративных строк (line) и промпты для изображений и видео.
+ТВОЯ ЗАДАЧА: Написать 8 нарративных строк, промпты для изображений и видео, ПЛЮС профили голосов и типы озвучки каждой сцены.
 
-ПРИМЕР СТИЛЯ (нарративные строки, профессия — корабельный кок XVII века, ${langName}):
-Сцена 1: "Знаешь сколько ножей у корабельного кока? Тридцать семь. И каждый — для разного мяса."
-Сцена 2: "Четыре утра. Огонь в камбузе уже горит. Шторм ещё идёт. Ты уже готовишь."
-Сцена 3: "За год ты научился солить рыбу так чтобы она выжила дольше тебя."
-Сцена 4: "Никто не скажет спасибо. Капитан заметит тебя только когда что-то не так."
-Сцена 5: "Однажды ты приготовил акулу. Команда ела молча. Потом попросила добавку."
-Сцена 6: "Больной матрос пришёл ночью. Горячий бульон. Он выжил. Ты не узнаешь об этом."
-Сцена 7: "Все спят. Ты скребёшь котёл. За иллюминатором Атлантика. Тишина."
-Сцена 8: "Ты накормил двести человек. Они не знают твоего имени. И это нормально."
+ПРИМЕР СТИЛЯ (профессия — корабельный кок XVII века, ${langName}):
+Сцена 1 (narrator): "Знаешь сколько ножей у корабельного кока? Тридцать семь. Каждый — для разного мяса, досмотри до конца."
+Сцена 5 (dialogue): Кок: "Я приготовил акулу". Боцман: "Мы такое не едим". Потом попросил добавку.
+Сцена 8 (hero): Герой смотрит в камеру: "Ты накормил двести человек. Они не знают твоего имени. Подпишись."
 
 ТРЕБОВАНИЯ:
 - Язык нарратива: СТРОГО ${langName}
-- СТРОГО 17-20 слов на строку
-- Юмор, удивление и МОЩНЫЙ ИНТРИГУЮЩИЙ ХУК > пафос
-- Обязательно в Сцене 1: призыв смотреть до конца ("Досмотри до конца, чтобы узнать..."). 
-- Обязательно в Сцене 8: обещанный секрет/финал + призыв к подписке/вопрос.
+- СТРОГО 17-20 слов в поле line
+- Обязательно в Сцене 1 (narrator): призыв смотреть до конца
+- Обязательно в Сцене 8 (hero): финал + призыв к подписке/вопрос зрителю
 - Конкретные детали из реальной профессии
+- Сцена 5 и 6 ДОЛЖНЫ быть dialogue с реальным обменом репликами между двумя персонажами
+- voiceType для каждой сцены: narrator | hero | dialogue (согласно структуре выше)
+- dialogueParts — ТОЛЬКО для сцен с voiceType=dialogue: массив [{speaker, text}] где speaker это "hero" или "secondary"
+- narratorTone — эмоциональный тон озвучки (mysterious / warm / dramatic / curious / comedic / melancholic / triumphant)
 
 Выведи JSON:
 {
   "title": "поэтичное название на ${langName}",
   "profession": "название профессии",
   "era": "эпоха и место",
+  "voiceProfile": {
+    "narrator": "Detailed English voice description: e.g. warm deep male voice, calm documentary storytelling tone, slight gravitas",
+    "hero": "Detailed English voice description: e.g. young male voice, slightly gruff, earnest and tired, honest determination",
+    "secondary": "Detailed English voice description: e.g. older female voice, sharp wit, dry humor, skeptical tone"
+  },
   "characterProfile": {
     "faceShape": "round",
     "nose": "broad flat nose",
@@ -396,14 +399,22 @@ ${ideaContext}
     {
       "id": 1,
       "stage": "ХУК",
+      "voiceType": "narrator",
+      "narratorTone": "mysterious",
       "line": "нарратив на ${langName} — СТРОГО 17-20 слов, мощный хук + призыв смотреть до конца",
-      "imagePrompt": "highly detailed stylized 3D animated [профессия] worker, semi-realistic Pixar-style masterpiece, vibrant saturated colors, [ОПИСАНИЕ СЦЕНЫ — возраст, действие, детали]. BOLD LARGE OBJECTS in the background. Vibrant dramatic side lighting. Cinematic composition, vertical TikTok framing, 8k render. warm brown wide eyes, flour dust on cheek.",
-      "videoPrompt": "8-second cinematic stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic vibrant cartoon style. SCENE: [ДЕЙСТВИЕ]. CHARACTER: [ОПИСАНИЕ]. SETTING: [МЕСТО]. BOLD VISUALS: Large [объект] in focus. OPENING: close-up then reveal. CAMERA: cinematic slow-motion zoom-in. LIGHTING: vibrant dramatic lighting. ATMOSPHERE: rich and saturated. LAST FRAME: character looks at camera with mysterious smile. QUALITY: 8K masterpiece render."
+      "dialogueParts": null,
+      "imagePrompt": "highly detailed stylized 3D animated [профессия] worker, semi-realistic Pixar-style masterpiece, vibrant saturated colors, [ОПИСАНИЕ СЦЕНЫ]. BOLD LARGE OBJECTS in the background. Vibrant dramatic side lighting. Cinematic composition, vertical TikTok framing, 8k render.",
+      "videoPrompt": "8-second cinematic stylized 3D animated video, vertical 9:16 TikTok format, semi-realistic vibrant cartoon style. SCENE: [ДЕЙСТВИЕ — рот ЗАКРЫТ, герой совершает действие]. CHARACTER: [ОПИСАНИЕ]. SETTING: [МЕСТО]. BOLD VISUALS: Large [объект] in focus. OPENING: close-up then reveal. CAMERA: cinematic slow-motion zoom-in. LIGHTING: vibrant dramatic lighting. ATMOSPHERE: rich and saturated. LAST FRAME: [интригующий момент]. QUALITY: 8K masterpiece render."
     }
   ]
 }
 
-ВАЖНО: в JSON выведи ВСЕ 8 сцен с реальным нарративом в поле "line".`;
+ВАЖНО: 
+- Выведи ВСЕ 8 сцен с реальным нарративом
+- voiceProfile пиши НА АНГЛИЙСКОМ (это описание голоса для VEO3)
+- dialogueParts: ТОЛЬКО для сцен voiceType=dialogue, для остальных — null
+- В videoPrompt для narrator-сцен: ЯВНО указывай что рот героя ЗАКРЫТ, герой совершает действия
+- В videoPrompt для hero/dialogue-сцен: ЯВНО указывай что видны губы и нужен lip sync`;
 
         const raw = await callPollinations([
             { role: 'system', content: systemPrompt },
@@ -487,15 +498,85 @@ ${ideaContext}
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. Generate Video (image-to-video via G-Labs)
+    // 5. Generate Video with Native Audio (VEO3)
     // ─────────────────────────────────────────────────────────────────────────
-    ipcMain.handle('cartoon-generate-video', async (event, { sceneIndex, videoPrompt, sourceImageUrl, narrationLine, projectFolder }) => {
-        console.log(`[Cartoon] Generate video: scene=${sceneIndex} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
+    ipcMain.handle('cartoon-generate-video', async (event, {
+        sceneIndex, videoPrompt, sourceImageUrl, narrationLine,
+        projectFolder, voiceType, voiceProfile, narratorTone, dialogueParts
+    }) => {
+        console.log(`[Cartoon] Generate video (VEO3): scene=${sceneIndex} voiceType=${voiceType || 'narrator'} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
 
+        // ── Собираем AUDIO секцию промпта ───────────────────────────────────
+        const vType = voiceType || 'narrator';
+        const vProfile = voiceProfile || {};
+        const tone = narratorTone || 'warm';
+
+        const toneMap = {
+            mysterious: 'with an air of mystery and intrigue',
+            warm: 'with warmth and empathy',
+            dramatic: 'with dramatic intensity',
+            curious: 'with genuine curiosity and wonder',
+            comedic: 'with comedic timing and lightness',
+            melancholic: 'with quiet melancholy and reflection',
+            triumphant: 'with pride and quiet triumph',
+        };
+        const toneDesc = toneMap[tone] || 'with natural expression';
+
+        let audioSection = '';
+
+        if (vType === 'narrator') {
+            const narratorVoice = vProfile.narrator || 'warm, deep male voice, calm documentary storytelling tone';
+            audioSection = `
+AUDIO GENERATION:
+NARRATOR VOICEOVER — voice off-screen, character's mouth stays CLOSED.
+NARRATOR VOICE: ${narratorVoice}.
+TONE: ${toneDesc}.
+NARRATOR SAYS (verbatim, sync to 8 seconds): "${narrationLine || ''}"
+CHARACTER ACTION: performs work naturally with mouth closed or barely moving, no on-screen speech.
+AMBIENT SOUND: authentic period-accurate work sounds layered under narration.`;
+        } else if (vType === 'hero') {
+            const heroVoice = vProfile.hero || 'earnest young male voice, slightly gruff, honest determination';
+            audioSection = `
+AUDIO GENERATION:
+HERO SPEAKS ON-CAMERA — visible lip sync required.
+HERO VOICE: ${heroVoice}.
+TONE: ${toneDesc}.
+HERO SAYS (verbatim, lip-synced to 8 seconds): "${narrationLine || ''}"
+LIPSYNC: hero's mouth moves precisely in sync with speech, close-up on lips during key lines.
+AMBIENT SOUND: subtle background work sounds, do not overpower speech.`;
+        } else if (vType === 'dialogue') {
+            const heroVoice = vProfile.hero || 'earnest young male voice, honest determination';
+            const secVoice = vProfile.secondary || 'sharp, witty secondary voice, dry humor';
+            let dialogueText = '';
+            if (dialogueParts && dialogueParts.length > 0) {
+                dialogueText = dialogueParts.map(p => {
+                    const voice = p.speaker === 'secondary' ? 'SECONDARY CHARACTER' : 'HERO';
+                    return `${voice}: "${p.text}"`;
+                }).join('\n');
+            } else {
+                // Фоллбэк: весь текст для героя
+                dialogueText = `HERO: "${narrationLine || ''}"`;
+            }
+            audioSection = `
+AUDIO GENERATION:
+TWO-CHARACTER DIALOGUE — both characters visible with synchronized lip sync.
+HERO VOICE: ${heroVoice}. SECONDARY VOICE: ${secVoice}.
+TONE: ${toneDesc}.
+DIALOGUE (lip-synced, total ~8 seconds):
+${dialogueText}
+LIPSYNC: each character's mouth moves precisely in sync only when their character speaks.
+CAMERA: cuts between characters during dialogue, showing mouth movement clearly.
+AMBIENT SOUND: subtle background work sounds layered under dialogue.`;
+        }
+
+        // ── Финальный промпт = визуал + аудио ──────────────────────────────
+        const fullPrompt = `${videoPrompt}\n${audioSection}`;
+        console.log(`[Cartoon] VEO3 prompt built (${fullPrompt.length} chars), voiceType=${vType}`);
+
+        // ── Подготовка reference image ──────────────────────────────────────
         let referenceImages = [];
         if (sourceImageUrl && sourceImageUrl.startsWith('data:image')) {
             referenceImages.push({ data: sourceImageUrl });
-            console.log(`[Cartoon] Using base64 reference image for scene ${sceneIndex}`);
         } else {
             const imagePath = sourceImageUrl ? sourceImageUrl.replace('media:///', '').split('?')[0] : null;
             if (imagePath && fs.existsSync(imagePath)) {
@@ -504,7 +585,7 @@ ${ideaContext}
                 referenceImages.push({ data: `data:image/${ext};base64,${imageBase64}` });
                 console.log(`[Cartoon] Using file reference image: ${imagePath}`);
             } else {
-                console.log(`[Cartoon] No reference image found for scene ${sceneIndex}, using text-to-video mode`);
+                console.log(`[Cartoon] No reference image — using text-to-video mode`);
             }
         }
 
@@ -512,10 +593,12 @@ ${ideaContext}
             ? path.join(CARTOON_DIRS.base, projectFolder)
             : CARTOON_DIRS.videos;
 
+        // VEO3 с аудио — пробуем veo3, фоллбэк на veo3_fast
         const options = {
-            prompt: videoPrompt,
-            model: 'veo_31_lite',
+            prompt: fullPrompt,
+            model: 'veo3',
             aspectRatio: '9:16',
+            generateAudio: true,
             sectionDir,
             subFolder: 'Videos',
             sceneIndex,
@@ -526,10 +609,24 @@ ${ideaContext}
             }
         };
 
-        const savedPath = await generateVideoViaGLabs(options);
-        const previewPath = await reencodeForPreview(savedPath, sceneIndex, projectFolder);
-        return `media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+        try {
+            const savedPath = await generateVideoViaGLabs(options);
+            const previewPath = await reencodeForPreview(savedPath, sceneIndex, projectFolder);
+            return `media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+        } catch (err) {
+            // Фоллбэк на veo3_fast если veo3 недоступен
+            if (err.message && (err.message.includes('veo3') || err.message.includes('model'))) {
+                console.warn(`[Cartoon] veo3 failed, trying veo3_fast: ${err.message}`);
+                options.model = 'veo3_fast';
+                const savedPath = await generateVideoViaGLabs(options);
+                const previewPath = await reencodeForPreview(savedPath, sceneIndex, projectFolder);
+                return `media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+            }
+            throw err;
+        }
     });
+
+
 
     console.log('[Cartoon] Profession Story Handlers registered ✅');
 }

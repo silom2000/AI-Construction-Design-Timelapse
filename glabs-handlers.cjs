@@ -252,6 +252,9 @@ const generateVideoViaGLabs = async (options = {}) => {
         if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
 
         const bodyData = { prompt, model, aspect_ratio: aspectRatio, resolution, mode };
+        if (options.generateAudio) {
+            bodyData.generate_audio = true;
+        }
         if (referenceImages && referenceImages.length > 0) {
             bodyData.reference_images = referenceImages;
         }
@@ -416,7 +419,8 @@ function registerGLabsHandlers(ipcMain) {
         subFolder = '',
         sceneIndex = 0,
         mode = 'text_to_video',
-        referenceImages = []
+        referenceImages = [],
+        generateAudio = false
     }) => {
         return gLabsTaskQueue.enqueue('video', async () => {
             console.log(`[G-Labs VID] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${mode} subFolder=${subFolder}`);
@@ -428,6 +432,9 @@ function registerGLabsHandlers(ipcMain) {
                 resolution: '720p',
                 mode
             };
+            if (generateAudio) {
+                bodyData.generate_audio = true;
+            }
             if (referenceImages && referenceImages.length > 0) {
                 bodyData.reference_images = referenceImages;
             }
