@@ -21,16 +21,14 @@ const LANG_NAMES = {
     Spanish: 'Spanish', Polish: 'Polish', Italian: 'Italian', Portuguese: 'Portuguese'
 };
 
-// ── 100 Object Categories for diverse idea generation ─────────────────────────
+// ── Object Categories for diverse lifehack idea generation (NO FOOD) ─────────
 const OBJECT_CATEGORIES = [
-    // ЕДА И КУХНЯ
-    { theme: 'Food & Kitchen', objects: ['vegetables', 'fruits', 'kitchen utensils', 'spices', 'junk food', 'healthy food', 'breakfast items', 'street food', 'frozen food', 'mixed vegetables vs fruits'] },
     // ПРЕДМЕТЫ ДОМАШНЕГО ОБИХОДА
-    { theme: 'Household', objects: ['furniture', 'bedroom objects', 'bathroom items', 'cleaning tools', 'electrical appliances', 'doors & windows', 'pillows & blankets', 'storage items', 'lights & fans', 'dustbin contents'] },
+    { theme: 'Household', objects: ['furniture', 'bedroom objects', 'bathroom items', 'cleaning tools', 'electrical appliances', 'doors & windows', 'pillows & blankets', 'storage items', 'lights & fans', 'laundry items'] },
     // ОФИСНАЯ ЖИЗНЬ
-    { theme: 'Office & Work', objects: ['desk objects', 'laptop & accessories', 'stationery', 'printer & scanner', 'office furniture', 'work-from-home setup', 'ID card & access card', 'files & folders', 'pantry items', 'meeting room objects'] },
+    { theme: 'Office & Work', objects: ['desk objects', 'laptop & accessories', 'stationery', 'printer & scanner', 'office furniture', 'work-from-home setup', 'ID card & access card', 'files & folders', 'cable management', 'meeting room objects'] },
     // ТРЕНАЖЕРНЫЙ ЗАЛ
-    { theme: 'Gym & Fitness', objects: ['gym equipment', 'dumbbells & weights', 'cardio machines', 'gym accessories', 'protein supplements', 'fitness tracking devices', 'gym lockers', 'workout clothes', 'yoga equipment', 'post-workout items'] },
+    { theme: 'Gym & Fitness', objects: ['gym equipment', 'dumbbells & weights', 'cardio machines', 'gym accessories', 'fitness tracking devices', 'gym lockers', 'workout clothes', 'yoga equipment', 'resistance bands', 'gym bags'] },
     // ЗДОРОВЬЕ И ТЕЛО
     { theme: 'Health & Body', objects: ['internal organs', 'bones & muscles', 'immune system parts', 'digestive system', 'heart vs brain', 'hormones', 'blood cells', 'senses (eyes, ears)', 'mental health emotions', 'body parts vs habits'] },
     // ТЕХНОЛОГИИ
@@ -676,6 +674,22 @@ For EACH scene (exactly 6), generate following JSON:
     ipcMain.handle('studio-generate-ideas', async (event, { mode, language }) => {
         const langName = LANG_NAMES[language] || 'English';
 
+        // Cultural context mapping for different languages/countries
+        const culturalContext = {
+            'English': 'Western lifestyle (USA, UK, Canada, Australia): focus on productivity hacks, tech gadgets, work-from-home, fitness culture, time management',
+            'German': 'German lifestyle: focus on engineering precision, efficiency, eco-friendly solutions, punctuality, quality tools, organized living',
+            'French': 'French lifestyle: focus on style, elegance, home comfort, work-life balance, aesthetic solutions, culinary tools (non-food), fashion accessories',
+            'Spanish': 'Spanish lifestyle: focus on social life, family time, siesta culture, outdoor living, warm climate solutions, festive preparations',
+            'Italian': 'Italian lifestyle: focus on design, craftsmanship, family traditions, home aesthetics, fashion, artisan tools',
+            'Russian': 'Russian lifestyle: focus on practical solutions, winter survival, apartment living, DIY repairs, resourcefulness, durability',
+            'Polish': 'Polish lifestyle: focus on home improvement, practical hacks, seasonal challenges, family gatherings, budget-friendly solutions',
+            'Portuguese': 'Portuguese/Brazilian lifestyle: focus on tropical climate, beach culture, compact living, resourcefulness, social gatherings',
+            'Chinese': 'Chinese lifestyle: focus on space-saving, urban living, efficiency, traditional wisdom meets modern tech, family harmony',
+            'Japanese': 'Japanese lifestyle: focus on minimalism, organization, small spaces, precision, quality over quantity, seasonal living'
+        };
+
+        const cultureNote = culturalContext[langName] || culturalContext['English'];
+
         // Get random categories for variety + exclusion list to avoid repeats
         const randomCats = getRandomCategories(3);
         const historyKey = `studio_${mode}_${language}`;
@@ -698,8 +712,8 @@ For EACH scene (exactly 6), generate following JSON:
                - Visual-friendly for AI animation, 60–90 second format.
                ${exclusionClause}
                Target Language: ${langName}.
-               
-               Output ONLY a JSON object with an "ideas" array: 
+
+               Output ONLY a JSON object with an "ideas" array:
                {"ideas": [{"original": "HOOK: [Hook Line]. TITLE: [Catchy Name]. FOODS: [Items]. HACK: [Secret]. PAYOFF: [Benefit]", "translation": "Полный перевод идеи на русский язык: ХУК: [Hook Line]. НАЗВАНИЕ: [Catchy Name]. ЕДА: [Items]. ЛАЙФХАК: [Secret]. ВЫГОДА: [Benefit]"}]}`
             : `ШАГ 1 — ПОИСК ИДЕИ (Topic Finder) [Seed: ${randomSeed}]
                Provide me 5 highly viral LIFEHACK topic ideas for a talking-objects Short/Reel, optimized for Instagram Reels and YouTube Shorts.
@@ -707,12 +721,23 @@ For EACH scene (exactly 6), generate following JSON:
                🎯 THIS TIME, USE OBJECTS FROM THESE SPECIFIC CATEGORIES:
                ${randomCats.map((c, i) => `${i + 1}. ${c}`).join('\n               ')}
 
+               🌍 CULTURAL ADAPTATION FOR ${langName.toUpperCase()}:
+               ${cultureNote}
+
+               IMPORTANT: Adapt lifehacks to match the lifestyle, climate, living conditions, and daily challenges specific to ${langName}-speaking countries. What's relevant in one culture may not resonate in another.
+
                Pick DIFFERENT, UNUSUAL, UNEXPECTED objects from those categories. DO NOT use generic items like "water bottle", "pillow", "toothbrush", "alarm clock" — those are overused. Be CREATIVE and SPECIFIC.
+
+               ❌ STRICTLY FORBIDDEN:
+               - NO food items (fruits, vegetables, meals, snacks, drinks, ingredients)
+               - NO kitchen utensils related to food preparation
+               - NO eating or cooking-related objects
+               - Focus on NON-FOOD lifehacks only
 
                FORMAT RULES:
                - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
                - The hook must sound like the object is revealing a secret, exposing a mistake, or sharing a trick that saves time/money/health.
-               - Topic must center on ONE mass-interest problem: health, money, productivity, sleep, food, habits, or fitness.
+               - Topic must center on ONE mass-interest problem: health, money, productivity, sleep, habits, fitness, or home organization.
                - The object is not fighting — it's TEACHING. It has an insider secret and can't wait to tell it.
                - Each idea must include: Hook line + Object name + Core lifehack angle + Emotional payoff.
                - Visual-friendly for AI animation, 30–60 second format.
