@@ -5,10 +5,11 @@ import StudioTab from './StudioTab';
 import GLabsTab from './GLabsTab';
 import TimelapseTab from './TimelapseTab';
 import { StoryTab } from './StoryTab';
+import { SurviveTab } from './SurviveTab';
 import CartoonTab from './CartoonTab';
 import './TimelapseTab.css';
 
-type AppTab = 'timelapse' | 'skeleton' | 'health' | 'objects' | 'glabs' | 'story' | 'cartoon';
+type AppTab = 'timelapse' | 'skeleton' | 'health' | 'objects' | 'glabs' | 'story' | 'cartoon' | 'survive';
 
 function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('timelapse');
@@ -55,6 +56,9 @@ function App() {
         <button style={tabStyle('story')} onClick={() => setActiveTab('story')}>
           📖 AI Stories
         </button>
+        <button style={tabStyle('survive')} onClick={() => setActiveTab('survive')}>
+          🆘 Survive
+        </button>
         <button style={tabStyle('cartoon')} onClick={() => setActiveTab('cartoon')}>
           🎨 Cartoon Pro
         </button>
@@ -89,6 +93,11 @@ function App() {
       {/* ── CARTOON TAB ────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'cartoon' ? 'flex' : 'none', flexDirection: 'column' }}>
         <CartoonTab />
+      </div>
+
+      {/* ── SURVIVE TAB ────────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'survive' ? 'flex' : 'none', flexDirection: 'column' }}>
+        <SurviveTab />
       </div>
 
       {/* ── G-LABS TAB ─────────────────────────────────── */}

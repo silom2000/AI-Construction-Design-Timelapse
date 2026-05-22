@@ -70,6 +70,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cartoonGenerateAudio: (data) => ipcRenderer.invoke('cartoon-generate-audio', data),
   cartoonGenerateVideo: (data) => ipcRenderer.invoke('cartoon-generate-video', data),
 
+  // Survive — Extreme Survival Scenarios
+  surviveGenerateIdeas: (data) => ipcRenderer.invoke('survive-generate-ideas', data),
+  surviveGenerateScript: (data) => ipcRenderer.invoke('survive-generate-script', data),
+  surviveGenerateImage: (data) => ipcRenderer.invoke('survive-generate-image', data),
+  surviveGenerateAudio: (data) => ipcRenderer.invoke('survive-generate-audio', data),
+  surviveGenerateVideo: (data) => ipcRenderer.invoke('survive-generate-video', data),
+
   // G-Labs Integration
   glabsHealthCheck: () => ipcRenderer.invoke('glabs-health-check'),
   glabsLaunch: () => ipcRenderer.invoke('glabs-launch'),

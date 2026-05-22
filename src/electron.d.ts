@@ -97,6 +97,13 @@ export interface IElectronAPI {
   onStoryVideoProgress: (callback: (data: any) => void) => void,
   onStoryImageProgress: (callback: (data: any) => void) => void,
 
+  // Survive — Extreme Survival Scenarios
+  surviveGenerateIdeas: (params: { language: string }) => Promise<any[]>,
+  surviveGenerateScript: (params: { idea: any, language: string, projectFolder: string }) => Promise<any>,
+  surviveGenerateImage: (data: any) => Promise<string>,
+  surviveGenerateAudio: (data: any) => Promise<string>,
+  surviveGenerateVideo: (data: any) => Promise<string>,
+
   // G-Labs Integration
   glabsHealthCheck: () => Promise<{ running: boolean; tasks_pending?: number; tasks_running?: number; error?: string }>,
   glabsLaunch: () => Promise<{ success: boolean; error?: string }>,

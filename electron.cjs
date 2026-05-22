@@ -19,6 +19,7 @@ const { registerSkeletonHandlers, synthesizeUnifiedSpeech } = require('./skeleto
 const { registerGLabsHandlers } = require('./glabs-handlers.cjs');
 const { registerStoryHandlers } = require('./story-handlers.cjs');
 const { registerCartoonHandlers } = require('./cartoon-handlers.cjs');
+const { registerSurviveHandlers } = require('./survive-handlers.cjs');
 const { registerExportHandlers } = require('./export-handlers.cjs');
 
 // ── Новые модули (П.1, П.3, П.4, П.5) ──────────────────────────────────────
@@ -36,6 +37,7 @@ const MEDIA_ROOTS = [
     'SkeletonShorts',
     'CinematicTimelapse',
     'Cartoons',
+    'Survive',
     'Audio',
     'Images',
     'Image',
@@ -257,6 +259,7 @@ app.whenReady().then(async () => {
     registerGLabsHandlers(ipcMain);
     registerStoryHandlers(ipcMain);
     registerCartoonHandlers(ipcMain);
+    registerSurviveHandlers(ipcMain);
 
     createWindow();
 });
