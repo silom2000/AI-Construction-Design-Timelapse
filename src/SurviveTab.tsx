@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import './StoryTab.css'; // Reuse Story styles
+import { useState } from 'react';
+import './SurviveTab.css';
 
 type SceneState = {
   imgUrl?: string;
@@ -222,18 +222,21 @@ export function SurviveTab() {
   };
 
   return (
-    <div className="story-tab">
-      <div className="story-header">
-        <h2>🆘 Survive — Extreme Survival Scenarios</h2>
-        <p className="story-subtitle">
+    <div className="survive-container">
+      {/* ── SIDEBAR ──────────────────────────────────────────────────────────── */}
+      <aside className="survive-sidebar">
+        <h2 className="survive-title">🆘 Survive — Extreme Survival Scenarios</h2>
+        <p className="survive-subtitle">
           Learn life-saving survival techniques through cinematic AI-generated scenarios
         </p>
-      </div>
 
-      <div className="story-controls">
-        <div className="story-control-group">
-          <label>Language:</label>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+        <div className="survive-form-group">
+          <label className="survive-label">Narration Language</label>
+          <select
+            className="survive-select"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
             <option value="Russian">Russian (Русский)</option>
             <option value="English">English</option>
             <option value="German">German (Deutsch)</option>
@@ -241,159 +244,205 @@ export function SurviveTab() {
           </select>
         </div>
 
-        <div className="story-control-group">
-          <label>Image Model:</label>
-          <select value={imageModel} onChange={(e) => setImageModel(e.target.value as any)}>
-            <option value="imagen4">Imagen 4 (Best Quality)</option>
-            <option value="nano_banana_2">Nano Banana 2 (Fast)</option>
-            <option value="nano_banana_pro">Nano Banana Pro (Balanced)</option>
-          </select>
+        <div className="survive-form-group">
+          <label className="survive-label">Image Model</label>
+          <div className="survive-model-group">
+            <label className={`survive-model-option ${imageModel === 'imagen4' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="imageModel"
+                value="imagen4"
+                checked={imageModel === 'imagen4'}
+                onChange={(e) => setImageModel(e.target.value as any)}
+              />
+              <div className="survive-model-label">
+                <span className="survive-model-name">Imagen 4</span>
+                <span className="survive-model-desc">Google, High quality</span>
+              </div>
+            </label>
+
+            <label className={`survive-model-option ${imageModel === 'nano_banana_2' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="imageModel"
+                value="nano_banana_2"
+                checked={imageModel === 'nano_banana_2'}
+                onChange={(e) => setImageModel(e.target.value as any)}
+              />
+              <div className="survive-model-label">
+                <span className="survive-model-name">Nano Banana 2</span>
+                <span className="survive-model-desc">Fast generation</span>
+              </div>
+            </label>
+
+            <label className={`survive-model-option ${imageModel === 'nano_banana_pro' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="imageModel"
+                value="nano_banana_pro"
+                checked={imageModel === 'nano_banana_pro'}
+                onChange={(e) => setImageModel(e.target.value as any)}
+              />
+              <div className="survive-model-label">
+                <span className="survive-model-name">Nano Banana Pro</span>
+                <span className="survive-model-desc">4K, Thinking model</span>
+              </div>
+            </label>
+          </div>
         </div>
 
         <button
-          className="story-btn story-btn-primary"
+          className="survive-btn"
           onClick={handleGenerateIdeas}
           disabled={isLoadingIdeas}
         >
-          {isLoadingIdeas ? '⏳ Generating Ideas...' : '🎲 Generate 5 Survival Scenarios'}
+          {isLoadingIdeas ? '⏳ Generating...' : '🎲 Generate 5 Survival Scenarios'}
         </button>
-      </div>
 
-      {ideas.length > 0 && (
-        <div className="story-ideas-section">
-          <h3>📋 Select a Survival Scenario:</h3>
-          <div className="story-ideas-grid">
+        {/* ── Idea Cards ──────────────────────────────────────────────────── */}
+        {ideas.length > 0 && (
+          <div style={{ marginTop: '20px' }}>
+            <label className="survive-label">Select Scenario</label>
             {ideas.map((idea) => (
-              <div
+              <button
                 key={idea.id}
-                className={`story-idea-card ${selectedIdea?.id === idea.id ? 'selected' : ''}`}
+                className={`survive-idea-btn ${selectedIdea?.id === idea.id ? 'selected' : ''}`}
                 onClick={() => handleSelectIdea(idea)}
               >
-                <div className="story-idea-category">{idea.category}</div>
-                <h4>{idea.scenario}</h4>
-                <p className="story-idea-hook">{idea.hook}</p>
-                <p className="story-idea-description">{idea.description}</p>
-                <div className="story-idea-meta">
-                  <span className="story-idea-steps">📝 {idea.stepsCount} Steps</span>
-                  <span className={`story-idea-difficulty difficulty-${idea.difficulty}`}>
+                <div className="survive-idea-category">{idea.category}</div>
+                <div className="survive-idea-title">{idea.scenario}</div>
+                <div className="survive-idea-hook">{idea.hook}</div>
+                <div className="survive-idea-meta">
+                  <span>📝 {idea.stepsCount} Steps</span>
+                  <span className={`survive-idea-difficulty difficulty-${idea.difficulty}`}>
                     {idea.difficulty === 'низкая' ? '🟢 Easy' : idea.difficulty === 'средняя' ? '🟡 Medium' : '🔴 Hard'}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </aside>
 
-      {isLoadingScript && (
-        <div className="story-loading">
-          <div className="story-spinner"></div>
-          <p>Generating survival script with 6 steps...</p>
-        </div>
-      )}
-
-      {script && (
-        <div className="story-script-section">
-          <div className="story-script-header">
-            <h3>📖 {script.title}</h3>
-            <p className="story-script-category">Category: {script.category}</p>
-            <p className="story-script-hook">{script.hook}</p>
-            <button className="story-btn story-btn-success" onClick={handleGenerateAll}>
-              ⚡ Generate All (Images + Audio + Videos)
-            </button>
+      {/* ── MAIN CONTENT ─────────────────────────────────────────────────────── */}
+      <main className="survive-main">
+        {!script && !isLoadingScript && (
+          <div className="survive-empty-state">
+            <div className="survive-empty-icon">🆘</div>
+            <p>Generate Survival Scenarios to start crafting life-saving content</p>
           </div>
+        )}
 
-          <div className="story-scenes-grid">
-            {script.steps.map((step, idx) => {
-              const state = sceneStates[idx] || {};
-              return (
-                <div key={step.id} className="story-scene-card">
-                  <div className="story-scene-header">
-                    <span className="story-scene-icon">{STEP_ICONS[idx]}</span>
-                    <h4>{STEP_LABELS[idx]}</h4>
-                    <span className="story-scene-number">{step.stepNumber}</span>
-                  </div>
-
-                  <div className="story-scene-narration">
-                    <strong>Narration:</strong>
-                    <p>{step.line}</p>
-                  </div>
-
-                  <div className="story-scene-actions">
-                    <button
-                      className="story-btn story-btn-small"
-                      onClick={() => handleGenerateImage(idx)}
-                      disabled={state.imgLoading}
-                    >
-                      {state.imgLoading ? '⏳ Image...' : state.imgUrl ? '✅ Image' : '🖼️ Generate Image'}
-                    </button>
-                    <button
-                      className="story-btn story-btn-small"
-                      onClick={() => handleGenerateAudio(idx)}
-                      disabled={state.audioLoading}
-                    >
-                      {state.audioLoading ? '⏳ Audio...' : state.audioUrl ? '✅ Audio' : '🎤 Generate Audio'}
-                    </button>
-                    <button
-                      className="story-btn story-btn-small"
-                      onClick={() => handleGenerateVideo(idx)}
-                      disabled={state.vidLoading || !state.imgUrl}
-                    >
-                      {state.vidLoading ? '⏳ Video...' : state.vidUrl ? '✅ Video' : '🎬 Generate Video'}
-                    </button>
-                  </div>
-
-                  {state.statusText && (
-                    <div className="story-scene-status">{state.statusText}</div>
-                  )}
-
-                  {state.imgUrl && (
-                    <div className="story-scene-preview">
-                      <img src={state.imgUrl} alt={`Step ${idx}`} />
-                    </div>
-                  )}
-
-                  {state.audioUrl && (
-                    <div className="story-scene-audio">
-                      <audio controls src={state.audioUrl} />
-                    </div>
-                  )}
-
-                  {state.vidUrl && (
-                    <div className="story-scene-video">
-                      <video controls src={state.vidUrl} />
-                    </div>
-                  )}
-
-                  <details className="story-scene-prompts">
-                    <summary>📝 View Prompts</summary>
-                    <div className="story-prompt-block">
-                      <strong>Image Prompt:</strong>
-                      <button
-                        className="story-copy-btn"
-                        onClick={() => handleCopyPrompt(step.imagePrompt, idx * 2)}
-                      >
-                        {copiedIdx === idx * 2 ? '✅ Copied' : '📋 Copy'}
-                      </button>
-                      <pre>{step.imagePrompt}</pre>
-                    </div>
-                    <div className="story-prompt-block">
-                      <strong>Video Prompt:</strong>
-                      <button
-                        className="story-copy-btn"
-                        onClick={() => handleCopyPrompt(step.videoPrompt, idx * 2 + 1)}
-                      >
-                        {copiedIdx === idx * 2 + 1 ? '✅ Copied' : '📋 Copy'}
-                      </button>
-                      <pre>{step.videoPrompt}</pre>
-                    </div>
-                  </details>
-                </div>
-              );
-            })}
+        {isLoadingScript && (
+          <div className="survive-loading">
+            <div className="survive-spinner"></div>
+            <p>Generating survival script with 6 steps...</p>
           </div>
-        </div>
-      )}
+        )}
+
+        {script && (
+          <>
+            <div className="survive-script-header">
+              <h3 className="survive-script-title">{script.title}</h3>
+              <p className="survive-script-category">Category: {script.category}</p>
+              <p className="survive-script-hook">{script.hook}</p>
+              <button className="survive-generate-all-btn" onClick={handleGenerateAll}>
+                ⚡ Generate All (Images + Audio + Videos)
+              </button>
+            </div>
+
+            <div className="survive-scenes-grid">
+              {script.steps.map((step, idx) => {
+                const state = sceneStates[idx] || {};
+                return (
+                  <div key={step.id} className="survive-scene-card">
+                    <div className="survive-scene-header">
+                      <span className="survive-scene-icon">{STEP_ICONS[idx]}</span>
+                      <h4 className="survive-scene-title">{STEP_LABELS[idx]}</h4>
+                      <span className="survive-scene-number">{step.stepNumber}</span>
+                    </div>
+
+                    <div className="survive-scene-narration">
+                      <strong>Narration:</strong>
+                      <p>{step.line}</p>
+                    </div>
+
+                    <div className="survive-scene-actions">
+                      <button
+                        className="survive-scene-btn"
+                        onClick={() => handleGenerateImage(idx)}
+                        disabled={state.imgLoading}
+                      >
+                        {state.imgLoading ? '⏳ Image...' : state.imgUrl ? '✅ Image' : '🖼️ Generate Image'}
+                      </button>
+                      <button
+                        className="survive-scene-btn"
+                        onClick={() => handleGenerateAudio(idx)}
+                        disabled={state.audioLoading}
+                      >
+                        {state.audioLoading ? '⏳ Audio...' : state.audioUrl ? '✅ Audio' : '🎤 Generate Audio'}
+                      </button>
+                      <button
+                        className="survive-scene-btn"
+                        onClick={() => handleGenerateVideo(idx)}
+                        disabled={state.vidLoading || !state.imgUrl}
+                      >
+                        {state.vidLoading ? '⏳ Video...' : state.vidUrl ? '✅ Video' : '🎬 Generate Video'}
+                      </button>
+                    </div>
+
+                    {state.statusText && (
+                      <div className="survive-scene-status">{state.statusText}</div>
+                    )}
+
+                    {state.imgUrl && (
+                      <div className="survive-scene-preview">
+                        <img src={state.imgUrl} alt={`Step ${idx}`} />
+                      </div>
+                    )}
+
+                    {state.audioUrl && (
+                      <div className="survive-scene-audio">
+                        <audio controls src={state.audioUrl} />
+                      </div>
+                    )}
+
+                    {state.vidUrl && (
+                      <div className="survive-scene-video">
+                        <video controls src={state.vidUrl} />
+                      </div>
+                    )}
+
+                    <details className="survive-scene-prompts">
+                      <summary>📝 View Prompts</summary>
+                      <div className="survive-prompt-block">
+                        <strong>Image Prompt:</strong>
+                        <button
+                          className="survive-copy-btn"
+                          onClick={() => handleCopyPrompt(step.imagePrompt, idx * 2)}
+                        >
+                          {copiedIdx === idx * 2 ? '✅ Copied' : '📋 Copy'}
+                        </button>
+                        <pre>{step.imagePrompt}</pre>
+                      </div>
+                      <div className="survive-prompt-block">
+                        <strong>Video Prompt:</strong>
+                        <button
+                          className="survive-copy-btn"
+                          onClick={() => handleCopyPrompt(step.videoPrompt, idx * 2 + 1)}
+                        >
+                          {copiedIdx === idx * 2 + 1 ? '✅ Copied' : '📋 Copy'}
+                        </button>
+                        <pre>{step.videoPrompt}</pre>
+                      </div>
+                    </details>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }
