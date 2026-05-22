@@ -280,18 +280,27 @@ ${completedText}
 - Банальные фразы ("эта профессия очень важна")
 - Короткие предложения (< 15 слов)
 - Пафос и морализаторство
+- Упоминания реальных известных людей, знаменитостей, политиков, исторических личностей
+- Названия реальных брендов, компаний, логотипов
+- Отсылки к конкретным знаменитым событиям или персонам
 
 ════════════════════════════════════════════════
 СТИЛЬ ИЗОБРАЖЕНИЙ (3D cartoon animated):
 ════════════════════════════════════════════════
 Основа стиля для КАЖДОГО imagePrompt:
-"highly detailed stylized 3D animated [ПРОФЕССИЯ] worker, semi-realistic Pixar-style masterpiece, 
-EXTREMELY VIBRANT SATURATED COLORS, high contrast, rich color palette, expressive facial features, 
+"highly detailed stylized 3D animated [ПРОФЕССИЯ] worker, semi-realistic Pixar-style masterpiece,
+EXTREMELY VIBRANT SATURATED COLORS, high contrast, rich color palette, expressive facial features,
 natural relaxed facial expression, subtle micro-expressions, attentive eyes, detailed skin texture,
-worn work clothes, [КОНКРЕТНАЯ РАБОЧАЯ ОБСТАНОВКА], 
+worn work clothes, [КОНКРЕТНАЯ РАБОЧАЯ ОБСТАНОВКА],
 BOLD DOMINANT LARGE OBJECTS in the composition to ground the scene, monumental scale elements,
 cinematic dramatic lighting, sharp focus, ultra detailed textures, observational storytelling,
 vertical TikTok framing, professional camera work, 8k render, breathtaking visuals"
+
+КРИТИЧЕСКИ ВАЖНО для imagePrompt и videoPrompt:
+- НЕ упоминать реальных известных людей, знаменитостей, политиков, исторических личностей
+- НЕ использовать названия брендов, компаний, логотипов
+- Использовать только ВЫМЫШЛЕННЫХ персонажей и ОБЩИЕ описания профессий
+- Вместо "похож на [знаменитость]" писать общие черты: "молодой мужчина", "пожилая женщина"
 
 ВАЖНО для imagePrompt:
 - Возраст персонажа соответствует сцене
@@ -321,6 +330,12 @@ OPENING: Start with close-up of [рука/инструмент/лицо] then re
 CAMERA: [ВЫБЕРИ — CINEMATIC WORK]. LIGHTING: [ВЫБЕРИ — ULTRA VIBRANT]. ATMOSPHERE: [RICH, DEEP, SATURATED].
 LAST FRAME: [ИНТРИГУЮЩИЙ ВИЗУАЛЬНЫЙ МОМЕНТ].
 QUALITY: 8K masterpiece render, high saturation, vivid colors, period-accurate props, fluid professional movement."
+
+КРИТИЧЕСКИ ВАЖНО для videoPrompt:
+- Персонажи должны быть ПОЛНОСТЬЮ ВЫМЫШЛЕННЫМИ, без сходства с реальными людьми
+- НЕ упоминать имена знаменитостей, политиков, исторических личностей
+- НЕ использовать названия брендов, логотипов, компаний
+- Описывать персонажей через общие черты: "молодой рабочий", "опытный мастер", "пожилой ремесленник"
 
 CAMERA по сцене (CINEMATIC MOVEMENTS):
 - Сцена 1 → Cinematic slow-motion zoom-in, focusing on expressive eyes
@@ -409,12 +424,14 @@ ${ideaContext}
   ]
 }
 
-ВАЖНО: 
+ВАЖНО:
 - Выведи ВСЕ 8 сцен с реальным нарративом
 - voiceProfile пиши НА АНГЛИЙСКОМ (это описание голоса для VEO3)
 - dialogueParts: ТОЛЬКО для сцен voiceType=dialogue, для остальных — null
 - В videoPrompt для narrator-сцен: ЯВНО указывай что рот героя ЗАКРЫТ, герой совершает действия
-- В videoPrompt для hero/dialogue-сцен: ЯВНО указывай что видны губы и нужен lip sync`;
+- В videoPrompt для hero/dialogue-сцен: ЯВНО указывай что видны губы и нужен lip sync
+- КРИТИЧЕСКИ ВАЖНО: Все персонажи должны быть ВЫМЫШЛЕННЫМИ, без упоминаний реальных людей, брендов, знаменитостей
+- В imagePrompt и videoPrompt НЕ использовать имена известных личностей или названия брендов`;
 
         const raw = await callPollinations([
             { role: 'system', content: systemPrompt },
