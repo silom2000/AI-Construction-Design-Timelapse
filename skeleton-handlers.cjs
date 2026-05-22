@@ -883,6 +883,19 @@ For EACH scene (exactly 6), generate following JSON:
             // Post-processing: Replace [line] placeholders and inject Pixar Cinematic templates
             if (parsed.scenes && Array.isArray(parsed.scenes)) {
                 parsed.scenes = parsed.scenes.map((scene, idx) => {
+                    // 0. Clean duplicate dialogue text (AI sometimes generates text twice)
+                    if (scene.line) {
+                        const parts = scene.line.split(/\s+/);
+                        const halfLen = Math.floor(parts.length / 2);
+                        const firstHalf = parts.slice(0, halfLen).join(' ');
+                        const secondHalf = parts.slice(halfLen).join(' ');
+                        // If second half is identical or very similar to first half, keep only first half
+                        if (firstHalf && secondHalf && (firstHalf === secondHalf || secondHalf.includes(firstHalf))) {
+                            scene.line = firstHalf;
+                            console.log(`[ObjectWars] Removed duplicate dialogue in scene ${idx + 1}`);
+                        }
+                    }
+
                     // 1. Dialogue Injection
                     if (scene.videoPrompt && scene.videoPrompt.includes('[line]') && scene.line) {
                         scene.videoPrompt = scene.videoPrompt.replace('[line]', scene.line);
@@ -905,9 +918,11 @@ For EACH scene (exactly 6), generate following JSON:
                     const vidVarId = scene.videoVariant || pickVariant(PIXAR_VIDEO_VARIANTS, idx).id;
                     const vidVar = PIXAR_VIDEO_VARIANTS.find(v => v.id === vidVarId) || PIXAR_VIDEO_VARIANTS[0];
                     const vidMotionDesc = scene.videoPrompt || '';
-                    // Construct strong video prompt: Style FIRST, then Identity, then Motion, then Audio
-                    scene.video_prompt = `${PIXAR_VIDEO_STYLE} CHARACTER: ${characterIdentity}. ${vidVar.template} ${vidMotionDesc} ${PIXAR_VIDEO_MOTION} VISUAL RULE: Do not render any visible written words in the video. Do not show the spoken dialogue as text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, labels, or text overlays. AUDIO TRACK: A professional character voice speaking in ${langName} language exactly: "${scene.line}". LIP-SYNC: Accurate mouth movement. ${PIXAR_VIDEO_NEGATIVE} ${PIXAR_VIDEO_SAFETY} ABSOLUTE RULE: The character MUST stay as ${characterIdentity} at all times. Show only the physical object with eyes and mouth on its surface. NO people in frame. NO human body parts. NO human morphing.`;
-                    
+
+                    // CRITICAL: NO PEOPLE rule MUST be at the very beginning for VEO3 to prioritize it
+                    // Construct strong video prompt: NO PEOPLE FIRST, then Style, Identity, Motion, Audio
+                    scene.video_prompt = `CRITICAL VISUAL LOCK: NO PEOPLE IN ANY FRAME. NO HUMAN HEADS, FACES, SKIN, BODIES, HANDS, ARMS, LEGS, FEET AT ANY POINT IN THE VIDEO. ESPECIALLY NOT IN THE FINAL SECONDS (6-8s). The character is ONLY the physical object ${characterIdentity} with cartoon eyes and mouth on its surface throughout the entire 8 seconds. ${PIXAR_VIDEO_STYLE} CHARACTER: ${characterIdentity}. ${vidVar.template} ${vidMotionDesc} ${PIXAR_VIDEO_MOTION} VISUAL RULE: Do not render any visible written words in the video. Do not show the spoken dialogue as text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, labels, or text overlays. AUDIO TRACK: A professional character voice speaking in ${langName} language exactly: "${scene.line}". LIP-SYNC: Accurate mouth movement synchronized to the audio. ENDING LOCK (6-8s): Character remains as ${characterIdentity} object only, NO human appearance, NO morphing into person. ${PIXAR_VIDEO_NEGATIVE} ${PIXAR_VIDEO_SAFETY}`;
+
                     // Legacy field support
                     scene.videoPrompt = scene.video_prompt;
 
