@@ -34,8 +34,9 @@ async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null
     const apiKey = process.env.VOICEAPI_KEY;
     if (!apiKey) throw new Error('[Survive Voice] VOICEAPI_KEY not set in .env');
 
-    const voiceId = process.env.SURVIVE_VOICE_ID || process.env.TEST_VOICE_ID;
-    if (!voiceId) throw new Error('[Survive Voice] Set SURVIVE_VOICE_ID or TEST_VOICE_ID in .env');
+    // Voice ID: try SURVIVE_VOICE_ID, fallback to STORY_VOICE_ID, then TEST_VOICE_ID
+    const voiceId = process.env.SURVIVE_VOICE_ID || process.env.STORY_VOICE_ID || process.env.TEST_VOICE_ID;
+    if (!voiceId) throw new Error('[Survive Voice] Set SURVIVE_VOICE_ID, STORY_VOICE_ID, or TEST_VOICE_ID in .env');
 
     let filename;
     if (sceneIndex !== null && sceneIndex !== undefined) {
@@ -247,15 +248,17 @@ function registerSurviveHandlers(ipcMain) {
       "description": "Полное описание сценария на ${langName} (2-3 предложения): что произошло, где ты находишься, какая опасность",
       "stepsCount": 6,
       "difficulty": "низкая|средняя|высокая",
-      "translation_ru": "Полный перевод на русский: scenario + hook + description"
+      "translation_ru": "Полный перевод на русский (ТОЛЬКО если язык НЕ русский): scenario + hook + description"
     }
   ]
 }
 
-ВАЖНО:
+КРИТИЧЕСКИ ВАЖНО:
+- ВСЕ текстовые поля (scenario, hook, description, category) ДОЛЖНЫ быть на ${langName}
+- translation_ru нужен ТОЛЬКО если ${langName} !== "Russian" (для дублирования на русский)
+- Если ${langName} === "Russian", то translation_ru = пустая строка ""
 - Все 5 идей должны быть из РАЗНЫХ категорий
 - Язык генерации: ${langName}
-- Перевод на русский: ОБЯЗАТЕЛЬНО в поле translation_ru
 - Каждая идея = 6 шагов выживания (оптимально для 60-сек видео)
 ${exclusionClause}`;
 
