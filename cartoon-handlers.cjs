@@ -457,23 +457,51 @@ ${ideaContext}
     // ─────────────────────────────────────────────────────────────────────────
     // 3. Generate Image (3D cartoon style via G-Labs)
     // ─────────────────────────────────────────────────────────────────────────
-    ipcMain.handle('cartoon-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder }) => {
+    ipcMain.handle('cartoon-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder, characterRefUrl }) => {
         try {
             const model = (imageModel || 'imagen4').replace('freepik-', '');
             const sectionDir = projectFolder
                 ? path.join(CARTOON_DIRS.base, projectFolder)
                 : CARTOON_DIRS.images;
 
+            // Prepend character consistency instruction for scenes 2+ when reference exists
+            let finalPrompt = imagePrompt;
+            let referenceImages = [];
+            if (characterRefUrl && sceneIndex > 0) {
+                const refInstruction =
+                    `CHARACTER CONSISTENCY REQUIREMENT: This scene features the SAME main character as Scene 1. ` +
+                    `Maintain IDENTICAL appearance: exact same face shape, eye color, hairstyle, skin tone, ` +
+                    `clothing style, and 3D cartoon art style as established in the reference (Scene 1). ` +
+                    `Do NOT alter the character's look in any way between scenes. `;
+                finalPrompt = refInstruction + imagePrompt;
+                console.log(`[Cartoon] Scene ${sceneIndex}: character consistency prefix added`);
+                
+                // Prepare reference image for character consistency
+                if (characterRefUrl.startsWith('data:image')) {
+                    referenceImages.push({ data: characterRefUrl });
+                    console.log(`[Cartoon] Scene ${sceneIndex}: Using base64 reference image`);
+                } else {
+                    const imagePath = characterRefUrl.replace('media:///', '').split('?')[0];
+                    if (fs.existsSync(imagePath)) {
+                        const ext = imagePath.endsWith('.png') ? 'png' : 'jpeg';
+                        const imageBase64 = fs.readFileSync(imagePath).toString('base64');
+                        referenceImages.push({ data: `data:image/${ext};base64,${imageBase64}` });
+                        console.log(`[Cartoon] Scene ${sceneIndex}: Using file reference image: ${imagePath}`);
+                    }
+                }
+            }
+
             console.log(`[Cartoon] Generate image: scene=${sceneIndex} model=${model} folder=${projectFolder || 'default'}`);
 
             const savedPaths = await generateImageViaGLabs({
-                prompt: imagePrompt,
+                prompt: finalPrompt,
                 model,
                 aspectRatio: '9:16',
                 count: 1,
                 sectionDir,
                 subFolder: 'Images',
                 sceneIndex,
+                referenceImages,
                 onProgress: (p) => {
                     event.sender.send('cartoon-image-progress', { sceneIndex, status: p.status, attempt: p.attempt });
                 }

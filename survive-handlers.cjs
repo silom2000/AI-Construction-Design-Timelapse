@@ -24,7 +24,12 @@ const LANG_NAMES = {
     en: 'English',
     ru: 'Russian',
     de: 'German',
-    fr: 'French'
+    fr: 'French',
+    // Also support full names as keys (SurviveTab sends full names)
+    English: 'English',
+    Russian: 'Russian',
+    German: 'German',
+    French: 'French',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -336,33 +341,32 @@ ${exclusionClause}`;
 ВИЗУАЛЬНЫЙ СТИЛЬ (для imagePrompt и videoPrompt):
 ════════════════════════════════════════════════
 
-РЕАЛИСТИЧНАЯ КИНЕМАТОГРАФИЧЕСКАЯ ДРАМА:
+ГРЯЗНАЯ ПЛАСТИЛИНОВАЯ СТОП-МОУШЕН АНИМАЦИЯ (GRITTY CLAYMATION STOP-MOTION):
 
 IMAGE PROMPTS (ТОЛЬКО English):
-"Hyper-realistic cinematic photography, 8K, dramatic lighting, intense atmosphere.
+"Gritty stop-motion claymation style, tactile physical materials, miniature diorama aesthetic.
 SCENE: [конкретное описание сцены и действия].
-PERSON: [возраст, пол, одежда, эмоция на лице] performing [конкретное действие выживания].
-ENVIRONMENT: [детальное описание окружения — опасность видна].
-CAMERA: Medium shot, eye-level, vertical 9:16 format.
-MOOD: High tension, life-or-death urgency, survival documentary style.
-LIGHTING: Dramatic natural lighting, high contrast, cinematic color grading.
-DETAILS: Visible sweat, dirt, torn clothes, realistic injuries (if applicable), authentic survival gear.
-QUALITY: Award-winning photojournalism, National Geographic style, ultra-detailed, sharp focus."
+PERSON: [возраст, пол, одежда, эмоция на лице] sculpted from textured clay, slightly exaggerated proportions, performing [конкретное действие выживания].
+ENVIRONMENT: [детальное описание окружения — опасность видна], handmade miniature set, tangible textures (cardboard, wire, textured clay, painted plastic).
+CAMERA: Medium shot, eye-level, vertical 9:16 format, macro photography depth of field.
+MOOD: High tension, gritty urban or rugged outdoor feel.
+LIGHTING: Studio miniature lighting, harsh dramatic shadows, practical light effects.
+DETAILS: Fingerprints on clay, slightly rough textures, handmade imperfections, gritty details like dirt and grime.
+QUALITY: High-end stop-motion animation studio quality (like Laika), distinct from clean 3D Pixar styles, tactile, hyper-detailed."
 
 VIDEO PROMPTS (ТОЛЬКО English):
-"CAMERA MOVEMENT: Smooth handheld tracking shot, following the person's action, slight camera shake for realism.
+"CAMERA MOVEMENT: Stop-motion camera style, slight jitter, dynamic miniature framing.
 ACTION: [конкретное действие персонажа — шаг выживания].
-MOTION: Realistic human movement, urgency in body language, focused expression.
-ENVIRONMENT: [окружение и опасность].
-PACING: Fast-paced survival action, high tension, documentary realism.
-ENDING: Freeze on determined face or successful action completion.
-QUALITY: Cinematic 8K, natural motion, realistic physics, survival documentary style."
+MOTION: Stop-motion animation feel, slightly lower frame rate effect, distinct poses.
+ENVIRONMENT: [окружение и опасность] made of tangible miniature materials.
+PACING: High tension, dramatic action.
+ENDING: Freeze on determined clay face.
+QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tactile."
 
 ЗАПРЕЩЕНО в промптах:
-❌ Мультяшный стиль, cartoon, anime
+❌ Гладкий 3D Pixar/Disney стиль
+❌ Фотореализм, живые люди
 ❌ Графическое насилие, кровь, gore
-❌ Нереалистичные супергеройские действия
-❌ Слишком постановочные сцены (должно выглядеть как реальная съёмка)
 
 ════════════════════════════════════════════════
 СТРУКТУРА 6 ШАГОВ:
@@ -457,12 +461,24 @@ QUALITY: Cinematic 8K, natural motion, realistic physics, survival documentary s
     // ─────────────────────────────────────────────────────────────────────────
     // 3. Generate Image
     // ─────────────────────────────────────────────────────────────────────────
-    ipcMain.handle('survive-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder }) => {
+    ipcMain.handle('survive-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder, referenceImageUrl }) => {
         try {
             const cleanModel = (imageModel || 'flux1.1').replace(/^glabs-/, '');
             const sectionDir = projectFolder ? path.join(SURVIVE_DIRS.base, projectFolder) : SURVIVE_DIRS.images;
 
-            console.log(`[Survive] Generate image: scene=${sceneIndex} model=${cleanModel} folder=${projectFolder || 'default'}`);
+            console.log(`[Survive] Generate image: scene=${sceneIndex} model=${cleanModel} folder=${projectFolder || 'default'} hasRef=${!!referenceImageUrl}`);
+
+            // Build reference images for character consistency (scenes 1-5 use scene 0 as reference)
+            let referenceImages = [];
+            if (referenceImageUrl && sceneIndex > 0) {
+                const refPath = referenceImageUrl.replace('media:///', '').split('?')[0];
+                if (fs.existsSync(refPath)) {
+                    const ext = refPath.endsWith('.png') ? 'png' : 'jpeg';
+                    const b64 = fs.readFileSync(refPath, { encoding: 'base64' });
+                    referenceImages.push({ data: `data:image/${ext};base64,${b64}` });
+                    console.log(`[Survive] Using character reference image from scene 0: ${refPath}`);
+                }
+            }
 
             const savedPaths = await generateImageViaGLabs({
                 prompt: imagePrompt,
@@ -470,7 +486,8 @@ QUALITY: Cinematic 8K, natural motion, realistic physics, survival documentary s
                 count: 1,
                 sectionDir: SURVIVE_DIRS.base,
                 subFolder: projectFolder,
-                sceneIndex: sceneIndex
+                sceneIndex: sceneIndex,
+                referenceImages
             });
 
             return `media:///${savedPaths[0].replace(/\\/g, '/')}?t=${Date.now()}`;

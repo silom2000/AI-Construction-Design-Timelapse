@@ -344,10 +344,20 @@
 }
 
 /* ── Media Preview ───────────────────────────────────── */
+.survive-scene-preview {
+  width: 120px;
+  aspect-ratio: 9 / 16;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
 .survive-scene-preview img {
   width: 100%;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .survive-scene-audio audio {

@@ -66,6 +66,7 @@ export function SurviveTab() {
   const [sceneStates, setSceneStates] = useState<Record<number, SceneState>>({});
   const [projectFolder, setProjectFolder] = useState<string>('');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [characterRefUrl, setCharacterRefUrl] = useState<string | null>(null);
 
   const handleGenerateIdeas = async () => {
     setIsLoadingIdeas(true);
@@ -74,6 +75,7 @@ export function SurviveTab() {
     setScript(null);
     setSceneStates({});
     setProjectFolder('');
+    setCharacterRefUrl(null);
     try {
       const result = await window.electronAPI.surviveGenerateIdeas({ language });
       setIdeas(result || []);
@@ -88,6 +90,7 @@ export function SurviveTab() {
     setSelectedIdea(idea);
     setScript(null);
     setSceneStates({});
+    setCharacterRefUrl(null);
     setIsLoadingScript(true);
 
     const timestamp = Date.now();
@@ -108,7 +111,7 @@ export function SurviveTab() {
     }
   };
 
-  const handleGenerateImage = async (sceneIndex: number) => {
+  const handleGenerateImage = async (sceneIndex: number, overrideRefUrl?: string | null): Promise<string | undefined> => {
     if (!script) return;
     const step = script.steps[sceneIndex];
     if (!step) return;
@@ -118,17 +121,26 @@ export function SurviveTab() {
       [sceneIndex]: { ...prev[sceneIndex], imgLoading: true, statusText: 'Generating image...' }
     }));
 
+    // Use explicitly passed refUrl (from handleGenerateAll loop) or fall back to state
+    const refUrl = overrideRefUrl !== undefined ? overrideRefUrl : characterRefUrl;
+
     try {
       const imgUrl = await window.electronAPI.surviveGenerateImage({
         sceneIndex,
         imagePrompt: step.imagePrompt,
         imageModel,
-        projectFolder
+        projectFolder,
+        referenceImageUrl: sceneIndex > 0 ? refUrl : undefined
       });
       setSceneStates(prev => ({
         ...prev,
         [sceneIndex]: { ...prev[sceneIndex], imgUrl, imgLoading: false, statusText: 'Image ready' }
       }));
+      // Store scene 0 image as character reference for subsequent scenes
+      if (sceneIndex === 0 && imgUrl) {
+        setCharacterRefUrl(imgUrl);
+      }
+      return imgUrl;
     } catch (err: any) {
       alert(`Image generation failed for step ${sceneIndex}: ${err.message}`);
       setSceneStates(prev => ({
@@ -168,13 +180,13 @@ export function SurviveTab() {
     }
   };
 
-  const handleGenerateVideo = async (sceneIndex: number) => {
+  const handleGenerateVideo = async (sceneIndex: number, overrideImgUrl?: string) => {
     if (!script) return;
     const step = script.steps[sceneIndex];
     if (!step) return;
 
-    const state = sceneStates[sceneIndex];
-    if (!state?.imgUrl) {
+    const imgUrl = overrideImgUrl ?? sceneStates[sceneIndex]?.imgUrl;
+    if (!imgUrl) {
       alert('Generate image first!');
       return;
     }
@@ -188,7 +200,7 @@ export function SurviveTab() {
       const vidUrl = await window.electronAPI.surviveGenerateVideo({
         sceneIndex,
         videoPrompt: step.videoPrompt,
-        sourceImageUrl: state.imgUrl,
+        sourceImageUrl: imgUrl,
         narrationLine: step.line,
         projectFolder
       });
@@ -207,11 +219,20 @@ export function SurviveTab() {
 
   const handleGenerateAll = async () => {
     if (!script) return;
+    // Track ref URL locally to avoid stale closure across async loop iterations
+    let localRefUrl: string | null = characterRefUrl;
     for (let i = 0; i < script.steps.length; i++) {
-      const state = sceneStates[i];
-      if (!state?.imgUrl) await handleGenerateImage(i);
-      if (!state?.audioUrl) await handleGenerateAudio(i);
-      if (!state?.vidUrl) await handleGenerateVideo(i);
+      let imgUrl = sceneStates[i]?.imgUrl;
+      if (!imgUrl) {
+        imgUrl = await handleGenerateImage(i, localRefUrl);
+      }
+      // Once scene 0 image is ready, store as character ref for all subsequent scenes
+      if (i === 0 && imgUrl) {
+        localRefUrl = imgUrl;
+        setCharacterRefUrl(imgUrl);
+      }
+      if (!sceneStates[i]?.audioUrl) await handleGenerateAudio(i);
+      await handleGenerateVideo(i, imgUrl);
     }
   };
 

@@ -68,6 +68,7 @@ export default function CartoonTab() {
   const [isLoadingScript, setIsLoadingScript] = useState(false);
   const [sceneStates, setSceneStates]         = useState<Record<number, SceneState>>({});
   const [copiedIdx, setCopiedIdx]             = useState<number | null>(null);
+  const [characterRefUrl, setCharacterRefUrl] = useState<string | undefined>(undefined);
 
   // ── Generate ideas ─────────────────────────────────────────────────────────
   const handleGenerateIdeas = async () => {
@@ -95,6 +96,7 @@ export default function CartoonTab() {
       const result = await (window as any).electronAPI.cartoonGenerateScript({ idea, language, projectFolder: folder });
       setScript(result);
       setSceneStates({});
+      setCharacterRefUrl(undefined);
     } catch (e) {
       console.error(e);
       alert('Failed to generate cartoon script.');
@@ -108,10 +110,16 @@ export default function CartoonTab() {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: true, statusText: 'Generating image...' } }));
     try {
       const url = await (window as any).electronAPI.cartoonGenerateImage({
-        sceneIndex: sceneIndex, imagePrompt: prompt, imageModel, projectFolder
+        sceneIndex,
+        imagePrompt: prompt,
+        imageModel,
+        projectFolder,
+        characterRefUrl: sceneId > 1 ? characterRefUrl : undefined,
       });
       const imgUrl = Array.isArray(url) ? url[0] : url;
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: false, imgUrl, statusText: undefined } }));
+      // Scene 1 is the character reference for all subsequent scenes
+      if (sceneId === 1 && imgUrl) setCharacterRefUrl(imgUrl);
     } catch (e) {
       console.error(e);
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: false, statusText: 'Image generation failed' } }));
@@ -123,10 +131,15 @@ export default function CartoonTab() {
     setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgUrl: undefined, imgLoading: true, statusText: 'Regenerating image...' } }));
     try {
       const url = await (window as any).electronAPI.cartoonGenerateImage({
-        sceneIndex: sceneIndex, imagePrompt: prompt, imageModel, projectFolder
+        sceneIndex,
+        imagePrompt: prompt,
+        imageModel,
+        projectFolder,
+        characterRefUrl: sceneId > 1 ? characterRefUrl : undefined,
       });
       const imgUrl = Array.isArray(url) ? url[0] : url;
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: false, imgUrl, statusText: undefined } }));
+      if (sceneId === 1 && imgUrl) setCharacterRefUrl(imgUrl);
     } catch (e) {
       console.error(e);
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], imgLoading: false, statusText: 'Regeneration failed' } }));
@@ -380,10 +393,11 @@ export default function CartoonTab() {
                       <button
                         className="cartoon-media-btn"
                         onClick={() => handleGenerateImage(idx, scene.id, scene.imagePrompt)}
-                        disabled={sceneStates[scene.id]?.imgLoading}
+                        disabled={sceneStates[scene.id]?.imgLoading || (scene.id > 1 && !characterRefUrl)}
+                        title={scene.id > 1 && !characterRefUrl ? 'Generate scene 1 image first (character reference)' : ''}
                       >
                         {sceneStates[scene.id]?.imgLoading && !sceneStates[scene.id]?.imgUrl
-                          ? '⏳ Generating...' : '🖼️ Generate Image'}
+                          ? '⏳ Generating...' : scene.id > 1 && !characterRefUrl ? '🔒 Await Ref' : '🖼️ Generate Image'}
                       </button>
                       {sceneStates[scene.id]?.imgUrl && (
                         <button
