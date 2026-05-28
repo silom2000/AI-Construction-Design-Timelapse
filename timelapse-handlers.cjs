@@ -217,42 +217,76 @@ IMPORTANT: Generate exactly 4 diverse construction project ideas. Each must spec
 - Unique visual appeal (architectural style, scale, complexity)
 
 ═══════════════════════════════════════════════════════════════════════════════
+TECHNICAL PROCESS SPECIFICATION (TPS) — MANDATORY FIRST STEP:
+═══════════════════════════════════════════════════════════════════════════════
+Before writing ANY image or video prompt, you MUST define the domain-specific
+visual dictionary for THIS EXACT project type. This prevents AI hallucinations
+where wrong materials, wrong structures, or wrong architectural styles appear.
+
+TPS must include:
+1. OBJECT IDENTITY — Exact name, category, and sub-type of the structure
+2. DOMAIN GLOSSARY — Critical components with their EXACT visual descriptions
+   (materials, shapes, proportions, colors — SPECIFIC to this domain)
+3. FORBIDDEN SUBSTITUTIONS — What must NEVER appear (residential elements on
+   marine structures, wrong glass types, wrong frame materials, etc.)
+4. VISUAL ANCHORS — 3-5 key visual details that make this object unmistakable
+   (e.g. for yacht: teak decking, marine-grade aluminum extrusions, horizontal
+   flush-mount tempered glass, stainless steel railings)
+
 OUTPUT FORMAT (STATE 3 — DETAILED PROMPTS):
 ═══════════════════════════════════════════════════════════════════════════════
 Output exactly as JSON:
 {
-  "projectType": "house|pool|renovation|commercial|infrastructure",
+  "projectType": "house|pool|renovation|commercial|infrastructure|marine|industrial|landscape",
+  "projectTitle": "Short catchy English title, max 5 words, TikTok-ready (e.g. 'Coastal Villa From Zero', 'Urban Loft Transformation')",
+  "tiktokDescription": "Engaging 2-sentence English description for TikTok/Reels caption (e.g. 'Watch this massive coastal villa emerge from the sand. The final pool area is unreal! 🤯')",
+  "tiktokHashtags": "5 hyper-relevant English hashtags without the # symbol separated by spaces (e.g. 'construction architecture timelapse luxuryhome build')",
   "contextConfirmation": "Technical confirmation of project type and construction sequence to be followed",
+  "technicalProcessSpec": {
+    "objectIdentity": "Exact type and subtype of the object being built/renovated",
+    "domainGlossary": {
+      "componentName": "Exact visual description: material, shape, color, proportion",
+      "anotherComponent": "..."
+    },
+    "forbiddenSubstitutions": ["List of things that MUST NEVER appear in any frame"],
+    "visualAnchors": ["3-5 unmistakable visual details unique to this object/domain"]
+  },
   "images": [
      {
        "id": 1,
-       "title": "Stage 1: [SPECIFIC STAGE NAME]",
-       "prompt": "[DETAILED IMAGE PROMPT following the template above for this project type]",
-       "technicalNotes": "Key elements: [list critical elements that MUST be visible]"
+       "title": "Stage 1: [ZERO STATE / SITE PREPARATION]",
+       "prompt": "[DETAILED IMAGE PROMPT — raw site, empty state, preparation works. MUST reference visualAnchors from TPS. 150-250 words]",
+       "technicalNotes": "Key elements: [list critical elements that MUST be visible. Include FORBIDDEN items from TPS]"
      },
-     { "id": 2, "title": "Stage 2: [SPECIFIC STAGE NAME]", "prompt": "...", "technicalNotes": "..." },
-     { "id": 3, "title": "Stage 3: [SPECIFIC STAGE NAME]", "prompt": "...", "technicalNotes": "..." },
-     { "id": 4, "title": "Stage 4: [SPECIFIC STAGE NAME]", "prompt": "...", "technicalNotes": "..." }
+     { "id": 2, "title": "Stage 2: [FOUNDATION / HULL / BASE WORKS]", "prompt": "...", "technicalNotes": "..." },
+     { "id": 3, "title": "Stage 3: [PRIMARY STRUCTURE — 30-50%]", "prompt": "...", "technicalNotes": "..." },
+     { "id": 4, "title": "Stage 4: [PRIMARY STRUCTURE — 70-80%]", "prompt": "...", "technicalNotes": "..." },
+     { "id": 5, "title": "Stage 5: [SYSTEMS & FINISHING DETAILS]", "prompt": "...", "technicalNotes": "..." },
+     { "id": 6, "title": "Stage 6: [FINAL COMPLETE STATE]", "prompt": "...", "technicalNotes": "..." }
   ],
   "videos": [
      {
        "id": 1,
        "title": "Video 1: [STAGE 1 → STAGE 2 TRANSITION]",
-       "prompt": "[DETAILED VIDEO PROMPT with physics rules, camera lock, realistic progression]",
+       "prompt": "[DETAILED VIDEO PROMPT with: domain-specific materials from TPS, physics rules, camera lock, forbidden substitutions explicitly stated, realistic progression. 150-200 words]",
        "keyActions": "[Specific construction activities visible in this transition]"
      },
      { "id": 2, "title": "Video 2: [STAGE 2 → STAGE 3 TRANSITION]", "prompt": "...", "keyActions": "..." },
      { "id": 3, "title": "Video 3: [STAGE 3 → STAGE 4 TRANSITION]", "prompt": "...", "keyActions": "..." },
-     { "id": 4, "title": "Video 4: Final Cinematic Tour", "prompt": "SLOW SMOOTH CAMERA MOVEMENT around completed project. [Details of final reveal]", "keyActions": "Cinematic reveal of finished project" }
+     { "id": 4, "title": "Video 4: [STAGE 4 → STAGE 5 TRANSITION]", "prompt": "...", "keyActions": "..." },
+     { "id": 5, "title": "Video 5: [STAGE 5 → STAGE 6 TRANSITION]", "prompt": "...", "keyActions": "..." },
+     { "id": 6, "title": "Video 6: Final Cinematic Tour", "prompt": "SLOW SMOOTH CAMERA MOVEMENT around completed project. [Details of final reveal using exact domain-specific visual anchors from TPS]", "keyActions": "Cinematic reveal of finished project" }
    ],
-   "engineerNotes": "Construction sequence validation: [Confirm each stage is buildable from previous stage, all physics rules followed, no magic transformations]"
+   "engineerNotes": "Construction sequence validation: [Confirm each stage is buildable from previous stage, all physics rules followed, no forbidden substitutions, TPS visual anchors present in all prompts]"
 }
 
 CRITICAL:
-- Each image prompt must be 150-250 words, hyper-detailed
-- Each video prompt must include physics rules and forbidden actions
+- TPS domainGlossary must be populated BEFORE writing any prompt
+- Each image prompt MUST reference at least 3 visual anchors from TPS
+- Each video prompt MUST explicitly list 2-3 FORBIDDEN items specific to this domain
 - Stages must follow logical construction sequence for the project type
 - NO generic descriptions — be specific about materials, equipment, actions
+- 6 stages = smaller jumps between frames = less room for AI hallucinations
 `;
 
 
@@ -299,7 +333,7 @@ function registerTimelapseHandlers(ipcMain) {
             const cleanJson = response.match(/\[[\s\S]*\]/)?.[0] || response.match(/\{[\s\S]*\}/)?.[0] || response;
             const parsed = JSON.parse(cleanJson);
             const ideas = normalizeEnvironmentIdeas(parsed);
-            if (ideas && ideas.length === 4) return ideas;
+            if (ideas && ideas.length > 0) return ideas;
         } catch (e) {
             console.warn('[Timelapse] JSON parse failed, falling back to line parse:', e.message);
         }
@@ -444,7 +478,7 @@ function registerTimelapseHandlers(ipcMain) {
         }
 
         // Reinforce spatial consistency in the prompt
-        const stageLabels = ['BEFORE — raw/empty', 'MID-CONSTRUCTION', 'COMPLETED UNFURNISHED', 'FULLY FURNISHED'];
+        const stageLabels = ['ZERO STATE', 'FOUNDATION WORKS', 'PRIMARY STRUCTURE 40%', 'PRIMARY STRUCTURE 75%', 'SYSTEMS & FINISHING', 'FINAL COMPLETE STATE'];
         const consistencyPrefix = imgIndex > 0
             ? `CRITICAL CONSISTENCY RULE: This is the EXACT SAME ROOM as the reference image. Identical camera position, lens angle, ceiling height, wall proportions, window placement, floor area. Do NOT change the spatial layout. Only show the transformation stage: ${stageLabels[imgIndex]}. `
             : '';
@@ -496,17 +530,19 @@ function registerTimelapseHandlers(ipcMain) {
 
         const cameraLock = `CAMERA: COMPLETELY LOCKED POSITION. Absolutely NO camera movement, NO panning, NO zooming, NO tilting. Fixed high-angle drone perspective (9:16 vertical format). Only the construction site changes, camera stays frozen in space.`;
 
-        // ── Video 4: Cinematic tour, uses only Image 4 as start frame ──────────
-        if (videoIndex === 3) {
-            const startImgPath = findImage(4);
+        const audioRules = `AUDIO GENERATION INSTRUCTIONS: DO NOT GENERATE ANY MUSIC. The video must contain ONLY the authentic, raw ambient sounds of the physical environment and construction activity (machinery working, tools, natural ambient noise). NO background music, NO cinematic scores, NO artificial soundtracks.`;
+
+        // ── Video 6: Cinematic tour, uses only Image 6 as start frame ──────────
+        if (videoIndex === 5) {
+            const startImgPath = findImage(6);
             if (!startImgPath || !fs.existsSync(startImgPath)) {
-                throw new Error('Image 4 (FINAL STAGE) not found. Please generate it first.');
+                throw new Error('Image 6 (FINAL STAGE) not found. Please generate it first.');
             }
-            console.log(`[Timelapse] Generating Video 4 — Cinematic Tour (start: Image 4)...`);
+            console.log(`[Timelapse] Generating Video 6 — Cinematic Tour (start: Image 6)...`);
             const startB64 = fs.readFileSync(startImgPath, { encoding: 'base64' });
 
-            // Video 4 is the ONLY video with camera movement (cinematic reveal)
-            const enhancedPrompt = `CINEMATIC FINAL REVEAL. SLOW SMOOTH CAMERA MOVEMENT: gentle orbital drift around the completed project, revealing all angles and details. ${prompt} Hyper-realistic architectural cinematography, 8K quality, natural lighting, showcasing the finished construction in its full glory. NO construction activity, NO workers, NO equipment — only the pristine completed project. Smooth, professional camera work, breathtaking final showcase.`;
+            // Video 6 is the ONLY video with camera movement (cinematic reveal)
+            const enhancedPrompt = `CINEMATIC FINAL REVEAL. SLOW SMOOTH CAMERA MOVEMENT: gentle orbital drift around the completed project, revealing all angles and details. ${prompt} Hyper-realistic architectural cinematography, 8K quality, natural lighting, showcasing the finished construction in its full glory. NO construction activity, NO workers, NO equipment — only the pristine completed project. Smooth, professional camera work, breathtaking final showcase. ${audioRules}`;
 
             const generatedVideoPath = await generateVideoViaGLabs({
                 prompt: enhancedPrompt,
@@ -541,7 +577,7 @@ function registerTimelapseHandlers(ipcMain) {
         const endB64 = fs.readFileSync(endImgPath, { encoding: 'base64' });
 
         // Enhanced prompt with strict physics and camera rules
-        const enhancedPrompt = `CONSTRUCTION TIMELAPSE TRANSITION. ${cameraLock} ${physicsRules} ${prompt} TIME-LAPSE PROGRESSION: Smooth, realistic construction activity showing gradual transformation from start frame to end frame. Workers moving naturally, equipment operating on ground level, materials being delivered and installed logically. NO instant teleportation of objects. NO magic transformations. Natural daylight, construction site atmosphere, hyper-realistic 8K quality. Temporal consistency maintained throughout.`;
+        const enhancedPrompt = `CONSTRUCTION TIMELAPSE TRANSITION. ${cameraLock} ${physicsRules} ${audioRules} ${prompt} TIME-LAPSE PROGRESSION: Smooth, realistic construction activity showing gradual transformation from start frame to end frame. Workers moving naturally, equipment operating on ground level, materials being delivered and installed logically. NO instant teleportation of objects. NO magic transformations. Natural daylight, construction site atmosphere, hyper-realistic 8K quality. Temporal consistency maintained throughout.`;
 
         // Mode `start_end_image` enables smooth transition between two frames
         const generatedVideoPath = await generateVideoViaGLabs({
@@ -565,16 +601,29 @@ function registerTimelapseHandlers(ipcMain) {
         return `media:///${videoPath.replace(/\\/g, '/')}?t=${Date.now()}`;
     });
 
-    ipcMain.handle('timelapse-assemble', async (event, { subFolder }) => {
+    ipcMain.handle('timelapse-assemble', async (event, { subFolder, projectTitle }) => {
         const baseDir = subFolder ? path.join(TIMELAPSE_DIR, subFolder) : TIMELAPSE_DIR;
-        const finalPath = path.join(baseDir, `timelapse_final_${Date.now()}.mp4`);
+
+        let safeTitle = "timelapse_final";
+        if (projectTitle && typeof projectTitle === 'string') {
+            safeTitle = projectTitle
+                .replace(/[^a-z0-9а-яё\s]/gi, '') // удаляем спецсимволы
+                .replace(/\s+/g, '_')            // пробелы меняем на подчеркивания
+                .substring(0, 50)                // ограничиваем длину
+                .trim();
+            if (!safeTitle) safeTitle = "timelapse_final";
+        }
+
+        const finalPath = path.join(baseDir, `${safeTitle}_${Date.now()}.mp4`);
         const listPath = path.join(baseDir, 'filelist.txt');
         
         const videos = [
             path.join(baseDir, 'video_1.mp4'),
             path.join(baseDir, 'video_2.mp4'),
             path.join(baseDir, 'video_3.mp4'),
-            path.join(baseDir, 'video_4.mp4')
+            path.join(baseDir, 'video_4.mp4'),
+            path.join(baseDir, 'video_5.mp4'),
+            path.join(baseDir, 'video_6.mp4')
         ];
 
         for (let i = 0; i < videos.length; i++) {
@@ -593,14 +642,14 @@ function registerTimelapseHandlers(ipcMain) {
         const tempPath = path.join(TIMELAPSE_DIR, 'temp.mp4');
 
         // Bouncy swing-pop music
-        const musicDir = path.join(__dirname, 'Music');
+        const musicDir = path.join('D:', 'Open_Project', 'AISTUDIO', 'Music');
         const musicFiles = fs.existsSync(musicDir) ? fs.readdirSync(musicDir).filter(f => f.endsWith('.mp4') || f.endsWith('.mp3') || f.endsWith('.wav')) : [];
-        const bgMusicPath = musicFiles.length > 0 ? path.join(musicDir, musicFiles[0]) : null;
+        const bgMusicPath = musicFiles.length > 0 ? path.join(musicDir, musicFiles[Math.floor(Math.random() * musicFiles.length)]) : null;
 
         return new Promise((resolve, reject) => {
             // Lossless concatenation using stream copy instead of re-encoding
             const concat = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', '-y', tempPath]);
-            
+
             concat.on('close', code => {
                 if (code !== 0) return reject(new Error('FFmpeg concat failed.'));
                 if (!bgMusicPath) {
@@ -613,16 +662,24 @@ function registerTimelapseHandlers(ipcMain) {
                     const durationStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempPath}"`).toString().trim();
                     const duration = parseFloat(durationStr);
                     const fadeStart = Math.max(0, duration - 2);
-                    const filter = `[1:a]volume=0.1,afade=t=out:st=${fadeStart}:d=2[bgm];[0:a][bgm]amix=inputs=2:duration=first[a]`;
+
+                    // [0:a]volume=0.2 - original video volume scaled to 20%
+                    // [1:a]volume=1.0,afade... - background music volume normal, fades out last 2 sec
+                    // [0:v]crop... - crop 4% from bottom and left (watermark is bottom right), then scale back to 720x1280
+                    const filter = `[0:v]crop=in_w*0.96:in_h*0.96:in_w*0.04:0,scale=720:1280[vout];[0:a]volume=0.2[orig];[1:a]volume=1.0,afade=t=out:st=${fadeStart}:d=2[bgm];[orig][bgm]amix=inputs=2:duration=first:dropout_transition=2[aout]`;
 
                     const mix = spawn('ffmpeg', [
                         '-i', tempPath,
+                        '-stream_loop', '-1', // Loop background music if it's shorter than video
                         '-i', bgMusicPath,
                         '-filter_complex', filter,
-                        '-map', '0:v',
-                        '-map', '[a]',
-                        '-c:v', 'copy',
+                        '-map', '[vout]',
+                        '-map', '[aout]',
+                        '-c:v', 'libx264',
+                        '-preset', 'fast',
+                        '-crf', '23',
                         '-c:a', 'aac',
+                        '-shortest', // Cut at the length of the shortest input (video path)
                         '-y', finalPath
                     ]);
 

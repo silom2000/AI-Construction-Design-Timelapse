@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   timelapseGenerateCustomPrompts: (customIdea, images, video) => ipcRenderer.invoke('timelapse-generate-custom-prompts', { customIdea, images, video }),
   timelapseGenerateImage: (imgIndex, prompt, model, subFolder, referenceImage) => ipcRenderer.invoke('timelapse-generate-image', { imgIndex, prompt, model, subFolder, referenceImage }),
   timelapseGenerateVideo: (videoIndex, prompt, subFolder, referenceImages) => ipcRenderer.invoke('timelapse-generate-video', { videoIndex, prompt, subFolder, referenceImages }),
-  timelapseAssemble: (subFolder) => ipcRenderer.invoke('timelapse-assemble', { subFolder }),
+  timelapseAssemble: (subFolder, projectTitle) => ipcRenderer.invoke('timelapse-assemble', { subFolder, projectTitle }),
 
 
   // ── П.2: Прогресс генерации изображений ────────────────────────────────────

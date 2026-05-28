@@ -3,6 +3,9 @@ import { Image as ImageIcon, Video, CheckCircle, RotateCw, RefreshCw, Download, 
 import './TimelapseTab.css';
 
 export interface CinematicPromptData {
+    projectTitle?: string;
+    tiktokDescription?: string;
+    tiktokHashtags?: string;
     contextConfirmation: string;
     images: {
         id: number;
@@ -23,6 +26,7 @@ const TimelapseTab: React.FC = () => {
     // Pipeline States
     const [pipelineState, setPipelineState] = useState<'IDLE' | 'SELECTION' | 'EXECUTION'>('IDLE');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isAutoGenerating, setIsAutoGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // SELECTION State
@@ -32,10 +36,10 @@ const TimelapseTab: React.FC = () => {
     const [promptData, setPromptData] = useState<CinematicPromptData | null>(null);
 
     // Assets State
-    const [generatedImages, setGeneratedImages] = useState<(string | null)[]>([null, null, null, null]);
-    const [generatedVideos, setGeneratedVideos] = useState<(string | null)[]>([null, null, null, null]);
-    const [generatingImages, setGeneratingImages] = useState<boolean[]>([false, false, false, false]);
-    const [generatingVideos, setGeneratingVideos] = useState<boolean[]>([false, false, false, false]);
+    const [generatedImages, setGeneratedImages] = useState<(string | null)[]>([null, null, null, null, null, null]);
+    const [generatedVideos, setGeneratedVideos] = useState<(string | null)[]>([null, null, null, null, null, null]);
+    const [generatingImages, setGeneratingImages] = useState<boolean[]>([false, false, false, false, false, false]);
+    const [generatingVideos, setGeneratingVideos] = useState<boolean[]>([false, false, false, false, false, false]);
 
     // Assembly State
     const [assembling, setAssembling] = useState(false);
@@ -44,7 +48,7 @@ const TimelapseTab: React.FC = () => {
     const [selectedImageModel, setSelectedImageModel] = useState('imagen4');
     const [timelapseID, setTimelapseID] = useState('');
     const [customIdea, setCustomIdea] = useState('');
-    const [referenceImages, setReferenceImages] = useState<(string | null)[]>([null, null, null, null]); // [stage1, stage2, stage3, stage4]
+    const [referenceImages, setReferenceImages] = useState<(string | null)[]>([null, null, null, null, null, null]); // [stage1..stage6]
     const [referenceVideo, setReferenceVideo] = useState<string | null>(null);
     const [useReferencesAsFinal, setUseReferencesAsFinal] = useState(false);
 
@@ -87,17 +91,17 @@ const TimelapseTab: React.FC = () => {
             setPipelineState('EXECUTION');
             
             if (useReferencesAsFinal) {
-                let mapped: (string|null)[] = [null, null, null, null];
-                if (data.referenceFrames && data.referenceFrames.length === 4) {
+                let mapped: (string|null)[] = [null, null, null, null, null, null];
+                if (data.referenceFrames && data.referenceFrames.length === 6) {
                     mapped = data.referenceFrames;
                 } else {
                     mapped = [...referenceImages];
                 }
                 setGeneratedImages(mapped);
             } else {
-                setGeneratedImages([null, null, null, null]);
+                setGeneratedImages([null, null, null, null, null, null]);
             }
-            setGeneratedVideos([null, null, null, null]);
+            setGeneratedVideos([null, null, null, null, null, null]);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -157,8 +161,8 @@ const TimelapseTab: React.FC = () => {
             setPromptData(data);
             setPipelineState('EXECUTION');
             // reset assets
-            setGeneratedImages([null, null, null, null]);
-            setGeneratedVideos([null, null, null, null]);
+            setGeneratedImages([null, null, null, null, null, null]);
+            setGeneratedVideos([null, null, null, null, null, null]);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -193,10 +197,10 @@ const TimelapseTab: React.FC = () => {
 
     const generateVideo = async (videoIndex: number) => {
         if (!promptData) return;
-        const requiredImageIdx = videoIndex === 3 ? 3 : videoIndex;
+        const requiredImageIdx = videoIndex === 5 ? 5 : videoIndex;
         if (!generatedImages[requiredImageIdx]) {
-            const label = videoIndex === 3
-                ? 'Please generate Image 4 (FULLY FURNISHED) first — it is the starting frame for the Cinematic Tour.'
+            const label = videoIndex === 5
+                ? 'Please generate Image 6 (FINAL STATE) first — it is the starting frame for the Cinematic Tour.'
                 : `Please generate Image ${videoIndex + 1} first, it acts as the starting frame for Video ${videoIndex + 1}.`;
             setError(label);
             return;
@@ -219,6 +223,82 @@ const TimelapseTab: React.FC = () => {
         }
     };
 
+    const handleAutoGeneration = async () => {
+        if (!promptData) return;
+        setIsAutoGenerating(true);
+        setError(null);
+
+        const currentImages = [...generatedImages];
+        const currentVideos = [...generatedVideos];
+
+        try {
+            // Phase 1: Generate missing images sequentially
+            for (let idx = 0; idx < promptData.images.length; idx++) {
+                if (currentImages[idx]) {
+                    console.log(`[AutoGen] Image ${idx + 1} already generated. Skipping.`);
+                    continue;
+                }
+
+                setGeneratingImages(prev => { const n = [...prev]; n[idx] = true; return n; });
+                try {
+                    let refImg = null;
+                    if (idx === 0) refImg = referenceImages[0];
+                    if (idx === 5) refImg = referenceImages[5];
+
+                    const url = await window.electronAPI.timelapseGenerateImage(
+                        idx, 
+                        promptData.images[idx].prompt, 
+                        selectedImageModel, 
+                        timelapseID,
+                        refImg
+                    );
+                    
+                    currentImages[idx] = url;
+                    setGeneratedImages(prev => { const n = [...prev]; n[idx] = url; return n; });
+                } catch (err: any) {
+                    throw new Error(`Error generating Image ${idx + 1}: ${err.message}`);
+                } finally {
+                    setGeneratingImages(prev => { const n = [...prev]; n[idx] = false; return n; });
+                }
+            }
+
+            // Phase 2: Generate missing videos sequentially
+            for (let idx = 0; idx < promptData.videos.length; idx++) {
+                if (currentVideos[idx]) {
+                    console.log(`[AutoGen] Video ${idx + 1} already generated. Skipping.`);
+                    continue;
+                }
+
+                const requiredImageIdx = idx === 5 ? 5 : idx;
+                if (!currentImages[requiredImageIdx]) {
+                    throw new Error(`Cannot generate Video ${idx + 1} because Image ${requiredImageIdx + 1} is missing.`);
+                }
+
+                setGeneratingVideos(prev => { const n = [...prev]; n[idx] = true; return n; });
+                try {
+                    const refImgs = referenceImages.filter(img => !!img);
+                    const url = await window.electronAPI.timelapseGenerateVideo(
+                        idx, 
+                        promptData.videos[idx].prompt, 
+                        timelapseID,
+                        refImgs
+                    );
+                    
+                    currentVideos[idx] = url;
+                    setGeneratedVideos(prev => { const n = [...prev]; n[idx] = url; return n; });
+                } catch (err: any) {
+                    throw new Error(`Error generating Video ${idx + 1}: ${err.message}`);
+                } finally {
+                    setGeneratingVideos(prev => { const n = [...prev]; n[idx] = false; return n; });
+                }
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsAutoGenerating(false);
+        }
+    };
+
     const assembleFinal = async () => {
         if (generatedVideos.includes(null)) {
             setError('Please generate all 4 videos before assembling.');
@@ -227,7 +307,7 @@ const TimelapseTab: React.FC = () => {
         setAssembling(true);
         setError(null);
         try {
-            const url = await window.electronAPI.timelapseAssemble(timelapseID);
+            const url = await window.electronAPI.timelapseAssemble(timelapseID, promptData?.projectTitle);
             setFinalVideoUrl(url);
         } catch (e: any) {
             setError(`Assembly Error: ${e.message}`);
@@ -248,8 +328,8 @@ const TimelapseTab: React.FC = () => {
         setPipelineState('IDLE');
         setEnvironments([]);
         setPromptData(null);
-        setGeneratedImages([null, null, null, null]);
-        setGeneratedVideos([null, null, null, null]);
+        setGeneratedImages([null, null, null, null, null, null]);
+        setGeneratedVideos([null, null, null, null, null, null]);
         setFinalVideoUrl(null);
         setError(null);
     };
@@ -285,8 +365,18 @@ const TimelapseTab: React.FC = () => {
                             </button>
                         ))}
                     </div>
+                    {pipelineState === 'EXECUTION' && (
+                        <button
+                            onClick={handleAutoGeneration}
+                            disabled={isAutoGenerating || isGenerating}
+                            className="auto-generate-btn"
+                        >
+                            {isAutoGenerating ? <RefreshCw className="spin" size={14} /> : <Zap size={14} />}
+                            {isAutoGenerating ? ' GENERATING...' : ' AUTO GENERATION'}
+                        </button>
+                    )}
                     {pipelineState !== 'IDLE' && (
-                        <button onClick={resetWorkflow} style={{ background: '#333', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '12px' }}>
+                        <button onClick={resetWorkflow} disabled={isAutoGenerating} style={{ background: '#333', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '12px' }}>
                             <RotateCw size={14} /> RESET
                         </button>
                     )}
@@ -317,11 +407,11 @@ const TimelapseTab: React.FC = () => {
                         <Video size={36} color="#3b82f6" />
                     </div>
                     <h2 style={{ margin: '0 0 0.75rem 0', fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.5px', textAlign: 'center', color: '#f1f5f9' }}>Cinematic Timelapse</h2>
-                    <p style={{ margin: '0 0 0.5rem 0', color: '#64748b', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase', textAlign: 'center' }}>AI · CONSTRUCTION · 4-STAGE PIPELINE</p>
+                    <p style={{ margin: '0 0 0.5rem 0', color: '#64748b', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase', textAlign: 'center' }}>AI · CONSTRUCTION · 6-STAGE PIPELINE</p>
                     <div style={{ width: '48px', height: '2px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', borderRadius: '2px', margin: '1.5rem 0 2rem 0' }} />
                     <div style={{ width: '100%', maxWidth: '700px', background: 'rgba(15, 23, 42, 0.5)', padding: '2rem', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                            {['STAGE 1', 'STAGE 2', 'STAGE 3', 'STAGE 4'].map((label, idx) => (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                            {['STAGE 1', 'STAGE 2', 'STAGE 3', 'STAGE 4', 'STAGE 5', 'STAGE 6'].map((label, idx) => (
                                 <div key={idx} onClick={() => handleImageUpload(idx)} style={{ aspectRatio: '1', background: 'rgba(0,0,0,0.3)', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', transition: 'all 0.2s' }}>
                                     {referenceImages[idx] ? (
                                         <img src={referenceImages[idx]!} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -398,10 +488,57 @@ const TimelapseTab: React.FC = () => {
             {/* STATE 3: EXECUTION */}
             {pipelineState === 'EXECUTION' && promptData && (
                 <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', paddingBottom: '4rem' }}>
+                    {promptData.projectTitle && (
+                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>TikTok Title</span>
+                            <span style={{ color: '#f1f5f9', fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.5px' }}>{promptData.projectTitle}</span>
+                        </div>
+                    )}
+
                     <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '1rem 1.5rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
                         <span style={{ color: '#3b82f6', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '1px' }}>CONTEXT CONFIRMATION</span>
                         <p style={{ margin: '0.5rem 0 0 0', fontSize: '1.1rem', color: '#e2e8f0' }}>{promptData.contextConfirmation}</p>
                     </div>
+
+                    {(promptData.tiktokDescription || promptData.tiktokHashtags) && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                            {promptData.tiktokDescription && (
+                                <div style={{ background: '#111827', border: '1px solid #334155', borderRadius: '0.5rem', p: 0, overflow: 'hidden' }}>
+                                    <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>TikTok / Reels Description</span>
+                                        <button
+                                            onClick={() => navigator.clipboard.writeText(promptData.tiktokDescription || '')}
+                                            style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
+                                            title="Copy Description"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
+                                    <div style={{ padding: '1rem', color: '#cbd5e1', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                        {promptData.tiktokDescription}
+                                    </div>
+                                </div>
+                            )}
+
+                            {promptData.tiktokHashtags && (
+                                <div style={{ background: '#111827', border: '1px solid #334155', borderRadius: '0.5rem', p: 0, overflow: 'hidden' }}>
+                                    <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Hashtags</span>
+                                        <button
+                                            onClick={() => navigator.clipboard.writeText(promptData.tiktokHashtags?.split(' ').map(h => `#${h}`).join(' ') || '')}
+                                            style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
+                                            title="Copy Hashtags"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
+                                    <div style={{ padding: '1rem', color: '#3b82f6', fontSize: '0.95rem', lineHeight: 1.5, fontWeight: 500 }}>
+                                        {promptData.tiktokHashtags.split(' ').map(h => `#${h}`).join(' ')}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {promptData.engineerNotes && (
                         <div style={{ background: 'rgba(16, 185, 129, 0.05)', borderLeft: '3px solid #10b981', padding: '0.75rem 1.25rem', borderRadius: '0 0.5rem 0.5rem 0', marginBottom: '2rem' }}>
@@ -431,7 +568,7 @@ const TimelapseTab: React.FC = () => {
                                         </div>
                                         <button 
                                             onClick={() => generateImage(idx)} 
-                                            disabled={generatingImages[idx] || (idx > 0 && !generatedImages[idx - 1])} 
+                                            disabled={generatingImages[idx] || (idx > 0 && !generatedImages[idx - 1]) || isAutoGenerating} 
                                             className="btn-primary" 
                                             style={{ 
                                                 padding: '0.4rem 0.8rem', 
@@ -472,14 +609,14 @@ const TimelapseTab: React.FC = () => {
                                                 {copiedIndex?.type === 'vid' && copiedIndex?.idx === idx ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
                                             </button>
                                         </div>
-                                        <button onClick={() => generateVideo(idx)} disabled={generatingVideos[idx] || !generatedImages[idx === 3 ? 3 : idx]} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: '#8b5cf6' }}>
+                                        <button onClick={() => generateVideo(idx)} disabled={generatingVideos[idx] || !generatedImages[idx === 5 ? 5 : idx] || isAutoGenerating} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: '#8b5cf6' }}>
                                             {generatingVideos[idx] ? <RefreshCw className="spin" size={14} /> : <Video size={14} />} {generatedVideos[idx] ? 'RE-ANIMATE' : 'ANIMATE'}
                                         </button>
                                     </div>
                                     <div className="clamped-prompt" style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>{vid.prompt}</div>
                                     {generatedVideos[idx] && (
                                         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', background: '#000' }}>
-                                            <video src={generatedVideos[idx]!} controls autoPlay loop style={{ maxHeight: '400px', width: 'auto', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '4px' }} />
+                                            <video src={generatedVideos[idx]!} controls loop style={{ maxHeight: '400px', width: 'auto', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '4px' }} />
                                         </div>
                                     )}
                                 </div>
@@ -500,14 +637,14 @@ const TimelapseTab: React.FC = () => {
 
                                 <button 
                                     onClick={assembleFinal} 
-                                    disabled={assembling || generatedVideos.includes(null)} 
+                                    disabled={assembling || generatedVideos.includes(null) || isAutoGenerating} 
                                     className="btn-primary" 
                                     style={{ 
                                         width: '100%', 
                                         padding: '1rem', 
                                         background: generatedVideos.includes(null) ? '#1e293b' : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
                                         color: generatedVideos.includes(null) ? '#475569' : '#fff',
-                                        cursor: (assembling || generatedVideos.includes(null)) ? 'not-allowed' : 'pointer',
+                                        cursor: (assembling || generatedVideos.includes(null) || isAutoGenerating) ? 'not-allowed' : 'pointer',
                                         opacity: generatedVideos.includes(null) ? 0.6 : 1,
                                         boxShadow: generatedVideos.includes(null) ? 'none' : '0 8px 24px rgba(79, 70, 229, 0.3)'
                                     }}
@@ -518,7 +655,7 @@ const TimelapseTab: React.FC = () => {
 
                                 {finalVideoUrl && (
                                     <div style={{ marginTop: '2rem', background: '#000', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #312e81' }}>
-                                        <video src={finalVideoUrl} controls autoPlay loop style={{ width: '100%', borderRadius: '0.5rem' }} />
+                                        <video src={finalVideoUrl} controls loop style={{ width: '100%', borderRadius: '0.5rem' }} />
                                         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
                                             <a href={finalVideoUrl} download style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#10b981', color: 'white', textDecoration: 'none', borderRadius: '0.5rem', fontWeight: 800, fontSize: '0.9rem' }}>
                                                 <Download size={18} /> DOWNLOAD FINAL
