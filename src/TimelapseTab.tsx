@@ -301,7 +301,7 @@ const TimelapseTab: React.FC = () => {
 
     const assembleFinal = async () => {
         if (generatedVideos.includes(null)) {
-            setError('Please generate all 4 videos before assembling.');
+            setError('Please generate all 6 videos before assembling.');
             return;
         }
         setAssembling(true);
@@ -488,57 +488,60 @@ const TimelapseTab: React.FC = () => {
             {/* STATE 3: EXECUTION */}
             {pipelineState === 'EXECUTION' && promptData && (
                 <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', paddingBottom: '4rem' }}>
-                    {promptData.projectTitle && (
-                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>TikTok Title</span>
-                            <span style={{ color: '#f1f5f9', fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.5px' }}>{promptData.projectTitle}</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                        <div style={{ background: '#111827', border: '1px solid #334155', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                            <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Video Title</span>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(promptData.projectTitle || '')}
+                                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
+                                    title="Copy Title"
+                                >
+                                    <Copy size={16} />
+                                </button>
+                            </div>
+                            <div style={{ padding: '1rem', color: '#f1f5f9', fontSize: '1.15rem', lineHeight: 1.35, fontWeight: 800 }}>
+                                {promptData.projectTitle || 'Untitled Timelapse'}
+                            </div>
                         </div>
-                    )}
+
+                        <div style={{ background: '#111827', border: '1px solid #334155', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                            <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Short Description</span>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(promptData.tiktokDescription || '')}
+                                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
+                                    title="Copy Description"
+                                >
+                                    <Copy size={16} />
+                                </button>
+                            </div>
+                            <div style={{ padding: '1rem', color: '#cbd5e1', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                {promptData.tiktokDescription || 'No description generated.'}
+                            </div>
+                        </div>
+
+                        <div style={{ background: '#111827', border: '1px solid #334155', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                            <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Hashtags</span>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(formatHashtags(promptData.tiktokHashtags))}
+                                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
+                                    title="Copy Hashtags"
+                                >
+                                    <Copy size={16} />
+                                </button>
+                            </div>
+                            <div style={{ padding: '1rem', color: '#3b82f6', fontSize: '0.95rem', lineHeight: 1.5, fontWeight: 500 }}>
+                                {formatHashtags(promptData.tiktokHashtags) || 'No hashtags generated.'}
+                            </div>
+                        </div>
+                    </div>
 
                     <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '1rem 1.5rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
                         <span style={{ color: '#3b82f6', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '1px' }}>CONTEXT CONFIRMATION</span>
                         <p style={{ margin: '0.5rem 0 0 0', fontSize: '1.1rem', color: '#e2e8f0' }}>{promptData.contextConfirmation}</p>
                     </div>
-
-                    {(promptData.tiktokDescription || promptData.tiktokHashtags) && (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-                            {promptData.tiktokDescription && (
-                                <div style={{ background: '#111827', border: '1px solid #334155', borderRadius: '0.5rem', p: 0, overflow: 'hidden' }}>
-                                    <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>TikTok / Reels Description</span>
-                                        <button
-                                            onClick={() => navigator.clipboard.writeText(promptData.tiktokDescription || '')}
-                                            style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
-                                            title="Copy Description"
-                                        >
-                                            <Copy size={16} />
-                                        </button>
-                                    </div>
-                                    <div style={{ padding: '1rem', color: '#cbd5e1', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        {promptData.tiktokDescription}
-                                    </div>
-                                </div>
-                            )}
-
-                            {promptData.tiktokHashtags && (
-                                <div style={{ background: '#111827', border: '1px solid #334155', borderRadius: '0.5rem', p: 0, overflow: 'hidden' }}>
-                                    <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Hashtags</span>
-                                        <button
-                                            onClick={() => navigator.clipboard.writeText(promptData.tiktokHashtags?.split(' ').map(h => `#${h}`).join(' ') || '')}
-                                            style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
-                                            title="Copy Hashtags"
-                                        >
-                                            <Copy size={16} />
-                                        </button>
-                                    </div>
-                                    <div style={{ padding: '1rem', color: '#3b82f6', fontSize: '0.95rem', lineHeight: 1.5, fontWeight: 500 }}>
-                                        {promptData.tiktokHashtags.split(' ').map(h => `#${h}`).join(' ')}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     {promptData.engineerNotes && (
                         <div style={{ background: 'rgba(16, 185, 129, 0.05)', borderLeft: '3px solid #10b981', padding: '0.75rem 1.25rem', borderRadius: '0 0.5rem 0.5rem 0', marginBottom: '2rem' }}>
@@ -552,7 +555,7 @@ const TimelapseTab: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                         {/* IMAGES COLUMN */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 2 — 4 PHOTOREALISTIC IMAGE PROMPTS</h3>
+                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 2 — 6 PHOTOREALISTIC IMAGE PROMPTS</h3>
                             {promptData.images.map((img, idx) => (
                                 <div key={idx} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '0.5rem', overflow: 'hidden' }}>
                                     <div style={{ padding: '1rem', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -595,7 +598,7 @@ const TimelapseTab: React.FC = () => {
 
                         {/* VIDEOS COLUMN */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 3 — 4 VIDEO PROMPTS (TRANSITIONS)</h3>
+                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 3 — 6 VIDEO PROMPTS</h3>
                             {promptData.videos.map((vid, idx) => (
                                 <div key={idx} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '0.5rem', overflow: 'hidden' }}>
                                     <div style={{ padding: '1rem', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -632,7 +635,7 @@ const TimelapseTab: React.FC = () => {
                                 <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
                                     {generatedVideos.every(v => !!v) 
                                         ? 'Все части готовы! Нажмите кнопку для склейки финального ролика.' 
-                                        : 'Сгенерируйте все 4 видео-перехода, чтобы активировать финальную сборку.'}
+                                        : 'Сгенерируйте все 6 видео, чтобы активировать финальную сборку.'}
                                 </p>
 
                                 <button 
@@ -676,6 +679,15 @@ const TimelapseTab: React.FC = () => {
 
     function hasImage(idx: number) {
         return !!generatedImages[idx];
+    }
+
+    function formatHashtags(value?: string) {
+        return (value || '')
+            .split(/\s+/)
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+            .map((tag) => tag.startsWith('#') ? tag : `#${tag}`)
+            .join(' ');
     }
 };
 

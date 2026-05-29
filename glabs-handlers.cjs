@@ -189,6 +189,7 @@ const generateImageViaGLabs = async (options = {}) => {
             subFolder = '',
             sceneIndex = 0,
             referenceImages = [],
+            strength,
             onProgress = null
         } = options;
 
@@ -200,6 +201,9 @@ const generateImageViaGLabs = async (options = {}) => {
         const bodyData = { prompt, model, aspect_ratio: aspectRatio, count };
         if (referenceImages && referenceImages.length > 0) {
             bodyData.reference_images = referenceImages;
+        }
+        if (typeof strength === 'number') {
+            bodyData.strength = strength;
         }
 
         const { statusCode, text } = await gLabsRequest('/api/image/generate', {

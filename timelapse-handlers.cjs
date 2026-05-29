@@ -8,287 +8,139 @@ const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handle
 
 const TIMELAPSE_DIR = path.join(__dirname, 'CinematicTimelapse');
 if (!fs.existsSync(TIMELAPSE_DIR)) fs.mkdirSync(TIMELAPSE_DIR, { recursive: true });
+const STAGE_COUNT = 6;
+const PROCESS_PROMPT_PATH = path.join(__dirname, 'AI_TIMELAPSE_PROCESS.md');
+const PROCESS_PROMPT = fs.existsSync(PROCESS_PROMPT_PATH)
+    ? fs.readFileSync(PROCESS_PROMPT_PATH, 'utf8')
+    : '';
 
 const MASTER_PROMPT = `
-You are a Master Construction Engineer and Cinematic Director specializing in hyper-realistic construction timelapse sequences.
+You are a Site-Specific Structural Engineer. Your goal is to recreate a construction process based STRICTLY on the provided environment.
 
-═══════════════════════════════════════════════════════════════════════════════
-CORE MISSION: Create PHYSICALLY ACCURATE, STRUCTURALLY CORRECT construction sequences
-═══════════════════════════════════════════════════════════════════════════════
+--- SOURCE PROCESS DOCUMENT ---
+Use this process document as the foundation for planning the timelapse:
+${PROCESS_PROMPT}
 
-CRITICAL RULES — PHYSICAL REALISM:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. NO MAGIC TRANSFORMATIONS — Every stage must show realistic construction progression
-2. NO FLOATING EQUIPMENT — All machinery MUST be on solid ground with visible contact
-3. NO WALKING ON WATER — Workers and equipment only on solid surfaces or proper scaffolding
-4. NO INSTANT MATERIALIZATION — Materials appear through realistic delivery and installation
-5. GRAVITY EXISTS — All objects obey physics, proper support structures visible
-6. SEQUENTIAL LOGIC — Each stage must be buildable from the previous stage
-7. PROPER FOUNDATION — Nothing can be built without proper ground preparation first
+--- STRICT SITE-SPECIFIC CONSISTENCY ---
+- BACKGROUND: You MUST preserve the background shown in the reference media.
+- STAGE 1 (MIRROR RULE): Stage 1 is a literal, detailed description of the FIRST uploaded file. Do NOT 'undo' construction. Recreate the house, materials, and trees EXACTLY.
+- ARCHITECTURAL DNA: Identify the colors and materials in the reference (e.g., "red brick", "white stucco") and keep them identical across all 6 stages.
 
-CONSTRUCTION SEQUENCE TEMPLATES BY PROJECT TYPE:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--- CONSTRUCTION PHASES (6 STAGES) ---
+1. STAGE 1: AS-IS STATE. Pixel-faithful description of the 'Start' media.
+2. STAGE 2: SITE PREPARATION. Clearing, marking, initial machinery arrival.
+3. STAGE 3: FOUNDATION WORK. Excavation, foundation pour, ground-level structures.
+4. STAGE 4: STRUCTURAL FRAME. Core skeleton, walls rising, scaffolding.
+5. STAGE 5: SHELL COMPLETE. Roof on, exterior walls closed, windows placed.
+6. STAGE 6: FINAL REVEAL. Exterior finishing, landscaping, and pristine completed state matching the user's goal.
 
-🏗️ NEW BUILDING CONSTRUCTION (House, Commercial, Multi-story):
-────────────────────────────────────────────────────────────────────────────────
-STAGE 1 — SITE PREPARATION & FOUNDATION (Week 1-2):
-• Excavation equipment (excavator, bulldozer) on site with visible tracks
-• Deep excavation pit with exposed earth layers, proper slope angles
-• Foundation formwork visible, rebar grid laid out on compacted gravel base
-• Concrete mixer trucks positioned on access road (NOT in the pit)
-• Workers in hard hats and hi-vis vests measuring and checking levels
-• Temporary fencing, material stockpiles, site office trailer
-• CAMERA: High drone angle 45°, showing full site context and access roads
+--- PHYSICAL RULES ---
+- MACHINERY: Must be realistically placed on the ground shown in the media.
+- CAMERA STAGES 1-5: "locked-down professional tripod, static camera, zero movement, structural anchor stability." Background stays 100% static.
+- CAMERA STAGE 6: "smooth cinematic drone orbital reveal, slow arc around the completed structure."
+- ENGINEER: Visible in Stages 2-4 (white hardhat, hi-vis vest).
 
-STAGE 2 — STRUCTURAL FRAME & WALLS (Week 3-6):
-• Concrete foundation fully cured, visible above ground level
-• Structural frame erected: steel beams OR concrete columns OR timber frame
-• Scaffolding surrounding the structure with safety netting
-• Crane positioned on stable ground, lifting materials (if multi-story)
-• Wall framing in progress: brick laying OR concrete blocks OR timber studs
-• Roof trusses being installed or flat roof deck visible
-• Material pallets, cement bags, stacked bricks on ground near structure
-• Workers actively building, realistic work-in-progress state
-• CAMERA: Same angle, showing vertical growth and structural skeleton
+--- TECHNICAL KEYWORDS ---
+- IMAGES: "8k realistic architectural photography, sharp details, consistent lighting, original environment preservation."
+- VIDEOS: "Temporal stability, natural physics, consistent background. Audio must contain construction machinery and worker ambience only. No music, no soundtrack, no melody, no singing."
 
-STAGE 3 — ENVELOPE & SYSTEMS (Week 7-10):
-• Exterior walls completed: brick facade OR stucco OR siding fully installed
-• Roof covering installed: tiles OR metal sheets OR membrane visible
-• Windows and doors installed in openings, frames visible
-• Scaffolding partially removed or relocated to detail areas
-• Interior rough-ins visible through windows: electrical conduits, plumbing pipes
-• HVAC equipment on roof or ground (if applicable)
-• Exterior insulation, waterproofing layers visible in cross-section areas
-• Site cleanup beginning, some equipment removed
-• CAMERA: Same angle, structure now weather-tight and recognizable
+--- IMAGE FRAME RULES ---
+- Every image prompt must describe ONE full-screen vertical 9:16 TikTok frame.
+- Never create a collage, triptych, split screen, storyboard, contact sheet, multi-panel layout, before/after comparison, grid, or several images inside one frame.
+- Stage 1 is the master visual reference for all later stages: preserve the same background, camera height, lens, perspective, object scale, horizon line, and main proportions.
+- Stage 1 camera must be a high-angle 45-degree top-down view, vertical 9:16 TikTok frame, wide enough to clearly show the full construction site scale, ground layout, machinery zones, workers, and the main structure area.
+- Stages 2-5 must keep a locked camera and change only the construction progress, not the viewpoint.
+- Stage 6 may add a subtle cinematic reveal feeling, but it must still preserve the original site identity and proportions.
 
-STAGE 4 — FINISHING & LANDSCAPING (Week 11-14):
-• All scaffolding removed, clean exterior surfaces
-• Final exterior details: painted trim, gutters, downspouts, lighting fixtures
-• Landscaping completed: graded soil, grass/plants, paved walkways/driveway
-• Outdoor features: deck, patio, fence (if applicable)
-• Interior visible through windows: finished walls, lighting, furnishings (if shown)
-• All construction equipment and materials removed
-• Clean, pristine final result with proper site drainage and access
-• CAMERA: Same angle, polished final reveal with context
-
-🏊 POOL CONSTRUCTION:
-────────────────────────────────────────────────────────────────────────────────
-STAGE 1 — EXCAVATION & STEEL FRAMEWORK:
-• Excavator digging rectangular pit in backyard, dirt piles on sides
-• Exposed earth walls with proper slope, no water (dry excavation)
-• Steel rebar grid being assembled on pit floor and walls
-• Plumbing pipes laid out: main drain, return lines, skimmer rough-in
-• Workers on solid ground around pit edge, NOT inside deep pit
-• CAMERA: High angle showing pit depth and surrounding yard context
-
-STAGE 2 — CONCRETE SHELL & PLUMBING:
-• Concrete poured and cured, forming solid pool shell (gunite or shotcrete)
-• Visible texture of raw concrete, no finish yet
-• Plumbing fixtures installed: skimmer box, return jets, main drain cover
-• Equipment pad poured: concrete slab for pump and filter
-• Pool equipment staged on pad: pump, filter, heater (not yet connected)
-• Backfill around pool exterior, compacted soil
-• CAMERA: Same angle, showing solid structure taking shape
-
-STAGE 3 — TILE, COPING & EQUIPMENT:
-• Pool interior surface applied: plaster OR tile OR pebble finish
-• Coping stones installed around pool edge (stone, brick, or concrete)
-• Pool equipment fully installed and plumbed: pump running, filter connected
-• Deck area prepared: forms for concrete deck or pavers base laid
-• Pool still empty but finished interior visible
-• CAMERA: Same angle, showing refined details
-
-STAGE 4 — FILLED & LANDSCAPING:
-• Pool filled with crystal clear water, proper water level at skimmer
-• Deck completed: stamped concrete OR pavers OR natural stone
-• Landscaping around pool: plants, grass, decorative rocks
-• Pool furniture, lighting, safety features (ladder, handrails)
-• Equipment running, water circulation visible
-• CAMERA: Same angle, inviting final result
-
-🛠️ RENOVATION / REMODEL:
-────────────────────────────────────────────────────────────────────────────────
-STAGE 1 — EXISTING CONDITION & DEMOLITION START:
-• Original space as-is: old finishes, dated fixtures, wear visible
-• Demolition in progress: partial wall removal, old flooring torn up
-• Debris piles, construction dumpster on site
-• Protective plastic sheeting, dust containment measures
-• Workers with demolition tools (sledgehammer, pry bars)
-• CAMERA: Fixed interior angle showing full room
-
-STAGE 2 — STRUCTURAL CHANGES & ROUGH-INS:
-• Walls opened up, new framing installed (if layout changed)
-• New electrical wiring, junction boxes, conduit visible
-• New plumbing pipes, drain lines, supply lines installed
-• HVAC ducts or vents added/relocated
-• Subfloor repairs, new underlayment installed
-• Insulation added in walls/ceiling (if visible)
-• CAMERA: Same angle, showing infrastructure upgrades
-
-STAGE 3 — FINISHES INSTALLATION:
-• Drywall installed and taped, ready for paint OR new wall finish
-• Flooring installed: hardwood, tile, carpet (in progress or completed)
-• Cabinets installed (kitchen/bath), countertops templated or placed
-• New windows/doors installed (if part of scope)
-• Painting in progress: primer, base coat visible
-• CAMERA: Same angle, space taking new form
-
-STAGE 4 — COMPLETED & FURNISHED:
-• All finishes complete: painted walls, finished floors, trim installed
-• Fixtures installed: lighting, plumbing fixtures, hardware
-• Appliances in place (if kitchen/bath)
-• Furniture arranged, decor added, space fully styled
-• Clean, polished, magazine-quality final result
-• CAMERA: Same angle, stunning transformation reveal
-
-🏗️ INFRASTRUCTURE (Bridge, Road, Tunnel):
-────────────────────────────────────────────────────────────────────────────────
-STAGE 1 — SITE PREP & FOUNDATION:
-• Heavy equipment on site: excavators, pile drivers, cranes
-• Foundation work: pilings driven, caissons drilled, footings poured
-• Temporary access roads, work platforms on solid ground
-• Surveying equipment, layout stakes, safety barriers
-• CAMERA: Wide angle showing full project scope
-
-STAGE 2 — STRUCTURAL ELEMENTS:
-• Main structural components: bridge piers, abutments, deck supports
-• Formwork and rebar for concrete pours
-• Steel beams being lifted and positioned by cranes
-• Workers on scaffolding and work platforms (properly supported)
-• CAMERA: Same angle, showing vertical/horizontal growth
-
-STAGE 3 — DECK & SURFACE:
-• Bridge deck poured or roadway base laid
-• Surface paving: asphalt or concrete
-• Barriers, railings, safety features installed
-• Drainage systems, expansion joints visible
-• CAMERA: Same angle, functional structure emerging
-
-STAGE 4 — FINISHING & OPENING:
-• Road markings, signage, lighting installed
-• Landscaping, erosion control, final grading
-• All equipment removed, barriers opened
-• Traffic flowing or structure in use
-• CAMERA: Same angle, completed infrastructure in context
-
-═══════════════════════════════════════════════════════════════════════════════
-PROMPT ENGINEERING RULES FOR EACH STAGE:
-═══════════════════════════════════════════════════════════════════════════════
-
-IMAGE PROMPTS — Technical Requirements:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Start with: "Hyper-realistic construction site photography, 8K, sharp focus"
-• Specify EXACT camera angle: "High drone angle 45° looking down, vertical 9:16 format"
-• List ALL visible elements in order: ground → foundation → structure → equipment → workers → sky
-• Materials: Specify textures (rough concrete, weathered wood, rusted steel, fresh paint)
-• Lighting: "Natural daylight, soft shadows, construction site lighting" (consistent across all stages)
-• Weather: Keep consistent (sunny, overcast, golden hour) across all 4 stages
-• NO BLUR, NO MOTION — Static, crystal-clear architectural photography
-• Include: "Physically accurate construction staging, all equipment on solid ground, realistic work-in-progress"
-
-VIDEO PROMPTS — Motion Requirements:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• CAMERA: "LOCKED CAMERA POSITION. NO camera movement. Static timelapse perspective."
-• MOTION: "Time-lapse construction progression. Workers moving naturally. Equipment operating realistically."
-• PHYSICS: "All objects obey gravity. Equipment on ground. Materials delivered and placed logically."
-• TRANSITIONS: "Smooth progression from start frame to end frame. No instant teleportation. Gradual build-up."
-• FORBIDDEN: "NO floating objects, NO levitating equipment, NO walking on water, NO instant materialization, NO magic transformations"
-• Include: "Realistic construction activity, proper safety equipment, logical material flow, temporal consistency"
-
-═══════════════════════════════════════════════════════════════════════════════
-OUTPUT FORMAT (STATE 2 — IDEA GENERATION):
-═══════════════════════════════════════════════════════════════════════════════
-When user asks for ideas, output exactly this JSON:
+--- OUTPUT FORMAT (STATE 2) ---
+When the user asks for ideas, output exactly this JSON object (ensure it contains exactly 4 full ideas):
 {
   "environments": [
     {
       "id": 1,
-      "ru": "ПОЛНОЕ описание проекта (2-3 предложения): ТИП ОБЪЕКТА + ЛОКАЦИЯ + КЛЮЧЕВЫЕ ЭТАПЫ СТРОИТЕЛЬСТВА + ВИЗУАЛЬНЫЙ ВАУ-ЭФФЕКТ + ФИНАЛЬНЫЙ РЕЗУЛЬТАТ. Пример: 'Строительство современного двухэтажного дома с бассейном в пригороде. От рытья котлована и заливки фундамента до установки крыши и ландшафтного дизайна. Реалистичная работа техники, поэтапное возведение стен, монтаж окон. Финал: роскошный дом с благоустроенной территорией.'",
-      "en": "FULL project description (2-3 sentences): OBJECT TYPE + LOCATION + KEY CONSTRUCTION STAGES + CINEMATIC HOOK + FINAL RESULT. Example: 'Modern two-story house with pool construction in suburban area. From excavation and foundation pour to roof installation and landscaping. Realistic equipment operation, progressive wall construction, window installation. Final: luxurious house with landscaped grounds.'"
+      "ru": "Полноценная русская карточка идеи №1...",
+      "en": "Full English idea card #1..."
+    },
+    {
+      "id": 2,
+      "ru": "Полноценная русская карточка идеи №2...",
+      "en": "Full English idea card #2..."
+    },
+    {
+      "id": 3,
+      "ru": "Полноценная русская карточка идеи №3...",
+      "en": "Full English idea card #3..."
+    },
+    {
+      "id": 4,
+      "ru": "Полноценная русская карточка идеи №4...",
+      "en": "Full English idea card #4..."
     }
   ]
 }
 
-IMPORTANT: Generate exactly 4 diverse construction project ideas. Each must specify:
-- Project type (house, pool, renovation, commercial, infrastructure)
-- Location context (suburban, urban, rural, coastal)
-- Key construction stages that will be shown
-- Unique visual appeal (architectural style, scale, complexity)
+STATE 2 rules:
+- Generate exactly 4 rich viral TikTok video-project ideas, not short prompts.
+- Each idea must be a different construction/design transformation with fantastic surrealism: impossible architecture, dreamlike materials, scale shifts, gravity-defying structures, mythic locations, or uncanny visual twists.
+- The surrealism must still be buildable as a 6-stage construction timelapse: clear start, escalation, strange mid-build spectacle, and unforgettable final reveal.
+- Every idea must include a strong viewer-retention hook: a mystery, visual contradiction, or escalating question that makes the viewer want to watch until the final frame.
+- Every idea must feel like content that could make a TikTok viewer stop scrolling, rewatch, comment, and subscribe.
+- Avoid ordinary renovations, generic luxury villas, plain pools, and predictable before/after ideas unless they contain a highly unusual surreal twist.
+- Each "ru" and "en" field must be 2-3 vivid sentences, suitable for displaying as a card, and should mention the hook plus the final reveal.
+- Do not output image prompts, video prompts, stage prompts, or the STATE 3 schema in STATE 2.
 
-═══════════════════════════════════════════════════════════════════════════════
-TECHNICAL PROCESS SPECIFICATION (TPS) — MANDATORY FIRST STEP:
-═══════════════════════════════════════════════════════════════════════════════
-Before writing ANY image or video prompt, you MUST define the domain-specific
-visual dictionary for THIS EXACT project type. This prevents AI hallucinations
-where wrong materials, wrong structures, or wrong architectural styles appear.
+STATE 2 style examples:
+- A ruined bus stop slowly becomes a floating glass cathedral while workers anchor glowing cables into the asphalt; the final reveal shows the entire street bending upward like a bridge into the sky.
+- An abandoned swimming pool is rebuilt into a miniature ocean with a lighthouse in the deep end; viewers wait to see whether the tiny storm inside the pool becomes real.
+- A cracked backyard shed transforms into a portal-shaped micro-mansion, with each stage revealing a larger impossible interior than the outside should allow.
 
-TPS must include:
-1. OBJECT IDENTITY — Exact name, category, and sub-type of the structure
-2. DOMAIN GLOSSARY — Critical components with their EXACT visual descriptions
-   (materials, shapes, proportions, colors — SPECIFIC to this domain)
-3. FORBIDDEN SUBSTITUTIONS — What must NEVER appear (residential elements on
-   marine structures, wrong glass types, wrong frame materials, etc.)
-4. VISUAL ANCHORS — 3-5 key visual details that make this object unmistakable
-   (e.g. for yacht: teak decking, marine-grade aluminum extrusions, horizontal
-   flush-mount tempered glass, stainless steel railings)
-
-OUTPUT FORMAT (STATE 3 — DETAILED PROMPTS):
-═══════════════════════════════════════════════════════════════════════════════
+--- OUTPUT FORMAT (STATE 3) ---
 Output exactly as JSON:
 {
-  "projectType": "house|pool|renovation|commercial|infrastructure|marine|industrial|landscape",
-  "projectTitle": "Short catchy English title, max 5 words, TikTok-ready (e.g. 'Coastal Villa From Zero', 'Urban Loft Transformation')",
-  "tiktokDescription": "Engaging 2-sentence English description for TikTok/Reels caption (e.g. 'Watch this massive coastal villa emerge from the sand. The final pool area is unreal! 🤯')",
-  "tiktokHashtags": "5 hyper-relevant English hashtags without the # symbol separated by spaces (e.g. 'construction architecture timelapse luxuryhome build')",
-  "contextConfirmation": "Technical confirmation of project type and construction sequence to be followed",
-  "technicalProcessSpec": {
-    "objectIdentity": "Exact type and subtype of the object being built/renovated",
-    "domainGlossary": {
-      "componentName": "Exact visual description: material, shape, color, proportion",
-      "anotherComponent": "..."
-    },
-    "forbiddenSubstitutions": ["List of things that MUST NEVER appear in any frame"],
-    "visualAnchors": ["3-5 unmistakable visual details unique to this object/domain"]
-  },
-  "images": [
-     {
-       "id": 1,
-       "title": "Stage 1: [ZERO STATE / SITE PREPARATION]",
-       "prompt": "[DETAILED IMAGE PROMPT — raw site, empty state, preparation works. MUST reference visualAnchors from TPS. 150-250 words]",
-       "technicalNotes": "Key elements: [list critical elements that MUST be visible. Include FORBIDDEN items from TPS]"
-     },
-     { "id": 2, "title": "Stage 2: [FOUNDATION / HULL / BASE WORKS]", "prompt": "...", "technicalNotes": "..." },
-     { "id": 3, "title": "Stage 3: [PRIMARY STRUCTURE — 30-50%]", "prompt": "...", "technicalNotes": "..." },
-     { "id": 4, "title": "Stage 4: [PRIMARY STRUCTURE — 70-80%]", "prompt": "...", "technicalNotes": "..." },
-     { "id": 5, "title": "Stage 5: [SYSTEMS & FINISHING DETAILS]", "prompt": "...", "technicalNotes": "..." },
-     { "id": 6, "title": "Stage 6: [FINAL COMPLETE STATE]", "prompt": "...", "technicalNotes": "..." }
-  ],
-  "videos": [
-     {
-       "id": 1,
-       "title": "Video 1: [STAGE 1 → STAGE 2 TRANSITION]",
-       "prompt": "[DETAILED VIDEO PROMPT with: domain-specific materials from TPS, physics rules, camera lock, forbidden substitutions explicitly stated, realistic progression. 150-200 words]",
-       "keyActions": "[Specific construction activities visible in this transition]"
-     },
-     { "id": 2, "title": "Video 2: [STAGE 2 → STAGE 3 TRANSITION]", "prompt": "...", "keyActions": "..." },
-     { "id": 3, "title": "Video 3: [STAGE 3 → STAGE 4 TRANSITION]", "prompt": "...", "keyActions": "..." },
-     { "id": 4, "title": "Video 4: [STAGE 4 → STAGE 5 TRANSITION]", "prompt": "...", "keyActions": "..." },
-     { "id": 5, "title": "Video 5: [STAGE 5 → STAGE 6 TRANSITION]", "prompt": "...", "keyActions": "..." },
-     { "id": 6, "title": "Video 6: Final Cinematic Tour", "prompt": "SLOW SMOOTH CAMERA MOVEMENT around completed project. [Details of final reveal using exact domain-specific visual anchors from TPS]", "keyActions": "Cinematic reveal of finished project" }
+  "projectTitle": "English viral title, 4-6 words, no hashtags",
+  "tiktokDescription": "English short video description, maximum 15 words",
+  "tiktokHashtags": "5-7 English hashtags separated by spaces, include # on each hashtag",
+  "contextConfirmation": "A technical confirmation that strictly follows the provided visual environment.",
+   "images": [
+      { "id": 1, "title": "Image 1 (AS-IS)", "prompt": "..." },
+      { "id": 2, "title": "Image 2 (SITE PREP)", "prompt": "..." },
+      { "id": 3, "title": "Image 3 (FOUNDATION)", "prompt": "..." },
+      { "id": 4, "title": "Image 4 (STRUCTURAL FRAME)", "prompt": "..." },
+      { "id": 5, "title": "Image 5 (SHELL COMPLETE)", "prompt": "..." },
+      { "id": 6, "title": "Image 6 (FINAL REVEAL)", "prompt": "..." }
    ],
-   "engineerNotes": "Construction sequence validation: [Confirm each stage is buildable from previous stage, all physics rules followed, no forbidden substitutions, TPS visual anchors present in all prompts]"
+   "videos": [
+      { "id": 1, "title": "Video 1 (Preparation)", "prompt": "..." },
+      { "id": 2, "title": "Video 2 (Foundation)", "prompt": "..." },
+      { "id": 3, "title": "Video 3 (Framing)", "prompt": "..." },
+      { "id": 4, "title": "Video 4 (Shell)", "prompt": "..." },
+      { "id": 5, "title": "Video 5 (Exterior Finishing)", "prompt": "..." },
+      { "id": 6, "title": "Video 6 (Final Orbit)", "prompt": "..." }
+    ],
+    "engineerNotes": "Technical summary referencing the specific structural challenges of the site shown."
 }
 
-CRITICAL:
-- TPS domainGlossary must be populated BEFORE writing any prompt
-- Each image prompt MUST reference at least 3 visual anchors from TPS
-- Each video prompt MUST explicitly list 2-3 FORBIDDEN items specific to this domain
-- Stages must follow logical construction sequence for the project type
-- NO generic descriptions — be specific about materials, equipment, actions
-- 6 stages = smaller jumps between frames = less room for AI hallucinations
-`;
+STATE 3 metadata rules:
+- projectTitle is required, English only, 4-6 words, TikTok-ready, filename-safe, no hashtags, no emoji.
+- tiktokDescription is required, English only, maximum 15 words, short and curiosity-driven.
+- tiktokHashtags is required, exactly 5-7 English hashtags separated by spaces, each starting with #.
+- These metadata fields must match the selected idea and final reveal.
 
+STATE 3 image prompt rules:
+- Each image prompt must describe only its own single stage, not the whole 6-stage sequence.
+- Every image prompt must explicitly include: "single full-frame vertical 9:16 TikTok image, no collage, no split screen, no storyboard, no multiple panels".
+- Image 1 must be a clean master frame/reference frame. It must not show multiple stages or any before/after layout.
+- Image 1 must use a high-angle 45-degree top-down camera view, vertical 9:16, showing the whole site clearly enough for viewers to understand the scale of the work.
+- Images 2-6 must preserve Image 1 composition, background, 45-degree high-angle camera, perspective, proportions, lens angle, and horizon line.
+- Never write an image prompt that asks to show a sequence, timeline, progression strip, multiple moments, several stages at once, or a comparison between stages.
+- Do not mention "six stages", "before and after", "step-by-step", "panels", "frames", "sequence", or "timeline" inside individual image prompts.
+- If the project idea contains several phases, convert it into one frozen photographic moment for the current stage only.
+
+STATE 3 video prompt audio rules:
+- Every video prompt must include this exact audio instruction: "SOUND DESIGN: only realistic construction site audio: excavators, cranes, concrete mixers, drills, hammers, footsteps, workers shouting short commands, wind, dust, metal clanks. Absolutely no music, no soundtrack, no cinematic score, no melody, no rhythm, no singing."
+- Do not use words that imply music in video prompts: musical, song, beat, rhythm, soundtrack, score, melody, orchestra, synth, bass, drums.
+- If a prompt needs atmosphere, describe construction ambience and machinery noise only.
+`;
 
 // Simple async wait to simulate process if needed
 const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -312,6 +164,17 @@ function normalizeEnvironmentIdeas(parsed) {
     }).filter((item) => item.ru && item.en);
 }
 
+function normalizePromptData(parsed) {
+    const images = Array.isArray(parsed?.images) ? parsed.images.slice(0, STAGE_COUNT) : [];
+    const videos = Array.isArray(parsed?.videos) ? parsed.videos.slice(0, STAGE_COUNT) : [];
+
+    return {
+        ...parsed,
+        images: images.map((item, index) => ({ ...item, id: index + 1 })),
+        videos: videos.map((item, index) => ({ ...item, id: index + 1 })),
+    };
+}
+
 function registerTimelapseHandlers(ipcMain) {
     let conversationHistory = [];
 
@@ -320,7 +183,7 @@ function registerTimelapseHandlers(ipcMain) {
             { role: 'system', content: MASTER_PROMPT },
             {
                 role: 'user',
-                content: 'STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards. Return only JSON in the STATE 2 format.'
+                content: 'STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards with fantastic surrealism, viral TikTok hooks, and unforgettable final reveals. Return only JSON in the STATE 2 format.'
             }
         ];
 
@@ -333,7 +196,7 @@ function registerTimelapseHandlers(ipcMain) {
             const cleanJson = response.match(/\[[\s\S]*\]/)?.[0] || response.match(/\{[\s\S]*\}/)?.[0] || response;
             const parsed = JSON.parse(cleanJson);
             const ideas = normalizeEnvironmentIdeas(parsed);
-            if (ideas && ideas.length > 0) return ideas;
+            if (ideas && ideas.length === 4) return ideas;
         } catch (e) {
             console.warn('[Timelapse] JSON parse failed, falling back to line parse:', e.message);
         }
@@ -354,7 +217,7 @@ function registerTimelapseHandlers(ipcMain) {
 
         try {
             const cleanJson = rawJsonString.match(/\{[\s\S]*\}/)?.[0] || rawJsonString;
-            return JSON.parse(cleanJson);
+            return normalizePromptData(JSON.parse(cleanJson));
         } catch (e) {
             console.error('[Timelapse] Failed to parse JSON:', rawJsonString);
             throw new Error('LLM failed to output valid JSON for State 3. Please reset and try again.');
@@ -382,27 +245,26 @@ function registerTimelapseHandlers(ipcMain) {
             });
         }
 
-        // If video is provided, extract 4 key frames (0%, 33%, 66%, 100%)
+        // If video is provided, extract key frames (evenly spaced)
         if (video) {
             try {
-                console.log('[Timelapse] Extracting frames from reference video...');
+                console.log(`[Timelapse] Extracting ${STAGE_COUNT} frames from reference video...`);
                 const tempVideoPath = path.join(os.tmpdir(), `ref_video_${Date.now()}.mp4`);
                 const videoData = video.split(';base64,').pop();
                 fs.writeFileSync(tempVideoPath, videoData, 'base64');
 
                 const duration = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempVideoPath}"`).toString().trim());
-                
-                for (let i = 0; i < 4; i++) {
-                    const timestamp = (duration * (i / 3)).toFixed(2);
+
+                for (let i = 0; i < STAGE_COUNT; i++) {
+                    const timestamp = (duration * (i / (STAGE_COUNT - 1))).toFixed(2);
                     const frameName = `ref_frame_${i + 1}.jpg`;
                     const framePath = path.join(baseDir, frameName);
-                    
-                    // Extract frame with high quality but reasonable size
+
                     execSync(`ffmpeg -ss ${timestamp} -i "${tempVideoPath}" -frames:v 1 -q:v 4 "${framePath}" -y`);
-                    
+
                     const frameBase64 = fs.readFileSync(framePath, 'base64');
                     finalImagesForLLM.push(`data:image/jpeg;base64,${frameBase64}`);
-                    
+
                     const uri = `media:///${framePath.replace(/\\/g, '/')}?t=${Date.now()}`;
                     referenceFrames.push(uri);
                 }
@@ -424,7 +286,7 @@ function registerTimelapseHandlers(ipcMain) {
             STRICT RULE: 
             Stage 1 MUST be a 100% literal description of the FIRST image/frame provided. 
             
-            Output the 4-stage pipeline in JSON format as per the system instructions.` }
+            Output the 6-stage pipeline in JSON format as per the system instructions.` }
         ];
 
         finalImagesForLLM.forEach((base64) => {
@@ -445,7 +307,7 @@ function registerTimelapseHandlers(ipcMain) {
         try {
             const cleanJson = rawJsonString.match(/\{[\s\S]*\}/)?.[0] || rawJsonString;
             const parsed = JSON.parse(cleanJson);
-            return { ...parsed, referenceFrames, subFolder: tid }; 
+            return { ...normalizePromptData(parsed), referenceFrames, subFolder: tid }; 
         } catch (e) {
             console.error('[Timelapse] Failed to parse custom JSON. Raw string:', rawJsonString);
             throw new Error('LLM response format error. Please try again.');
@@ -478,12 +340,23 @@ function registerTimelapseHandlers(ipcMain) {
         }
 
         // Reinforce spatial consistency in the prompt
-        const stageLabels = ['ZERO STATE', 'FOUNDATION WORKS', 'PRIMARY STRUCTURE 40%', 'PRIMARY STRUCTURE 75%', 'SYSTEMS & FINISHING', 'FINAL COMPLETE STATE'];
+        const stageLabels = [
+            'STAGE 1: AS-IS STATE',
+            'STAGE 2: SITE PREPARATION',
+            'STAGE 3: FOUNDATION WORK',
+            'STAGE 4: STRUCTURAL FRAME',
+            'STAGE 5: SHELL COMPLETE',
+            'STAGE 6: FINAL REVEAL'
+        ];
         const consistencyPrefix = imgIndex > 0
-            ? `CRITICAL CONSISTENCY RULE: This is the EXACT SAME ROOM as the reference image. Identical camera position, lens angle, ceiling height, wall proportions, window placement, floor area. Do NOT change the spatial layout. Only show the transformation stage: ${stageLabels[imgIndex]}. `
+            ? `CRITICAL CONSISTENCY RULE: This is the EXACT SAME ROOM/SITE as the previous images. Identical camera position, lens angle. Only show the transformation stage: ${stageLabels[imgIndex]}. `
             : '';
 
-        const finalPrompt = consistencyPrefix + prompt;
+        const frameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. High-angle 45-degree top-down construction camera, wide enough to show the full work scale, ground layout, machinery, workers, and main structure area clearly. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
+        const stageOneRule = imgIndex === 0
+            ? 'This is the master reference frame for the entire video. Use a high-angle 45-degree top-down view so the viewer can clearly see the scale of the site and all construction work zones. Create one clean full-screen frame only; do not show the construction sequence. '
+            : '';
+        const finalPrompt = frameRule + stageOneRule + consistencyPrefix + prompt;
 
         // Use I2I strength: low (0.2-0.4) for user refs to keep it identical, 0.6 for internal consistency
         const useStrength = referenceImage ? (imgIndex === 0 ? 0.2 : 0.4) : 0.6;
@@ -491,6 +364,7 @@ function registerTimelapseHandlers(ipcMain) {
         const savedPaths = await generateImageViaGLabs({
             prompt: finalPrompt,
             model: model || 'imagen4',
+            aspectRatio: '9:16',
             count: 1,
             sectionDir: TIMELAPSE_DIR,
             subFolder: subFolder,
@@ -509,7 +383,7 @@ function registerTimelapseHandlers(ipcMain) {
 
     ipcMain.handle('timelapse-generate-video', async (event, { videoIndex, prompt, subFolder }) => {
         const baseDir = subFolder ? path.join(TIMELAPSE_DIR, subFolder) : TIMELAPSE_DIR;
-
+        
         // Helper to find the latest version of an image file (e.g. image_1_TIMESTAMP.jpg or scene_1_TIMESTAMP.jpg)
         const findImage = (idx) => {
             if (!fs.existsSync(baseDir)) return null;
@@ -525,27 +399,19 @@ function registerTimelapseHandlers(ipcMain) {
         const getExt = (p) => p.endsWith('.png') ? 'png' : 'jpeg';
         const videoPath = path.join(baseDir, `video_${videoIndex + 1}.mp4`);
 
-        // ── PHYSICS & REALISM ENFORCEMENT for all videos ────────────────────────
-        const physicsRules = `CRITICAL PHYSICS RULES: All equipment and materials MUST remain on solid ground throughout the entire video. NO floating objects. NO levitating machinery. NO walking on water or air. Workers only on stable surfaces or proper scaffolding. All construction activity follows real-world physics and gravity. Smooth, realistic time-lapse progression with logical material flow and equipment movement.`;
+        const constructionAudioRule = 'SOUND DESIGN: only realistic construction site audio: excavators, cranes, concrete mixers, drills, hammers, footsteps, workers shouting short commands, wind, dust, metal clanks. Absolutely no music, no soundtrack, no cinematic score, no melody, no rhythm, no singing. Do not generate background music. Do not generate any musical accompaniment.';
+        const videoPromptSuffix = `${constructionAudioRule} The audio track must sound like raw recorded construction work, not like edited TikTok music.`;
 
-        const cameraLock = `CAMERA: COMPLETELY LOCKED POSITION. Absolutely NO camera movement, NO panning, NO zooming, NO tilting. Fixed high-angle drone perspective (9:16 vertical format). Only the construction site changes, camera stays frozen in space.`;
-
-        const audioRules = `AUDIO GENERATION INSTRUCTIONS: DO NOT GENERATE ANY MUSIC. The video must contain ONLY the authentic, raw ambient sounds of the physical environment and construction activity (machinery working, tools, natural ambient noise). NO background music, NO cinematic scores, NO artificial soundtracks.`;
-
-        // ── Video 6: Cinematic tour, uses only Image 6 as start frame ──────────
-        if (videoIndex === 5) {
-            const startImgPath = findImage(6);
+        // ── Final video: Cinematic tour, uses only final image as start frame ──
+        if (videoIndex === STAGE_COUNT - 1) {
+            const startImgPath = findImage(STAGE_COUNT);
             if (!startImgPath || !fs.existsSync(startImgPath)) {
-                throw new Error('Image 6 (FINAL STAGE) not found. Please generate it first.');
+                throw new Error(`Image ${STAGE_COUNT} (FINAL REVEAL) not found. Please generate it first.`);
             }
-            console.log(`[Timelapse] Generating Video 6 — Cinematic Tour (start: Image 6)...`);
+            console.log(`[Timelapse] Generating Video ${STAGE_COUNT} — Cinematic Tour (start: Image ${STAGE_COUNT})...`);
             const startB64 = fs.readFileSync(startImgPath, { encoding: 'base64' });
-
-            // Video 6 is the ONLY video with camera movement (cinematic reveal)
-            const enhancedPrompt = `CINEMATIC FINAL REVEAL. SLOW SMOOTH CAMERA MOVEMENT: gentle orbital drift around the completed project, revealing all angles and details. ${prompt} Hyper-realistic architectural cinematography, 8K quality, natural lighting, showcasing the finished construction in its full glory. NO construction activity, NO workers, NO equipment — only the pristine completed project. Smooth, professional camera work, breathtaking final showcase. ${audioRules}`;
-
             const generatedVideoPath = await generateVideoViaGLabs({
-                prompt: enhancedPrompt,
+                prompt: `CINEMATIC ORBITAL REVEAL. SMOOTH DRONE ARC MOVEMENT. ${constructionAudioRule} ${prompt} ${videoPromptSuffix}`,
                 model: 'veo_31_lite',
                 sectionDir: TIMELAPSE_DIR,
                 subFolder: subFolder,
@@ -560,7 +426,7 @@ function registerTimelapseHandlers(ipcMain) {
             return `media:///${videoPath.replace(/\\/g, '/')}?t=${Date.now()}`;
         }
 
-        // ── Videos 1-3: Transition between two frames ───────────────────────────
+        // ── Transition videos between two frames ───────────────────────────────
         const startImgPath = findImage(videoIndex + 1);
         const endImgPath = findImage(videoIndex + 2);
 
@@ -576,13 +442,10 @@ function registerTimelapseHandlers(ipcMain) {
         const startB64 = fs.readFileSync(startImgPath, { encoding: 'base64' });
         const endB64 = fs.readFileSync(endImgPath, { encoding: 'base64' });
 
-        // Enhanced prompt with strict physics and camera rules
-        const enhancedPrompt = `CONSTRUCTION TIMELAPSE TRANSITION. ${cameraLock} ${physicsRules} ${audioRules} ${prompt} TIME-LAPSE PROGRESSION: Smooth, realistic construction activity showing gradual transformation from start frame to end frame. Workers moving naturally, equipment operating on ground level, materials being delivered and installed logically. NO instant teleportation of objects. NO magic transformations. Natural daylight, construction site atmosphere, hyper-realistic 8K quality. Temporal consistency maintained throughout.`;
-
         // Mode `start_end_image` enables smooth transition between two frames
         const generatedVideoPath = await generateVideoViaGLabs({
-            prompt: enhancedPrompt,
-            model: 'veo_31_lite',
+            prompt: `STATIC CAMERA. TIMELAPSE TRANSITION. ${constructionAudioRule} ${prompt} ${videoPromptSuffix}`,
+            model: 'veo_31_lite', 
             sectionDir: TIMELAPSE_DIR,
             subFolder: subFolder,
             sceneIndex: videoIndex,
@@ -597,34 +460,23 @@ function registerTimelapseHandlers(ipcMain) {
         if (generatedVideoPath !== videoPath) {
             fs.copyFileSync(generatedVideoPath, videoPath);
         }
-
+        
         return `media:///${videoPath.replace(/\\/g, '/')}?t=${Date.now()}`;
     });
 
     ipcMain.handle('timelapse-assemble', async (event, { subFolder, projectTitle }) => {
         const baseDir = subFolder ? path.join(TIMELAPSE_DIR, subFolder) : TIMELAPSE_DIR;
-
-        let safeTitle = "timelapse_final";
-        if (projectTitle && typeof projectTitle === 'string') {
-            safeTitle = projectTitle
-                .replace(/[^a-z0-9а-яё\s]/gi, '') // удаляем спецсимволы
-                .replace(/\s+/g, '_')            // пробелы меняем на подчеркивания
-                .substring(0, 50)                // ограничиваем длину
-                .trim();
-            if (!safeTitle) safeTitle = "timelapse_final";
-        }
-
+        const safeTitle = typeof projectTitle === 'string' && projectTitle.trim()
+            ? projectTitle
+                .trim()
+                .replace(/[^a-z0-9\s_-]/gi, '')
+                .replace(/\s+/g, '_')
+                .slice(0, 80)
+            : 'timelapse_final';
         const finalPath = path.join(baseDir, `${safeTitle}_${Date.now()}.mp4`);
         const listPath = path.join(baseDir, 'filelist.txt');
         
-        const videos = [
-            path.join(baseDir, 'video_1.mp4'),
-            path.join(baseDir, 'video_2.mp4'),
-            path.join(baseDir, 'video_3.mp4'),
-            path.join(baseDir, 'video_4.mp4'),
-            path.join(baseDir, 'video_5.mp4'),
-            path.join(baseDir, 'video_6.mp4')
-        ];
+        const videos = Array.from({ length: STAGE_COUNT }, (_, i) => path.join(baseDir, `video_${i + 1}.mp4`));
 
         for (let i = 0; i < videos.length; i++) {
             if (!fs.existsSync(videos[i])) {
@@ -642,55 +494,53 @@ function registerTimelapseHandlers(ipcMain) {
         const tempPath = path.join(TIMELAPSE_DIR, 'temp.mp4');
 
         // Bouncy swing-pop music
-        const musicDir = path.join('D:', 'Open_Project', 'AISTUDIO', 'Music');
+        const musicDir = path.join(__dirname, 'Music');
         const musicFiles = fs.existsSync(musicDir) ? fs.readdirSync(musicDir).filter(f => f.endsWith('.mp4') || f.endsWith('.mp3') || f.endsWith('.wav')) : [];
-        const bgMusicPath = musicFiles.length > 0 ? path.join(musicDir, musicFiles[Math.floor(Math.random() * musicFiles.length)]) : null;
+        const bgMusicPath = musicFiles.length > 0
+            ? path.join(musicDir, musicFiles[Math.floor(Math.random() * musicFiles.length)])
+            : null;
 
         return new Promise((resolve, reject) => {
             // Lossless concatenation using stream copy instead of re-encoding
             const concat = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', '-y', tempPath]);
-
+            
             concat.on('close', code => {
                 if (code !== 0) return reject(new Error('FFmpeg concat failed.'));
-                if (!bgMusicPath) {
-                    fs.renameSync(tempPath, finalPath);
-                    return resolve(`media:///${finalPath.replace(/\\/g, '/')}?t=${Date.now()}`);
-                }
-
                 try {
                     const { execSync } = require('child_process');
                     const durationStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempPath}"`).toString().trim();
                     const duration = parseFloat(durationStr);
                     const fadeStart = Math.max(0, duration - 2);
 
-                    // [0:a]volume=0.2 - original video volume scaled to 20%
-                    // [1:a]volume=1.0,afade... - background music volume normal, fades out last 2 sec
-                    // [0:v]crop... - crop 4% from bottom and left (watermark is bottom right), then scale back to 720x1280
-                    const filter = `[0:v]crop=in_w*0.96:in_h*0.96:in_w*0.04:0,scale=720:1280[vout];[0:a]volume=0.2[orig];[1:a]volume=1.0,afade=t=out:st=${fadeStart}:d=2[bgm];[orig][bgm]amix=inputs=2:duration=first:dropout_transition=2[aout]`;
+                    const mixArgs = bgMusicPath
+                        ? [
+                            '-i', tempPath,
+                            '-i', bgMusicPath,
+                            '-filter_complex', `[0:a]volume=0.3[main];[1:a]volume=0.1,afade=t=out:st=${fadeStart}:d=2[bgm];[main][bgm]amix=inputs=2:duration=first[a]`,
+                            '-map', '0:v',
+                            '-map', '[a]',
+                            '-c:v', 'copy',
+                            '-c:a', 'aac',
+                            '-y', finalPath
+                        ]
+                        : [
+                            '-i', tempPath,
+                            '-filter:a', 'volume=0.3',
+                            '-c:v', 'copy',
+                            '-c:a', 'aac',
+                            '-y', finalPath
+                        ];
 
-                    const mix = spawn('ffmpeg', [
-                        '-i', tempPath,
-                        '-stream_loop', '-1', // Loop background music if it's shorter than video
-                        '-i', bgMusicPath,
-                        '-filter_complex', filter,
-                        '-map', '[vout]',
-                        '-map', '[aout]',
-                        '-c:v', 'libx264',
-                        '-preset', 'fast',
-                        '-crf', '23',
-                        '-c:a', 'aac',
-                        '-shortest', // Cut at the length of the shortest input (video path)
-                        '-y', finalPath
-                    ]);
+                    const mix = spawn('ffmpeg', mixArgs);
 
                     mix.on('close', (mixCode) => {
                         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
                         if (mixCode === 0) {
                             resolve(`media:///${finalPath.replace(/\\/g, '/')}?t=${Date.now()}`);
-                        } else reject(new Error('Music mix failed'));
+                        } else reject(new Error('Audio mix failed'));
                     });
                 } catch (e) {
-                    console.error('Timelapse Music mix error:', e);
+                    console.error('Timelapse audio mix error:', e);
                     fs.renameSync(tempPath, finalPath);
                     resolve(`media:///${finalPath.replace(/\\/g, '/')}?t=${Date.now()}`);
                 }
