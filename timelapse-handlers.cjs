@@ -42,13 +42,13 @@ ${PROCESS_PROMPT}
 
 --- TECHNICAL KEYWORDS ---
 - IMAGES: "8k realistic architectural photography, sharp details, consistent lighting, original environment preservation."
-- VIDEOS: "Temporal stability, natural physics, consistent background. Audio must contain construction machinery and worker ambience only. No music, no soundtrack, no melody, no singing."
+- VIDEOS: "Temporal stability, natural physics, consistent background. Sound design is a continuous raw construction-site ambience: engines, hydraulics, drills, saws, hammers, concrete mixers, cranes, metal clanks, gravel, wind, and dust."
 
 --- IMAGE FRAME RULES ---
 - Every image prompt must describe ONE full-screen vertical 9:16 TikTok frame.
 - Never create a collage, triptych, split screen, storyboard, contact sheet, multi-panel layout, before/after comparison, grid, or several images inside one frame.
 - Stage 1 is the master visual reference for all later stages: preserve the same background, camera height, lens, perspective, object scale, horizon line, and main proportions.
-- Stage 1 camera must be a high-angle 45-degree top-down view, vertical 9:16 TikTok frame, wide enough to clearly show the full construction site scale, ground layout, machinery zones, workers, and the main structure area.
+- Stage 1 camera must be a close elevated 30-degree oblique construction view, not a distant drone/helicopter shot and not straight down, vertical 9:16 TikTok frame. The main construction object must fill most of the frame while still showing nearby machinery, workers, and immediate work zones.
 - Stages 2-5 must keep a locked camera and change only the construction progress, not the viewpoint.
 - Stage 6 may add a subtle cinematic reveal feeling, but it must still preserve the original site identity and proportions.
 
@@ -130,15 +130,16 @@ STATE 3 image prompt rules:
 - Each image prompt must describe only its own single stage, not the whole 6-stage sequence.
 - Every image prompt must explicitly include: "single full-frame vertical 9:16 TikTok image, no collage, no split screen, no storyboard, no multiple panels".
 - Image 1 must be a clean master frame/reference frame. It must not show multiple stages or any before/after layout.
-- Image 1 must use a high-angle 45-degree top-down camera view, vertical 9:16, showing the whole site clearly enough for viewers to understand the scale of the work.
-- Images 2-6 must preserve Image 1 composition, background, 45-degree high-angle camera, perspective, proportions, lens angle, and horizon line.
+- Image 1 must use a close elevated 30-degree oblique construction camera view, not a distant drone/helicopter shot and not a straight-down 90-degree top view, vertical 9:16. The main structure must be large and readable, occupying roughly 65-80% of the frame height, with construction details clearly visible.
+- Images 2-6 must preserve Image 1 composition, background, close elevated 30-degree oblique camera, perspective, proportions, lens angle, and horizon line.
+- Never use a flat top-down map view, nadir view, bird's-eye 90-degree view, blueprint view, drone looking straight down, or orthographic plan view.
 - Never write an image prompt that asks to show a sequence, timeline, progression strip, multiple moments, several stages at once, or a comparison between stages.
 - Do not mention "six stages", "before and after", "step-by-step", "panels", "frames", "sequence", or "timeline" inside individual image prompts.
 - If the project idea contains several phases, convert it into one frozen photographic moment for the current stage only.
 
 STATE 3 video prompt audio rules:
-- Every video prompt must include this exact audio instruction: "SOUND DESIGN: only realistic construction site audio: excavators, cranes, concrete mixers, drills, hammers, footsteps, workers shouting short commands, wind, dust, metal clanks. Absolutely no music, no soundtrack, no cinematic score, no melody, no rhythm, no singing."
-- Do not use words that imply music in video prompts: musical, song, beat, rhythm, soundtrack, score, melody, orchestra, synth, bass, drums.
+- Every video prompt must include this exact audio instruction: "SOUND DESIGN: continuous raw construction-site ambience only: excavator engines, crane hydraulics, concrete mixers, drills, saws, hammers, metal clanks, gravel movement, wind, and dust."
+- Describe the audio as environmental machinery and tool noise from the construction site.
 - If a prompt needs atmosphere, describe construction ambience and machinery noise only.
 `;
 
@@ -326,9 +327,13 @@ function registerTimelapseHandlers(ipcMain) {
             console.log(`[Timelapse] Using USER REFERENCE for Stage ${imgIndex + 1} (STRICT REPLICATION)`);
             finalRefImages.push({ data: referenceImage.includes('base64,') ? referenceImage : `data:image/jpeg;base64,${referenceImage}` });
         } else if (imgIndex > 0 && fs.existsSync(baseDir)) {
-            // Look for scene_{imgIndex}_*.jpg (the PREVIOUS image, 1-indexed = imgIndex)
+            // Look for the previous stage image. It is mandatory for stable timelapse geometry.
             const prevFiles = fs.readdirSync(baseDir)
-                .filter(f => f.startsWith(`scene_${imgIndex}_`) && (f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')))
+                .filter(f => (
+                    f.startsWith(`scene_${imgIndex}_`) ||
+                    f.startsWith(`ref_frame_${imgIndex}`) ||
+                    f.startsWith(`image_${imgIndex}`)
+                ) && (f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')))
                 .sort();
             if (prevFiles.length > 0) {
                 const prevPath = path.join(baseDir, prevFiles[prevFiles.length - 1]);
@@ -336,6 +341,10 @@ function registerTimelapseHandlers(ipcMain) {
                 const b64 = fs.readFileSync(prevPath, { encoding: 'base64' });
                 finalRefImages.push({ data: `data:image/${ext};base64,${b64}` });
                 console.log(`[Timelapse] Using previous image as reference: ${prevFiles[prevFiles.length - 1]}`);
+            }
+
+            if (finalRefImages.length === 0) {
+                throw new Error(`Previous reference image for Stage ${imgIndex + 1} was not found. Generate Stage ${imgIndex} first to preserve camera and background.`);
             }
         }
 
@@ -349,17 +358,17 @@ function registerTimelapseHandlers(ipcMain) {
             'STAGE 6: FINAL REVEAL'
         ];
         const consistencyPrefix = imgIndex > 0
-            ? `CRITICAL CONSISTENCY RULE: This is the EXACT SAME ROOM/SITE as the previous images. Identical camera position, lens angle. Only show the transformation stage: ${stageLabels[imgIndex]}. `
+            ? `CRITICAL CONSISTENCY RULE: Use the provided previous image as the direct image-to-image reference. Keep the EXACT SAME SITE, same background, same close elevated 30-degree oblique camera, same lens, same perspective, same horizon line, same object scale, and same composition. Do not invent a new view or new plan. Only change construction progress for: ${stageLabels[imgIndex]}. `
             : '';
 
-        const frameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. High-angle 45-degree top-down construction camera, wide enough to show the full work scale, ground layout, machinery, workers, and main structure area clearly. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
+        const frameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique construction camera, like a camera mounted on a nearby crane or scaffolding looking diagonally down from the side, not a distant drone or helicopter. The main construction object must be close, large, and readable, occupying roughly 65-80% of the frame height, with workers, machinery, and immediate work zones visible around it. Absolutely NO far aerial establishing shot, NO tiny distant construction site, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
         const stageOneRule = imgIndex === 0
-            ? 'This is the master reference frame for the entire video. Use a high-angle 45-degree top-down view so the viewer can clearly see the scale of the site and all construction work zones. Create one clean full-screen frame only; do not show the construction sequence. '
+            ? 'This is the master reference frame for the entire video. Use a close elevated 30-degree oblique view so the viewer can clearly see construction details without the site becoming tiny. Create one clean full-screen frame only; do not show the construction sequence. '
             : '';
         const finalPrompt = frameRule + stageOneRule + consistencyPrefix + prompt;
 
-        // Use I2I strength: low (0.2-0.4) for user refs to keep it identical, 0.6 for internal consistency
-        const useStrength = referenceImage ? (imgIndex === 0 ? 0.2 : 0.4) : 0.6;
+        // Lower I2I strength keeps the previous frame closer and prevents camera drift.
+        const useStrength = referenceImage ? (imgIndex === 0 ? 0.2 : 0.35) : (imgIndex > 0 ? 0.35 : 0.6);
 
         const savedPaths = await generateImageViaGLabs({
             prompt: finalPrompt,
@@ -399,8 +408,8 @@ function registerTimelapseHandlers(ipcMain) {
         const getExt = (p) => p.endsWith('.png') ? 'png' : 'jpeg';
         const videoPath = path.join(baseDir, `video_${videoIndex + 1}.mp4`);
 
-        const constructionAudioRule = 'SOUND DESIGN: only realistic construction site audio: excavators, cranes, concrete mixers, drills, hammers, footsteps, workers shouting short commands, wind, dust, metal clanks. Absolutely no music, no soundtrack, no cinematic score, no melody, no rhythm, no singing. Do not generate background music. Do not generate any musical accompaniment.';
-        const videoPromptSuffix = `${constructionAudioRule} The audio track must sound like raw recorded construction work, not like edited TikTok music.`;
+        const constructionAudioRule = 'SOUND DESIGN: continuous raw construction-site ambience only: excavator engines, crane hydraulics, concrete mixers, drills, saws, hammers, metal clanks, gravel movement, wind, and dust.';
+        const videoPromptSuffix = `${constructionAudioRule} The audio track is environmental machinery and tool noise from the construction site.`;
 
         // ── Final video: Cinematic tour, uses only final image as start frame ──
         if (videoIndex === STAGE_COUNT - 1) {
@@ -491,11 +500,12 @@ function registerTimelapseHandlers(ipcMain) {
         }
 
         fs.writeFileSync(listPath, videos.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n'));
-        const tempPath = path.join(TIMELAPSE_DIR, 'temp.mp4');
+        const tempPath = path.join(baseDir, `temp_${Date.now()}.mp4`);
 
-        // Bouncy swing-pop music
         const musicDir = path.join(__dirname, 'Music');
-        const musicFiles = fs.existsSync(musicDir) ? fs.readdirSync(musicDir).filter(f => f.endsWith('.mp4') || f.endsWith('.mp3') || f.endsWith('.wav')) : [];
+        const musicFiles = fs.existsSync(musicDir)
+            ? fs.readdirSync(musicDir).filter(f => /\.(mp4|mp3|wav)$/i.test(f))
+            : [];
         const bgMusicPath = musicFiles.length > 0
             ? path.join(musicDir, musicFiles[Math.floor(Math.random() * musicFiles.length)])
             : null;
@@ -511,25 +521,51 @@ function registerTimelapseHandlers(ipcMain) {
                     const durationStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempPath}"`).toString().trim();
                     const duration = parseFloat(durationStr);
                     const fadeStart = Math.max(0, duration - 2);
+                    const hasVideoAudio = execSync(`ffprobe -v error -select_streams a:0 -show_entries stream=index -of csv=p=0 "${tempPath}"`).toString().trim().length > 0;
 
-                    const mixArgs = bgMusicPath
-                        ? [
+                    let mixArgs;
+                    if (bgMusicPath && hasVideoAudio) {
+                        mixArgs = [
                             '-i', tempPath,
+                            '-stream_loop', '-1',
                             '-i', bgMusicPath,
-                            '-filter_complex', `[0:a]volume=0.3[main];[1:a]volume=0.1,afade=t=out:st=${fadeStart}:d=2[bgm];[main][bgm]amix=inputs=2:duration=first[a]`,
+                            '-filter_complex', `[0:a]volume=0.3[main];[1:a]volume=0.1[bgm];[main][bgm]amix=inputs=2:duration=first[raw];[raw]afade=t=out:st=${fadeStart}:d=2[a]`,
                             '-map', '0:v',
                             '-map', '[a]',
                             '-c:v', 'copy',
                             '-c:a', 'aac',
+                            '-shortest',
                             '-y', finalPath
-                        ]
-                        : [
+                        ];
+                    } else if (bgMusicPath) {
+                        mixArgs = [
                             '-i', tempPath,
-                            '-filter:a', 'volume=0.3',
+                            '-stream_loop', '-1',
+                            '-i', bgMusicPath,
+                            '-filter_complex', `[1:a]volume=0.1[bgm];[bgm]afade=t=out:st=${fadeStart}:d=2[a]`,
+                            '-map', '0:v',
+                            '-map', '[a]',
+                            '-c:v', 'copy',
+                            '-c:a', 'aac',
+                            '-shortest',
+                            '-y', finalPath
+                        ];
+                    } else if (hasVideoAudio) {
+                        mixArgs = [
+                            '-i', tempPath,
+                            '-af', `volume=0.3,afade=t=out:st=${fadeStart}:d=2`,
                             '-c:v', 'copy',
                             '-c:a', 'aac',
                             '-y', finalPath
                         ];
+                    } else {
+                        mixArgs = [
+                            '-i', tempPath,
+                            '-c:v', 'copy',
+                            '-an',
+                            '-y', finalPath
+                        ];
+                    }
 
                     const mix = spawn('ffmpeg', mixArgs);
 
@@ -541,8 +577,7 @@ function registerTimelapseHandlers(ipcMain) {
                     });
                 } catch (e) {
                     console.error('Timelapse audio mix error:', e);
-                    fs.renameSync(tempPath, finalPath);
-                    resolve(`media:///${finalPath.replace(/\\/g, '/')}?t=${Date.now()}`);
+                    reject(e);
                 }
             });
         });
