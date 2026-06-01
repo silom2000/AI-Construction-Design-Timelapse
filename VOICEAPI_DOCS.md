@@ -2,7 +2,7 @@
 
 **Base URL:** `https://voiceapi.csv666.ru`  
 **Аутентификация:** заголовок `X-API-Key: <VOICEAPI_KEY>`  
-**Ключ из `.env`:** `VOICEAPI_KEY=866296891:6d5361454a6b525a52332b6173746332692f617a78513d3d`  
+**Ключ из `.env`:** `VOICEAPI_KEY=<VOICEAPI_KEY>`  
 **Голос по умолчанию (STORY_VOICE_ID):** `S3EMTLF63LOyQFQA2vOC`
 
 ---

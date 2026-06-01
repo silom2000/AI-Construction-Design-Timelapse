@@ -60,6 +60,8 @@ const TimelapseTab: React.FC = () => {
 
     const handleStart = async () => {
         setError(null);
+        setEnvironments([]);
+        setPipelineState('IDLE');
         setIsGenerating(true);
         try {
             const envs = await window.electronAPI.timelapseGetEnvironments();
@@ -316,9 +318,9 @@ const TimelapseTab: React.FC = () => {
         }
     };
 
-    const [copiedIndex, setCopiedIndex] = useState<{type: 'img' | 'vid', idx: number} | null>(null);
+    const [copiedIndex, setCopiedIndex] = useState<{type: 'img' | 'vid' | 'title' | 'desc' | 'hashtags', idx?: number} | null>(null);
 
-    const copyToClipboard = (text: string, type: 'img' | 'vid', idx: number) => {
+    const copyToClipboard = (text: string, type: 'img' | 'vid' | 'title' | 'desc' | 'hashtags', idx?: number) => {
         navigator.clipboard.writeText(text);
         setCopiedIndex({ type, idx });
         setTimeout(() => setCopiedIndex(null), 2000);
@@ -493,11 +495,11 @@ const TimelapseTab: React.FC = () => {
                             <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Video Title</span>
                                 <button
-                                    onClick={() => navigator.clipboard.writeText(promptData.projectTitle || '')}
+                                    onClick={() => copyToClipboard(promptData.projectTitle || '', 'title')}
                                     style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
                                     title="Copy Title"
                                 >
-                                    <Copy size={16} />
+                                    {copiedIndex?.type === 'title' ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
                                 </button>
                             </div>
                             <div style={{ padding: '1rem', color: '#f1f5f9', fontSize: '1.15rem', lineHeight: 1.35, fontWeight: 800 }}>
@@ -509,11 +511,11 @@ const TimelapseTab: React.FC = () => {
                             <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Short Description</span>
                                 <button
-                                    onClick={() => navigator.clipboard.writeText(promptData.tiktokDescription || '')}
+                                    onClick={() => copyToClipboard(promptData.tiktokDescription || '', 'desc')}
                                     style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
                                     title="Copy Description"
                                 >
-                                    <Copy size={16} />
+                                    {copiedIndex?.type === 'desc' ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
                                 </button>
                             </div>
                             <div style={{ padding: '1rem', color: '#cbd5e1', fontSize: '0.95rem', lineHeight: 1.5 }}>
@@ -525,11 +527,11 @@ const TimelapseTab: React.FC = () => {
                             <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Hashtags</span>
                                 <button
-                                    onClick={() => navigator.clipboard.writeText(formatHashtags(promptData.tiktokHashtags))}
+                                    onClick={() => copyToClipboard(formatHashtags(promptData.tiktokHashtags), 'hashtags')}
                                     style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
                                     title="Copy Hashtags"
                                 >
-                                    <Copy size={16} />
+                                    {copiedIndex?.type === 'hashtags' ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
                                 </button>
                             </div>
                             <div style={{ padding: '1rem', color: '#3b82f6', fontSize: '0.95rem', lineHeight: 1.5, fontWeight: 500 }}>

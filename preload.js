@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   timelapseGetEnvironments: () => ipcRenderer.invoke('timelapse-get-environments'),
   timelapseGeneratePrompts: (selectionIndex, selectedEnv) => ipcRenderer.invoke('timelapse-generate-prompts', { selectionIndex, selectedEnv }),
   timelapseGenerateCustomPrompts: (customIdea, images, video) => ipcRenderer.invoke('timelapse-generate-custom-prompts', { customIdea, images, video }),
+  timelapseGenerateReversePrompts: (baseImage) => ipcRenderer.invoke('timelapse-generate-reverse-prompts', { baseImage }),
   timelapseGenerateImage: (imgIndex, prompt, model, subFolder, referenceImage) => ipcRenderer.invoke('timelapse-generate-image', { imgIndex, prompt, model, subFolder, referenceImage }),
   timelapseGenerateVideo: (videoIndex, prompt, subFolder, referenceImages) => ipcRenderer.invoke('timelapse-generate-video', { videoIndex, prompt, subFolder, referenceImages }),
   timelapseAssemble: (subFolder, projectTitle) => ipcRenderer.invoke('timelapse-assemble', { subFolder, projectTitle }),
@@ -46,8 +47,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSkeletonAssemblyProgress: (callback) => ipcRenderer.on('skeleton-assembly-progress', (event, data) => callback(data)),
 
   // Studio Tabs
-  studioGenerateIdeas: (mode, language) => ipcRenderer.invoke('studio-generate-ideas', { mode, language }),
-  studioGenerateScript: (mode, topic, language) => ipcRenderer.invoke('studio-generate-script', { mode, topic, language }),
+  studioGenerateIdeas: (mode, language, provider) => ipcRenderer.invoke('studio-generate-ideas', { mode, language, provider }),
+  studioGenerateScript: (mode, topic, language, provider) => ipcRenderer.invoke('studio-generate-script', { mode, topic, language, provider }),
   studioAssembleVideo: (data) => ipcRenderer.invoke('studio-assemble-video', data),
   saveTextFiles: (files) => ipcRenderer.invoke('save-text-files', files),
 

@@ -5,6 +5,7 @@ const os = require('os');
 const { spawn, execSync } = require('child_process');
 const { callPollinations } = require('./skeleton-handlers.cjs'); // Reuse the LLM caller
 const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
+const historyManager = require('./history-manager.cjs');
 
 const TIMELAPSE_DIR = path.join(__dirname, 'CinematicTimelapse');
 if (!fs.existsSync(TIMELAPSE_DIR)) fs.mkdirSync(TIMELAPSE_DIR, { recursive: true });
@@ -180,11 +181,18 @@ function registerTimelapseHandlers(ipcMain) {
     let conversationHistory = [];
 
     ipcMain.handle('timelapse-get-environments', async () => {
+        const excludedTopics = historyManager.getTopics('timelapse_ru');
+        const excludedTopicsEn = historyManager.getTopics('timelapse_en');
+        const allExcluded = [...new Set([...excludedTopics, ...excludedTopicsEn])].slice(-40);
+        const exclusionClause = allExcluded.length > 0
+            ? `\n\nEXCLUSION LIST (DO NOT USE these ideas or anything similar — generate completely NEW and UNIQUE concepts):\n${allExcluded.join('\n')}`
+            : '';
+
         conversationHistory = [
             { role: 'system', content: MASTER_PROMPT },
             {
                 role: 'user',
-                content: 'STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards with fantastic surrealism, viral TikTok hooks, and unforgettable final reveals. Return only JSON in the STATE 2 format.'
+                content: `STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards with fantastic surrealism, viral TikTok hooks, and unforgettable final reveals. Return only JSON in the STATE 2 format.${exclusionClause}`
             }
         ];
 
@@ -197,13 +205,24 @@ function registerTimelapseHandlers(ipcMain) {
             const cleanJson = response.match(/\[[\s\S]*\]/)?.[0] || response.match(/\{[\s\S]*\}/)?.[0] || response;
             const parsed = JSON.parse(cleanJson);
             const ideas = normalizeEnvironmentIdeas(parsed);
-            if (ideas && ideas.length === 4) return ideas;
+            if (ideas && ideas.length === 4) {
+                ideas.forEach(idea => {
+                    historyManager.addTopic('timelapse_ru', idea.ru);
+                    historyManager.addTopic('timelapse_en', idea.en);
+                });
+                return ideas;
+            }
         } catch (e) {
             console.warn('[Timelapse] JSON parse failed, falling back to line parse:', e.message);
         }
         // Fallback: wrap plain lines as objects
         const lines = response.split('\n').map(l => l.trim()).filter(l => l.length > 10).slice(0, 4);
-        return lines.map((l, i) => ({ id: i + 1, en: l, ru: l }));
+        const fallbackIdeas = lines.map((l, i) => ({ id: i + 1, en: l, ru: l }));
+        fallbackIdeas.forEach(idea => {
+            historyManager.addTopic('timelapse_ru', idea.ru);
+            historyManager.addTopic('timelapse_en', idea.en);
+        });
+        return fallbackIdeas;
     });
 
     ipcMain.handle('timelapse-generate-prompts', async (event, { selectionIndex, selectedEnv }) => {
@@ -511,9 +530,12 @@ function registerTimelapseHandlers(ipcMain) {
             : null;
 
         return new Promise((resolve, reject) => {
-            // Lossless concatenation using stream copy instead of re-encoding
+            if (!bgMusicPath) {
+                return reject(new Error('No background music found in Music/ folder. Add at least one .mp3/.mp4/.wav file.'));
+            }
+
             const concat = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', '-y', tempPath]);
-            
+
             concat.on('close', code => {
                 if (code !== 0) return reject(new Error('FFmpeg concat failed.'));
                 try {
@@ -521,51 +543,19 @@ function registerTimelapseHandlers(ipcMain) {
                     const durationStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempPath}"`).toString().trim();
                     const duration = parseFloat(durationStr);
                     const fadeStart = Math.max(0, duration - 2);
-                    const hasVideoAudio = execSync(`ffprobe -v error -select_streams a:0 -show_entries stream=index -of csv=p=0 "${tempPath}"`).toString().trim().length > 0;
 
-                    let mixArgs;
-                    if (bgMusicPath && hasVideoAudio) {
-                        mixArgs = [
-                            '-i', tempPath,
-                            '-stream_loop', '-1',
-                            '-i', bgMusicPath,
-                            '-filter_complex', `[0:a]volume=0.3[main];[1:a]volume=0.1[bgm];[main][bgm]amix=inputs=2:duration=first[raw];[raw]afade=t=out:st=${fadeStart}:d=2[a]`,
-                            '-map', '0:v',
-                            '-map', '[a]',
-                            '-c:v', 'copy',
-                            '-c:a', 'aac',
-                            '-shortest',
-                            '-y', finalPath
-                        ];
-                    } else if (bgMusicPath) {
-                        mixArgs = [
-                            '-i', tempPath,
-                            '-stream_loop', '-1',
-                            '-i', bgMusicPath,
-                            '-filter_complex', `[1:a]volume=0.1[bgm];[bgm]afade=t=out:st=${fadeStart}:d=2[a]`,
-                            '-map', '0:v',
-                            '-map', '[a]',
-                            '-c:v', 'copy',
-                            '-c:a', 'aac',
-                            '-shortest',
-                            '-y', finalPath
-                        ];
-                    } else if (hasVideoAudio) {
-                        mixArgs = [
-                            '-i', tempPath,
-                            '-af', `volume=0.3,afade=t=out:st=${fadeStart}:d=2`,
-                            '-c:v', 'copy',
-                            '-c:a', 'aac',
-                            '-y', finalPath
-                        ];
-                    } else {
-                        mixArgs = [
-                            '-i', tempPath,
-                            '-c:v', 'copy',
-                            '-an',
-                            '-y', finalPath
-                        ];
-                    }
+                    const mixArgs = [
+                        '-i', tempPath,
+                        '-stream_loop', '-1',
+                        '-i', bgMusicPath,
+                        '-filter_complex', `[0:a]volume=0.1[main];[1:a]volume=0.9[bgm];[main][bgm]amix=inputs=2:duration=first[raw];[raw]afade=t=out:st=${fadeStart}:d=2[a]`,
+                        '-map', '0:v',
+                        '-map', '[a]',
+                        '-c:v', 'copy',
+                        '-c:a', 'aac',
+                        '-shortest',
+                        '-y', finalPath
+                    ];
 
                     const mix = spawn('ffmpeg', mixArgs);
 

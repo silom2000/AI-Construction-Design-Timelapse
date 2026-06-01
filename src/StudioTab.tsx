@@ -29,14 +29,26 @@ const LANGUAGES = [
     { label: 'Español', value: 'Spanish' },
 ];
 
+const LLM_PROVIDERS = [
+    { value: 'pollinations', label: 'Pollinations', desc: 'Free, openai-large model' },
+    { value: 'qwen', label: 'Qwen (NVIDIA)', desc: 'qwen3.5-397b-a17b' },
+    { value: 'kimi', label: 'Kimi (NVIDIA)', desc: 'kimi-k2.5' },
+    { value: 'custom', label: 'Custom Proxy', desc: 'Local or remote endpoint' },
+];
+
 const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [topic, setTopic] = useState('');
     const [lang, setLang] = useState('Russian');
+    const [llmProvider, setLlmProvider] = useState<string>('pollinations');
     const [imageModel, setImageModel] = useState<string>('freepik-mystic');
     const [videoModel] = useState<string>('veo_31_lite');
     const [script, setScript] = useState<StudioScript | null>(null);
+    const scriptRef = React.useRef(script);
+    scriptRef.current = script;
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+    const stopAutoGenerationRef = React.useRef(false);
     const [isIdeasLoading, setIsIdeasLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [viralIdeas, setViralIdeas] = useState<{ original: string; translation: string }[]>([]);
@@ -57,7 +69,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         setIsIdeasLoading(true);
         setError(null);
         try {
-            const ideas = await window.electronAPI.studioGenerateIdeas(mode, lang) as any;
+            const ideas = await window.electronAPI.studioGenerateIdeas(mode, lang, llmProvider) as any;
             setViralIdeas(ideas.map((idea: { original: string; translation: string }) => ({
                 original: idea.original,
                 translation: idea.translation,
@@ -80,7 +92,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
             const folder = `Studio_${timestamp}`;
             setProjectFolder(folder);
 
-            const result = await window.electronAPI.studioGenerateScript(mode, topic, lang);
+            const result = await window.electronAPI.studioGenerateScript(mode, topic, lang, llmProvider);
             setScript({
                 ...result,
                 scenes: result.scenes.map(s => ({ ...s, status: 'idle' }))
@@ -99,9 +111,9 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         } : null);
     };
 
-    const generateImage = async (sceneIndex: number, sceneId: number) => {
+    const generateImage = async (sceneIndex: number, sceneId: number): Promise<string | null> => {
         const scene = script?.scenes.find(s => s.id === sceneId);
-        if (!scene) return;
+        if (!scene) return null;
         updateScene(sceneId, { status: 'generating_images' });
         try {
             const imageUrl = await window.electronAPI.skeletonGenerateImage({
@@ -111,15 +123,18 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                 projectFolder
             });
             updateScene(sceneId, { status: 'idle', selectedImage: imageUrl, generatedImages: [imageUrl] });
+            return imageUrl;
         } catch (err: any) {
             setError(err.message);
             updateScene(sceneId, { status: 'idle' });
+            return null;
         }
     };
 
-    const animateScene = async (sceneIndex: number, sceneId: number) => {
+    const animateScene = async (sceneIndex: number, sceneId: number, overrideImageUrl?: string) => {
         const scene = script?.scenes.find(s => s.id === sceneId);
-        if (!scene || !scene.selectedImage) {
+        const imageUrl = overrideImageUrl || scene?.selectedImage;
+        if (!imageUrl) {
             alert('Сначала сгенерируйте изображение!');
             return;
         }
@@ -128,8 +143,8 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         try {
             const videoUrl = await window.electronAPI.skeletonGenerateVideo({
                 sceneIndex: sceneIndex,
-                videoPrompt: scene.videoPrompt,
-                scriptLine: scene.line,
+                videoPrompt: scene?.videoPrompt || '',
+                scriptLine: scene?.line || '',
                 language: lang,
                 videoModel: videoModel as any,
                 projectFolder
@@ -156,6 +171,65 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
             setError('Ошибка сборки: ' + e.message);
         } finally {
             setAssembling(false);
+        }
+    };
+
+    const resetProject = () => {
+        setScript(null);
+        setViralIdeas([]);
+        setTopic('');
+        setError(null);
+        setFinalVideoUrl(null);
+        setProjectFolder('');
+        setIsAutoGenerating(false);
+        stopAutoGenerationRef.current = false;
+    };
+
+    const stopAutoGeneration = () => {
+        stopAutoGenerationRef.current = true;
+        setIsAutoGenerating(false);
+    };
+
+    const runAutoGeneration = async () => {
+        const currentScript = scriptRef.current;
+        if (!currentScript || !currentScript.scenes) return;
+        setIsAutoGenerating(true);
+        stopAutoGenerationRef.current = false;
+        setError(null);
+
+        const imageUrls: (string | null)[] = [];
+
+        try {
+            for (let i = 0; i < currentScript.scenes.length; i++) {
+                if (stopAutoGenerationRef.current) break;
+                const s = currentScript.scenes[i];
+                if (!s.selectedImage) {
+                    const url = await generateImage(i, s.id);
+                    imageUrls.push(url);
+                    await new Promise(res => setTimeout(res, 500));
+                } else {
+                    imageUrls.push(s.selectedImage);
+                }
+            }
+
+            const updatedScript = scriptRef.current;
+            if (!updatedScript) return;
+
+            for (let i = 0; i < updatedScript.scenes.length; i++) {
+                if (stopAutoGenerationRef.current) break;
+                const s = updatedScript.scenes[i];
+                const img = imageUrls[i] || s.selectedImage;
+                if (img && !s.generatedVideoUrl) {
+                    await animateScene(i, s.id, img);
+                    await new Promise(res => setTimeout(res, 500));
+                }
+            }
+        } catch (err: any) {
+            console.error("AutoGen Error:", err);
+            setError("Autogeneration aborted: " + err.message);
+        } finally {
+            setIsAutoGenerating(false);
+            stopAutoGenerationRef.current = false;
         }
     };
 
@@ -227,9 +301,28 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                     </div>
                 </div>
 
+                <div className="sidebar-section">
+                    <h3 className="sidebar-title">🤖 LLM PROVIDER</h3>
+                    <div className="selection-list">
+                        {LLM_PROVIDERS.map(p => (
+                            <div
+                                key={p.value}
+                                className={`selection-chip ${llmProvider === p.value ? 'active' : ''}`}
+                                onClick={() => setLlmProvider(p.value)}
+                            >
+                                <div className="chip-radio" />
+                                <div className="chip-info">
+                                    <span className="chip-label">{p.label}</span>
+                                    <span className="chip-desc">{p.desc}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
 
-                {script && script.scenes.every(s => s.status === 'ready' || s.generatedVideoUrl) && (
+
+                {script && !finalVideoUrl && (
                     <div className="sidebar-section assembly-section">
                         <button
                             onClick={handleAssemble}
@@ -294,14 +387,36 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                     </div>
                                 </div>
 
-                                <button onClick={generateScript} disabled={isLoading || !topic} className="generate-btn">
-                                    {isLoading ? <RefreshCw className="spin" size={18} /> : <Zap size={18} />} GENERATE SCRIPT
-                                </button>
+                                {!script && (
+                                    <button onClick={generateScript} disabled={isLoading || !topic} className="generate-btn">
+                                        {isLoading ? <RefreshCw className="spin" size={18} /> : <Zap size={18} />} GENERATE SCRIPT
+                                    </button>
+                                )}
 
                                 {script && (
                                     <button onClick={exportPrompts} className="export-prompts-btn">
                                         <FileText size={18} /> EXPORT PROMPTS
                                     </button>
+                                )}
+
+                                {script && (
+                                    <button onClick={resetProject} className="export-prompts-btn" style={{ background: '#64748b' }}>
+                                        <RefreshCw size={18} /> RESET
+                                    </button>
+                                )}
+
+                                {script && script.scenes.length > 0 && (
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        {!isAutoGenerating ? (
+                                            <button onClick={runAutoGeneration} className="export-prompts-btn" style={{ background: '#10b981' }}>
+                                                <Zap size={18} /> AUTO GENERATE ALL
+                                            </button>
+                                        ) : (
+                                            <button onClick={stopAutoGeneration} className="export-prompts-btn" style={{ background: '#ef4444' }}>
+                                                <RefreshCw className="spin" size={18} /> STOP
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
 
@@ -337,7 +452,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                     </div>
                                     <div className="asset-display">
                                         <div className="preview-container">
-                                            <video src={finalVideoUrl} controls autoPlay loop className="preview-9-16" />
+                                            <video src={finalVideoUrl} controls loop className="preview-9-16" />
                                             <a href={finalVideoUrl} download className="download-floating-btn gold-btn">
                                                 <Download size={20} />
                                             </a>
@@ -403,7 +518,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                                 </div>
                                             ) : scene.generatedVideoUrl ? (
                                                 <div className="preview-container">
-                                                    <video src={scene.generatedVideoUrl} controls autoPlay loop className="preview-9-16" />
+                                                    <video src={scene.generatedVideoUrl} controls loop className="preview-9-16" />
                                                     <a href={scene.generatedVideoUrl} download className="download-floating-btn">
                                                         <Download size={20} />
                                                     </a>

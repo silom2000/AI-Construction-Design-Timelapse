@@ -77,13 +77,14 @@ export interface IElectronAPI {
   timelapseGetEnvironments: () => Promise<string[]>,
   timelapseGeneratePrompts: (selectionIndex: number, selectedEnv: string) => Promise<any>,
   timelapseGenerateCustomPrompts: (customIdea: string, images: (string | null)[], video: string | null) => Promise<any>,
+  timelapseGenerateReversePrompts: (baseImage: string) => Promise<any>,
   timelapseGenerateImage: (imgIndex: number, prompt: string, model?: string, subFolder?: string, referenceImage?: string | null) => Promise<string>,
   timelapseGenerateVideo: (videoIndex: number, prompt: string, subFolder?: string, referenceImages?: (string | null)[]) => Promise<string>,
-  timelapseAssemble: (subFolder?: string) => Promise<string>,
+  timelapseAssemble: (subFolder?: string, projectTitle?: string) => Promise<string>,
 
   // Studio Tabs
-  studioGenerateIdeas: (mode: 'health' | 'objects', language: string) => Promise<string[]>,
-  studioGenerateScript: (mode: 'health' | 'objects', topic: string, language: string) => Promise<StudioScript>,
+  studioGenerateIdeas: (mode: 'health' | 'objects', language: string, provider?: string) => Promise<string[]>,
+  studioGenerateScript: (mode: 'health' | 'objects', topic: string, language: string, provider?: string) => Promise<StudioScript>,
   studioAssembleVideo: (data: any) => Promise<string>,
   saveTextFiles: (files: { filename: string; content: string }[]) => Promise<{ success: boolean; error?: string }>,
 

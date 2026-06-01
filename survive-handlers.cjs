@@ -545,7 +545,10 @@ NARRATOR VOICEOVER — professional survival instructor voice, calm but urgent t
 NARRATOR SAYS (verbatim, sync to 10 seconds): "${narrationLine}"
 AMBIENT SOUND: realistic environmental sounds matching the survival scenario (wind, water, fire, etc.).`;
 
-        const fullPrompt = `${videoPrompt}\n${audioSection}`;
+        // Применение Veo 3.1 Cinematic 5-Element Formula
+        const cinematicEnvelope = `[Cinematography: High-intensity GoPro/First-person POV, shaky cam, lens flares] [Subject: The survivor in the scene] [Action: ${videoPrompt}] [Context: Extreme survival environment, realistic physics] [Style: Gritty, raw footage, hyper-detailed, 4k]`;
+
+        const fullPrompt = `${cinematicEnvelope}\n${audioSection}`;
 
         const options = {
             prompt: fullPrompt,
