@@ -1,4 +1,4 @@
-// ============ SKELETON SHORTS — WAN V2.6 720P ============
+﻿// ============ SKELETON SHORTS вЂ” WAN V2.6 720P ============
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
@@ -21,29 +21,29 @@ const LANG_NAMES = {
     Spanish: 'Spanish', Polish: 'Polish', Italian: 'Italian', Portuguese: 'Portuguese'
 };
 
-// ── Object Categories for diverse lifehack idea generation (NO FOOD) ─────────
+// в”Ђв”Ђ Object Categories for diverse lifehack idea generation (NO FOOD) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const OBJECT_CATEGORIES = [
-    // ПРЕДМЕТЫ ДОМАШНЕГО ОБИХОДА
+    // РџР Р•Р”РњР•РўР« Р”РћРњРђРЁРќР•Р“Рћ РћР‘РРҐРћР”Рђ
     { theme: 'Household', objects: ['furniture', 'bedroom objects', 'bathroom items', 'cleaning tools', 'electrical appliances', 'doors & windows', 'pillows & blankets', 'storage items', 'lights & fans', 'laundry items'] },
-    // ОФИСНАЯ ЖИЗНЬ
+    // РћР¤РРЎРќРђРЇ Р–РР—РќР¬
     { theme: 'Office & Work', objects: ['desk objects', 'laptop & accessories', 'stationery', 'printer & scanner', 'office furniture', 'work-from-home setup', 'ID card & access card', 'files & folders', 'cable management', 'meeting room objects'] },
-    // ТРЕНАЖЕРНЫЙ ЗАЛ
+    // РўР Р•РќРђР–Р•Р РќР«Р™ Р—РђР›
     { theme: 'Gym & Fitness', objects: ['gym equipment', 'dumbbells & weights', 'cardio machines', 'gym accessories', 'fitness tracking devices', 'gym lockers', 'workout clothes', 'yoga equipment', 'resistance bands', 'gym bags'] },
-    // ЗДОРОВЬЕ И ТЕЛО
+    // Р—Р”РћР РћР’Р¬Р• Р РўР•Р›Рћ
     { theme: 'Health & Body', objects: ['internal organs', 'bones & muscles', 'immune system parts', 'digestive system', 'heart vs brain', 'hormones', 'blood cells', 'senses (eyes, ears)', 'mental health emotions', 'body parts vs habits'] },
-    // ТЕХНОЛОГИИ
+    // РўР•РҐРќРћР›РћР“РР
     { theme: 'Tech & Digital', objects: ['mobile apps', 'phone components', 'social media platforms', 'notifications', 'AI tools', 'gadgets', 'cables & chargers', 'gaming devices', 'smart home devices', 'digital files'] },
-    // ДЕНЬГИ
+    // Р”Р•РќР¬Р“Р
     { theme: 'Money & Finance', objects: ['wallet contents', 'credit cards', 'coins & cash', 'bills & expenses', 'savings vs spending', 'investment assets', 'budget categories', 'subscription services', 'salary breakdown', 'shopping items'] },
-    // ШКОЛА И УЧЁБА
+    // РЁРљРћР›Рђ Р РЈР§РЃР‘Рђ
     { theme: 'School & Study', objects: ['school stationery', 'books', 'exam papers', 'classroom objects', 'backpack contents', 'homework materials', 'grades & marks', 'online class tools', 'study apps', 'library books'] },
-    // ПУТЕШЕСТВИЯ
+    // РџРЈРўР•РЁР•РЎРўР’РРЇ
     { theme: 'Travel & Outdoors', objects: ['luggage items', 'travel accessories', 'vehicle parts', 'road objects', 'tourist items', 'airport objects', 'train station items', 'hotel room items', 'weather elements', 'camping gear'] },
-    // ВЕСЁЛЫЙ И ВИРУСНЫЙ
+    // Р’Р•РЎРЃР›Р«Р™ Р Р’РР РЈРЎРќР«Р™
     { theme: 'Fun & Viral', objects: ['emojis', 'alphabet letters', 'numbers', 'colors', 'sounds', 'emotions', 'habits', 'daily routines', 'time periods', 'life stages'] }
 ];
 
-// ── Pixar Cinematic Image Prompt Variants ─────────────────────────────────────
+// в”Ђв”Ђ Pixar Cinematic Image Prompt Variants в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const PIXAR_IMAGE_VARIANTS = [
     {
         id: 'A', name: 'Heroic Drama',
@@ -55,7 +55,7 @@ const PIXAR_IMAGE_VARIANTS = [
     },
     {
         id: 'C', name: 'Noir Moody',
-        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, in moody cinematic scene, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, noir lighting — single neon light source (blue or orange), rain reflections on surface below, low angle shot looking up, determined confident object expression, shadow play on background wall, film grain overlay, dramatic 2.39:1 widescreen composition`
+        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, in moody cinematic scene, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, noir lighting вЂ” single neon light source (blue or orange), rain reflections on surface below, low angle shot looking up, determined confident object expression, shadow play on background wall, film grain overlay, dramatic 2.39:1 widescreen composition`
     },
     {
         id: 'D', name: 'Fun Chaos',
@@ -63,12 +63,12 @@ const PIXAR_IMAGE_VARIANTS = [
     }
 ];
 
-// ── Pixar Base Image Prompt (appended to every variant) ───────────────────────
-const PIXAR_IMAGE_BASE = `Pixar 3D animation style, ultra-cinematic lighting, moderate depth of field with a clear and detailed background environment, physically-based rendering, 8K, award-winning CGI, bold graphic shadows, teal-orange color grade, NOT: fog, blurry background, dramatic depth of field, blank background, storm clouds, human, person, man, woman, girl, boy, full human body, human head, human face, realistic human face, human skin, portrait of a person, selfie, hands, arms, legs, feet, morphing into human, flat lighting, centered symmetrical boring composition, white background, soft pastel mood, static feel, eye-level midshot`;
+// в”Ђв”Ђ Pixar Base Image Prompt (appended to every variant) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+const PIXAR_IMAGE_BASE = `Pixar 3D animation style, ultra-cinematic lighting, moderate depth of field with a clear and detailed background environment, physically-based rendering, 8K, award-winning CGI, bold graphic shadows, teal-orange color grade, NOT: fog, blurry background, blank background, storm clouds, flat lighting, centered symmetrical boring composition, white background, soft pastel mood, static feel, eye-level midshot`;
 
-const TALKING_OBJECT_IMAGE_LOCK = `ABSOLUTE OBJECTWARS VISUAL LOCK: show ONLY the speaking physical object as the main character. It must remain the real object named in CHARACTER, with expressive cartoon eyes and a lip-sync-ready mouth placed directly on the object's surface. Do not add a human presenter, human owner, human face, human head, realistic person, full human body, skin, hands, arms, legs, or feet. The object explains a practical TikTok lifehack to viewers through expression and pose-like object tilt; any environment may contain only non-human props.`;
+const TALKING_OBJECT_IMAGE_LOCK = `OBJECTWARS VISUAL LOCK: The main character is ONLY the physical object named in CHARACTER — rendered with expressive cartoon eyes and a lip-sync-ready mouth placed directly on its surface. The object explains a TikTok lifehack through expression and pose-like tilt. Background environment contains only contextual props relevant to the object.`;
 
-// ── VEO Video Motion Variants ─────────────────────────────────────────────────
+// в”Ђв”Ђ VEO Video Motion Variants в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const PIXAR_VIDEO_VARIANTS = [
     {
         id: 'A', name: 'Hyper-Dynamic Multi-Cut',
@@ -88,11 +88,12 @@ const PIXAR_VIDEO_VARIANTS = [
     }
 ];
 
-// ── Video Base Motion & Safety (appended to every variant) ─────────────────────
-const PIXAR_VIDEO_STYLE = `STYLE: Pixar 3D animation style, anthropomorphic character, award-winning CGI, vibrant colors, physically-based rendering.`;
+// в”Ђв”Ђ Video Base Motion & Safety (appended to every variant) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+const PIXAR_VIDEO_STYLE = `STYLE: Pixar 3D animation style, anthropomorphic character, award-winning CGI, vibrant colors, physically-based rendering.
+ CHARACTER FACE: TWO round cartoon eyes positioned symmetrically on the upper front panel, ONE wide horizontal smile mouth (coin-slot shape), friendly Pixar-style expression. Eyes: large, white with colored irises, no monocle, no single eye. Mood: confident and energetic, NOT scary, NOT monstrous.`;
 const PIXAR_VIDEO_MOTION = `ENERGY: high-tension buildup — feels like something is about to explode, cinematic music-video pacing.
 ENDING (last 1s): slow push-in continues + slight rack focus shift.`;
-const PIXAR_VIDEO_NEGATIVE = `NEGATIVE PROMPT: human, person, man, woman, girl, boy, full human body, human head, human face, human skin, realistic human, hands, arms, legs, feet, real life footage, blurry, low quality, watermark, text, subtitles, captions, on-screen dialogue, burned-in captions, karaoke text, speech bubbles, quote text, horror, decay, blood, zombie, morphing into human.`;
+const PIXAR_VIDEO_NEGATIVE = `VISUAL RULE: No written text, subtitles, captions, speech bubbles, or text overlays visible at any point.`;
 const PIXAR_VIDEO_SAFETY = `NOT: static locked camera, no movement, boring zoom only, lifeless scene, everything still.`;
 
 /** Pick a variant by rotating through the array based on scene index */
@@ -112,15 +113,15 @@ function getRandomCategories(n = 3) {
 
 // ------------- Phase 1: Voice API (csv666) -------------
 
-// ─────────────────────────────────────────────────────────────
-// VoiseAPI (https://voiceapi.csv666.ru) — ASYNC TASK FLOW
-// POST /tasks → {task_id: N} → poll GET /tasks/{id} → download audio
-// ─────────────────────────────────────────────────────────────
+// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// VoiseAPI (https://voiceapi.csv666.ru) вЂ” ASYNC TASK FLOW
+// POST /tasks в†’ {task_id: N} в†’ poll GET /tasks/{id} в†’ download audio
+// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
-// ═══════════════════════════════════════════════════════════
-// VoiseAPI async task flow — CORRECT IMPLEMENTATION
-// POST /tasks → {task_id: N} → poll → download binary MP3
-// ═══════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+// VoiseAPI async task flow вЂ” CORRECT IMPLEMENTATION
+// POST /tasks в†’ {task_id: N} в†’ poll в†’ download binary MP3
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 const _voiseApiAxios = require('axios');
 
 async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
@@ -128,7 +129,7 @@ async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
     if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set');
 
     const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
-    // ✅ CORRECT AUTH: X-API-Key header (per API docs securitySchemes)
+    // вњ… CORRECT AUTH: X-API-Key header (per API docs securitySchemes)
     const hdrs = {
         'X-API-Key': apiKey,
         'Content-Type': 'application/json'
@@ -160,7 +161,7 @@ async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
     console.log(`[Voice] task_id=${taskId}`);
 
     // Step 2: Poll GET /tasks/{id}/status (NOT /tasks/{id}!)
-    // Statuses: waiting → processing → ending (ready!) → ending_processed
+    // Statuses: waiting в†’ processing в†’ ending (ready!) в†’ ending_processed
     for (let n = 0; n < 60; n++) {
         await new Promise(r => setTimeout(r, 3000));
         const sr = await _voiseApiAxios.get(`${VOISE_BASE}/tasks/${taskId}/status`, { headers: hdrs });
@@ -171,7 +172,7 @@ async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
 
         // "ending" = result ready
         if (st === 'ending' || st === 'ending_processed') {
-            console.log(`[Voice] Status "${st}" — downloading /tasks/${taskId}/result`);
+            console.log(`[Voice] Status "${st}" вЂ” downloading /tasks/${taskId}/result`);
             const ar = await _voiseApiAxios.get(`${VOISE_BASE}/tasks/${taskId}/result`, { responseType: 'arraybuffer', headers: hdrs });
             const buf = Buffer.from(ar.data);
             if (buf.length < 100) throw new Error(`[Voice] Too small: ${buf.length}B`);
@@ -181,7 +182,7 @@ async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
             console.log(`[Voice] Saved: ${outputPath} (${buf.length}B)`);
             return outputPath;
         }
-        // waiting / processing — keep polling
+        // waiting / processing вЂ” keep polling
     }
     throw new Error(`[Voice] Timeout: task ${taskId}`);
 }
@@ -206,10 +207,10 @@ const synthesizeUnifiedSpeech = async (input, language = 'en', voice = 'aeb88254
 
 const CHARACTER_ANCHOR = `A full-body realistic humanoid SKELETON character with a semi-transparent human-shaped outer body shell. The character has: A fully exposed skull (NO skin, NO face, NO muscles). Clean, smooth, anatomically accurate skull. Large, round eye sockets with visible eyeballs. Bright yellow irises with dark pupils. Neutral to slightly vacant expression. Visible upper and lower teeth. Smooth cranium with no cracks, damage, decay, or horror elements. The body is a semi-transparent, glass-like human silhouette that clearly reveals the entire internal skeletal structure from head to toe. Skeleton details: Ivory / pale beige bones. Smooth, medical-grade surfaces. Accurate human proportions. Clearly defined rib cage, spine, pelvis, arms, hands, legs, knees, ankles, and feet. All joints, vertebrae, and phalanges visible and anatomically correct. No muscles. No veins. No organs. No skin texture. The style is: High-end medical visualization, Clean, clinical, modern. NOT horror. NOT zombie. NOT cartoon. NOT decayed. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`;
 
-// ── Pollinations helper ───────────────────────────────────────────────────────
+// в”Ђв”Ђ Pollinations helper в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const WORKING_TEXT_MODELS = ['gemini-3.1-pro-high', 'gemini-3.1-pro', 'gpt-4o', 'gpt-4-turbo'];
 
-const callPollinations = async (messages, jsonMode = false) => {
+const callPollinations = async (messages, jsonMode = false, forcedProvider = null) => {
     const providers = [];
 
     // 1. Qwen
@@ -259,13 +260,13 @@ const callPollinations = async (messages, jsonMode = false) => {
     // 5. Pollinations Fallback
     providers.push({
         id: 'pollinations',
-        url: 'https://gen.pollinations.ai/v1/chat/completions',
+        url: process.env.POLLINATIONS_API_URL || 'https://gen.pollinations.ai/v1/chat/completions',
         key: process.env.POLLINATIONS_API_KEY,
         model: 'openai-large'
     });
 
-    // Reorder based on DEFAULT_AI_PROVIDER
-    const defaultProvider = process.env.DEFAULT_AI_PROVIDER || 'qwen';
+    // Reorder: forcedProvider > DEFAULT_AI_PROVIDER > default
+    const defaultProvider = forcedProvider || process.env.DEFAULT_AI_PROVIDER || 'pollinations';
     providers.sort((a, b) => {
         if (a.id === defaultProvider && b.id !== defaultProvider) return -1;
         if (b.id === defaultProvider && a.id !== defaultProvider) return 1;
@@ -330,7 +331,7 @@ const callPollinations = async (messages, jsonMode = false) => {
 
 // `uploadToImgBB`, `createVideoViaFreepikPixVerse`, `createVideoViaPollinationsLTX2TextOnly` and other legacy generation functions were removed in favor of `glabs-handlers.cjs`
 
-// ── Очистка папки Audio перед новой генерацией ───────────────────────────────
+// в”Ђв”Ђ РћС‡РёСЃС‚РєР° РїР°РїРєРё Audio РїРµСЂРµРґ РЅРѕРІРѕР№ РіРµРЅРµСЂР°С†РёРµР№ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function cleanupAudioDir() {
     const audioDir = path.join(__dirname, 'Audio');
     if (!fs.existsSync(audioDir)) {
@@ -345,16 +346,16 @@ function cleanupAudioDir() {
                 fs.unlinkSync(path.join(audioDir, file));
                 removed++;
             } catch (e) {
-                console.warn(`[cleanupAudioDir] Не удалось удалить ${file}: ${e.message}`);
+                console.warn(`[cleanupAudioDir] РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ ${file}: ${e.message}`);
             }
         }
-        console.log(`[cleanupAudioDir] Удалено ${removed} файлов из Audio/`);
+        console.log(`[cleanupAudioDir] РЈРґР°Р»РµРЅРѕ ${removed} С„Р°Р№Р»РѕРІ РёР· Audio/`);
     } catch (e) {
-        console.error(`[cleanupAudioDir] Ошибка: ${e.message}`);
+        console.error(`[cleanupAudioDir] РћС€РёР±РєР°: ${e.message}`);
     }
 }
 
-// ── Preview re-encoding helper ────────────────────────────────────────────────
+// в”Ђв”Ђ Preview re-encoding helper в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 async function reencodeForPreview(inputPath, sceneIndex) {
     const skeletonDir = path.join(__dirname, 'SkeletonShorts');
     const previewDir = path.join(skeletonDir, 'preview');
@@ -374,7 +375,7 @@ async function reencodeForPreview(inputPath, sceneIndex) {
     });
 }
 
-// ── Audio muxing helper ───────────────────────────────────────────────────────
+// в”Ђв”Ђ Audio muxing helper в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 async function muxAudioIntoVideo(videoPath, audioPath, outputPath) {
     return new Promise((resolve, reject) => {
         const ffmpeg = spawn('ffmpeg', [
@@ -442,7 +443,7 @@ Output ONLY a JSON object with a "segments" array containing exactly 6 objects:
         else if (scriptJson.script) segmentsArray = scriptJson.script;
         else if (scriptJson.ideas) segmentsArray = scriptJson.ideas;
 
-        const scriptForUI = segmentsArray.map(s => `${s.original}\n[🇷🇺 ${s.translation}]`).join('\n\n');
+        const scriptForUI = segmentsArray.map(s => `${s.original}\n[рџ‡·рџ‡є ${s.translation}]`).join('\n\n');
         const scriptForPrompts = segmentsArray.map(s => s.original).join('\n\n');
 
         const promptsPrompt = `Convert this script into scene-by-scene IMAGE PROMPTS and IMAGE-TO-VIDEO PROMPTS with strict visual consistency.
@@ -476,7 +477,7 @@ For EACH scene (exactly 6), generate following JSON:
             video_prompt: `Cinematic motion: ${s.motion_detail}. Action: character ${s.pose_action}. Cinematic camera move (smooth dolly or slow-motion zoom), vibrant saturated colors, high resolution, masterpiece quality, fluid movement.`,
 
             // LTX-2 SPECIFIC RULES (Prompt.md requirements: Anchor at start, Audio label, Negative prompt)
-            ltx_video_prompt: `STRICTLY NO TEXT, NO SUBTITLES, NO CAPTIONS. ${CHARACTER_ANCHOR} ACTION: ${s.pose_action}. ENVIRONMENT: ${s.environment}. CINEMATIC CAMERA: Smooth tracking or slow-motion zoom. VIBRANT COLORS, HIGH SATURATION. AUDIO NARRATION ONLY (DO NOT SHOW AS TEXT): "${s.script_line}". NEGATIVE PROMPT: human skin, realistic face, muscles, organs, veins, blurry, low quality, watermark, text, subtitles, captions, horror, decay, blood, zombie.`
+            ltx_video_prompt: `STRICTLY NO TEXT, NO SUBTITLES, NO CAPTIONS. ${CHARACTER_ANCHOR} CHARACTER FACE: TWO round cartoon eyes positioned symmetrically on the upper front panel, ONE wide horizontal smile mouth (coin-slot shape), friendly Pixar-style expression. Eyes: large, white with colored irises, no monocle, no single eye. Mood: confident and energetic, NOT scary, NOT monstrous. ACTION: ${s.pose_action}. ENVIRONMENT: ${s.environment}. CINEMATIC CAMERA: Smooth tracking or slow-motion zoom. VIBRANT COLORS, HIGH SATURATION. AUDIO NARRATION ONLY (DO NOT SHOW AS TEXT): "${s.script_line}". NEGATIVE PROMPT: human skin, realistic face, muscles, organs, veins, blurry, low quality, watermark, text, subtitles, captions, asymmetric face, single eye, cyclopean, distorted features, uncanny valley expression.`
         }));
 
         // Audio is now synthesized separately via 'skeleton-generate-audio'
@@ -525,7 +526,7 @@ For EACH scene (exactly 6), generate following JSON:
             const skeletonDir = path.join(__dirname, 'SkeletonShorts');
             const baseDir = projectFolder ? path.join(skeletonDir, projectFolder) : skeletonDir;
 
-            // Find the scene image — it may have a timestamp suffix (e.g. scene_2_1773499181762.jpg)
+            // Find the scene image вЂ” it may have a timestamp suffix (e.g. scene_2_1773499181762.jpg)
             let imagePath = null;
             if (fs.existsSync(baseDir)) {
                 const prefix = `scene_${sceneIndex + 1}`;
@@ -671,7 +672,7 @@ For EACH scene (exactly 6), generate following JSON:
         });
     });
 
-    ipcMain.handle('studio-generate-ideas', async (event, { mode, language }) => {
+    ipcMain.handle('studio-generate-ideas', async (event, { mode, language, provider }) => {
         const langName = LANG_NAMES[language] || 'English';
 
         // Cultural context mapping for different languages/countries
@@ -695,40 +696,40 @@ For EACH scene (exactly 6), generate following JSON:
         const historyKey = `studio_${mode}_${language}`;
         const completedTopics = historyManager.getTopics(historyKey);
         const exclusionClause = completedTopics.length > 0
-            ? `\nEXCLUSION LIST — DO NOT repeat or rephrase any of these previously generated ideas:\n${completedTopics.slice(-30).join('\n')}\n`
+            ? `\nEXCLUSION LIST вЂ” DO NOT repeat or rephrase any of these previously generated ideas:\n${completedTopics.slice(-30).join('\n')}\n`
             : '';
 
         const randomSeed = Math.floor(Math.random() * 100000);
 
         const prompt = mode === 'health'
-            ? `ШАГ 1 — ПОИСК ИДЕИ (Topic Finder) [Seed: ${randomSeed}]
+            ? `РЁРђР“ 1 вЂ” РџРћРРЎРљ РР”Р•Р (Topic Finder) [Seed: ${randomSeed}]
                Provide me 5 highly viral LIFEHACK topic ideas for health-niche talking-object AI Shorts/Reels, where fruits, vegetables, or healthy foods become anthropomorphic expert characters inside the human body and reveal insider secrets about what they ACTUALLY do.
 
                FORMAT RULES:
                - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
                - Topic must center on ONE mass-interest health goal: fat burn, digestion, immunity, energy, hormones, skin, heart, blood sugar, or sleep.
-               - The food characters are NOT fighting — they are EXPERT INSIDERS sharing secrets.
+               - The food characters are NOT fighting вЂ” they are EXPERT INSIDERS sharing secrets.
                - Each idea must include: Hook line + Food type + Core lifehack angle + Emotional payoff.
-               - Visual-friendly for AI animation, 60–90 second format.
+               - Visual-friendly for AI animation, 60вЂ“90 second format.
                ${exclusionClause}
                Target Language: ${langName}.
 
                Output ONLY a JSON object with an "ideas" array:
-               {"ideas": [{"original": "HOOK: [Hook Line]. TITLE: [Catchy Name]. FOODS: [Items]. HACK: [Secret]. PAYOFF: [Benefit]", "translation": "Полный перевод идеи на русский язык: ХУК: [Hook Line]. НАЗВАНИЕ: [Catchy Name]. ЕДА: [Items]. ЛАЙФХАК: [Secret]. ВЫГОДА: [Benefit]"}]}`
-            : `ШАГ 1 — ПОИСК ИДЕИ (Topic Finder) [Seed: ${randomSeed}]
+               {"ideas": [{"original": "HOOK: [Hook Line]. TITLE: [Catchy Name]. FOODS: [Items]. HACK: [Secret]. PAYOFF: [Benefit]", "translation": "РџРѕР»РЅС‹Р№ РїРµСЂРµРІРѕРґ РёРґРµРё РЅР° СЂСѓСЃСЃРєРёР№ СЏР·С‹Рє: РҐРЈРљ: [Hook Line]. РќРђР—Р’РђРќРР•: [Catchy Name]. Р•Р”Рђ: [Items]. Р›РђР™Р¤РҐРђРљ: [Secret]. Р’Р«Р“РћР”Рђ: [Benefit]"}]}`
+            : `РЁРђР“ 1 вЂ” РџРћРРЎРљ РР”Р•Р (Topic Finder) [Seed: ${randomSeed}]
                Provide me 5 highly viral LIFEHACK topic ideas for a talking-objects Short/Reel, optimized for Instagram Reels and YouTube Shorts.
 
-               🎯 THIS TIME, USE OBJECTS FROM THESE SPECIFIC CATEGORIES:
+               рџЋЇ THIS TIME, USE OBJECTS FROM THESE SPECIFIC CATEGORIES:
                ${randomCats.map((c, i) => `${i + 1}. ${c}`).join('\n               ')}
 
-               🌍 CULTURAL ADAPTATION FOR ${langName.toUpperCase()}:
+               рџЊЌ CULTURAL ADAPTATION FOR ${langName.toUpperCase()}:
                ${cultureNote}
 
                IMPORTANT: Adapt lifehacks to match the lifestyle, climate, living conditions, and daily challenges specific to ${langName}-speaking countries. What's relevant in one culture may not resonate in another.
 
-               Pick DIFFERENT, UNUSUAL, UNEXPECTED objects from those categories. DO NOT use generic items like "water bottle", "pillow", "toothbrush", "alarm clock" — those are overused. Be CREATIVE and SPECIFIC.
+               Pick DIFFERENT, UNUSUAL, UNEXPECTED objects from those categories. DO NOT use generic items like "water bottle", "pillow", "toothbrush", "alarm clock" вЂ” those are overused. Be CREATIVE and SPECIFIC.
 
-               ❌ STRICTLY FORBIDDEN:
+               вќЊ STRICTLY FORBIDDEN:
                - NO food items (fruits, vegetables, meals, snacks, drinks, ingredients)
                - NO kitchen utensils related to food preparation
                - NO eating or cooking-related objects
@@ -738,15 +739,15 @@ For EACH scene (exactly 6), generate following JSON:
                - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
                - The hook must sound like the object is revealing a secret, exposing a mistake, or sharing a trick that saves time/money/health.
                - Topic must center on ONE mass-interest problem: health, money, productivity, sleep, habits, fitness, or home organization.
-               - The object is not fighting — it's TEACHING. It has an insider secret and can't wait to tell it.
+               - The object is not fighting вЂ” it's TEACHING. It has an insider secret and can't wait to tell it.
                - Each idea must include: Hook line + Object name + Core lifehack angle + Emotional payoff.
-               - Visual-friendly for AI animation, 30–60 second format.
+               - Visual-friendly for AI animation, 30вЂ“60 second format.
                - ALL 5 ideas must use DIFFERENT objects. Maximum variety!
                ${exclusionClause}
                Target Language: ${langName}.
-               Output ONLY a JSON object with an "ideas" array: {"ideas": [{"original": "Hook: [Your Hook Line]. Idea: [Your Idea Details]", "translation": "Полный перевод идеи на русский язык: Хук: [Your Hook Line]. Идея: [Your Idea Details]"}]}`;
+               Output ONLY a JSON object with an "ideas" array: {"ideas": [{"original": "Hook: [Your Hook Line]. Idea: [Your Idea Details]", "translation": "РџРѕР»РЅС‹Р№ РїРµСЂРµРІРѕРґ РёРґРµРё РЅР° СЂСѓСЃСЃРєРёР№ СЏР·С‹Рє: РҐСѓРє: [Your Hook Line]. РРґРµСЏ: [Your Idea Details]"}]}`;
 
-        const raw = await callPollinations([{ role: 'user', content: prompt }], true);
+        const raw = await callPollinations([{ role: 'user', content: prompt }], true, provider);
         console.log(`[Studio Ideas] Categories used: ${randomCats.join(' | ')}`);
         console.log(`[Studio Ideas] Raw AI Result:`, raw);
 
@@ -786,7 +787,7 @@ For EACH scene (exactly 6), generate following JSON:
         }
     });
 
-    ipcMain.handle('studio-generate-script', async (event, { mode, topic, language }) => {
+    ipcMain.handle('studio-generate-script', async (event, { mode, topic, language, provider }) => {
         const langName = LANG_NAMES[language] || 'English';
 
         let systemInstruction = "";
@@ -846,10 +847,11 @@ For EACH scene (exactly 6), generate following JSON:
             5. VIDEO MOTION (PIXAR DYNAMIC):
                - Variants: A (Energetic), B (Reveal), C (Rise), D (TikTok Hook).
             6. ABSOLUTE RULES: NO PEOPLE IN FRAME. NO HUMAN HEADS. NO HUMAN SKIN. NO HUMAN FACES. NO HUMAN BODY. NO HANDS, ARMS, LEGS, OR FEET. Object MUST stay as the physical object.
-            7. Each "line" must include an emotion tag: [shocked], [proud], etc.
-            8. The CTA SCENE (Scene 5) MUST be delivered with deep respect and warmth, explicitly inviting the viewer to subscribe AND leave a comment for more lifehack secrets and benefits.
-            9. The FINAL PAYOFF (Scene 6) ends the video on a high note.
-            10. ABSOLUTE VIDEO VISUAL RULE: Never show spoken dialogue as visible text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, or any written words inside video frames. Voice/audio only.`;
+            7. **STRICT BACKGROUND/HABITAT RULE**: You MUST explicitly place the object in its logical, real-world outdoor, industrial, or corresponding environment if it is not a household item. For example, a parking meter MUST be on a city sidewalk or street next to cars. A gas pump MUST be at a gas station. NEVER place outdoor, street, or industrial items inside a house, kitchen, or on a table with books/cups/dishes. You MUST explicitly describe the correct natural background environment in EVERY "imagePrompt" and "videoPrompt".
+            8. Each "line" must include an emotion tag: [shocked], [proud], etc.
+            9. The CTA SCENE (Scene 5) MUST be delivered with deep respect and warmth, explicitly inviting the viewer to subscribe AND leave a comment for more lifehack secrets and benefits.
+            10. The FINAL PAYOFF (Scene 6) ends the video on a high note.
+            11. ABSOLUTE VIDEO VISUAL RULE: Never show spoken dialogue as visible text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, or any written words inside video frames. Voice/audio only.`;
 
             userPrompt = `Create a viral short LIFEHACK script with exactly 6 scenes for "${topic}".
             Rotate Variants (A, B, C, D) for each scene.
@@ -874,7 +876,7 @@ For EACH scene (exactly 6), generate following JSON:
         const raw = await callPollinations([
             { role: 'system', content: systemInstruction },
             { role: 'user', content: userPrompt }
-        ], true);
+        ], true, provider);
 
         try {
             const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
@@ -919,9 +921,8 @@ For EACH scene (exactly 6), generate following JSON:
                     const vidVar = PIXAR_VIDEO_VARIANTS.find(v => v.id === vidVarId) || PIXAR_VIDEO_VARIANTS[0];
                     const vidMotionDesc = scene.videoPrompt || '';
 
-                    // CRITICAL: NO PEOPLE rule MUST be at the very beginning for VEO3 to prioritize it
-                    // Construct strong video prompt: NO PEOPLE FIRST, then Style, Identity, Motion, Audio
-                    scene.video_prompt = `CRITICAL VISUAL LOCK: NO PEOPLE IN ANY FRAME. NO HUMAN HEADS, FACES, SKIN, BODIES, HANDS, ARMS, LEGS, FEET AT ANY POINT IN THE VIDEO. ESPECIALLY NOT IN THE FINAL SECONDS (6-8s). The character is ONLY the physical object ${characterIdentity} with cartoon eyes and mouth on its surface throughout the entire 8 seconds. ${PIXAR_VIDEO_STYLE} CHARACTER: ${characterIdentity}. ${vidVar.template} ${vidMotionDesc} ${PIXAR_VIDEO_MOTION} VISUAL RULE: Do not render any visible written words in the video. Do not show the spoken dialogue as text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, labels, or text overlays. AUDIO TRACK: A professional character voice speaking in ${langName} language exactly: "${scene.line}". LIP-SYNC: Accurate mouth movement synchronized to the audio. ENDING LOCK (6-8s): Character remains as ${characterIdentity} object only, NO human appearance, NO morphing into person. ${PIXAR_VIDEO_NEGATIVE} ${PIXAR_VIDEO_SAFETY}`;
+                    // Construct video prompt: Style + Identity first, then camera, motion, audio
+                    scene.video_prompt = `${PIXAR_VIDEO_STYLE} CHARACTER: ${characterIdentity} — the sole animated protagonist, a physical object with cartoon eyes and a lip-sync mouth on its surface, present throughout all 8 seconds. ${vidVar.template} ${vidMotionDesc} ${PIXAR_VIDEO_MOTION} AUDIO TRACK: A professional character voice speaking in ${langName} language exactly: "${scene.line}". LIP-SYNC: Accurate mouth movement synchronized to the audio. ${PIXAR_VIDEO_NEGATIVE} ${PIXAR_VIDEO_SAFETY}`;
 
                     // Legacy field support
                     scene.videoPrompt = scene.video_prompt;
@@ -940,7 +941,10 @@ For EACH scene (exactly 6), generate following JSON:
     ipcMain.handle('studio-assemble-video', async (event, { useKaraoke, ideaTitle, language }) => {
         const studioDir = path.join(__dirname, 'SkeletonShorts');
         const finalDir = path.join(__dirname, 'FinalVideo');
+        const audioDir = path.join(__dirname, 'Audio');
+        const musicDir = path.join(__dirname, 'Music');
         if (!fs.existsSync(finalDir)) fs.mkdirSync(finalDir);
+        if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir);
 
         const files = fs.readdirSync(studioDir)
             .filter(f => f.startsWith('scene_') && f.endsWith('.mp4') && !f.includes('_sub'))
@@ -952,7 +956,7 @@ For EACH scene (exactly 6), generate following JSON:
 
         if (files.length === 0) throw new Error("No scenes found to assemble.");
 
-        const videoFiles = [];
+        let videoFiles = [];
         for (const f of files) {
             const pathIn = path.join(studioDir, f);
             if (useKaraoke) {
@@ -964,57 +968,73 @@ For EACH scene (exactly 6), generate following JSON:
             }
         }
 
-        const listPath = path.join(__dirname, 'studio_filelist.txt');
-        const tempPath = path.join(finalDir, `studio_temp_${Date.now()}.mp4`);
-        const outputPath = path.join(finalDir, `studio_final_${Date.now()}.mp4`);
-        fs.writeFileSync(listPath, videoFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n'));
+        // ─────────────────────────────────────────────────
+        //  Transitions + Whoosh Assembly
+        // ─────────────────────────────────────────────────
+        const TRANSITION_D = 0.35;
+        const tempDir = path.join(__dirname, 'temp_transitions');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
-        const musicDir = path.join(__dirname, 'Music');
-        const musicFiles = fs.existsSync(musicDir) ? fs.readdirSync(musicDir).filter(f => f.endsWith('.mp4') || f.endsWith('.mp3') || f.endsWith('.wav')) : [];
-        const bgMusicPath = musicFiles.length > 0 ? path.join(musicDir, musicFiles[0]) : null;
-
-        return new Promise((resolve, reject) => {
-            const concat = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', listPath, '-c:v', 'libx264', '-preset', 'fast', '-pix_fmt', 'yuv420p', '-y', tempPath]);
-
-            concat.on('close', async (code) => {
-                if (fs.existsSync(listPath)) fs.unlinkSync(listPath);
-                if (code !== 0) return reject(new Error('Concat failed'));
-
-                if (!bgMusicPath) {
-                    fs.renameSync(tempPath, outputPath);
-                    return resolve(`media:///${outputPath.replace(/\\/g, '/')}?t=${Date.now()}`);
+        // Look for whoosh sound in Music/, fallback to Audio/
+        let whooshPath = path.join(musicDir, 'Woosh.mp3');
+        if (!fs.existsSync(whooshPath)) {
+            whooshPath = path.join(musicDir, 'whoosh.mp3');
+            if (!fs.existsSync(whooshPath)) {
+                const musicFiles = fs.existsSync(musicDir) ? fs.readdirSync(musicDir).filter(f => /woosh|whoosh|deii|swish/i.test(f)) : [];
+                whooshPath = musicFiles.length > 0 ? path.join(musicDir, musicFiles[0]) : path.join(audioDir, 'whoosh.mp3');
+                if (!fs.existsSync(whooshPath)) {
+                    await generateWhooshSound(whooshPath);
                 }
+            }
+        }
 
-                try {
-                    const durationStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempPath}"`).toString().trim();
-                    const duration = parseFloat(durationStr);
-                    const fadeStart = Math.max(0, duration - 2);
-                    const filter = `[1:a]volume=0.1,afade=t=out:st=${fadeStart}:d=2[bgm];[0:a][bgm]amix=inputs=2:duration=first[a]`;
+        try {
+            const durations = videoFiles.map(f => getVideoDuration(f));
 
-                    const mix = spawn('ffmpeg', [
-                        '-i', tempPath,
-                        '-i', bgMusicPath,
-                        '-filter_complex', filter,
-                        '-map', '0:v',
-                        '-map', '[a]',
-                        '-c:v', 'copy',
-                        '-c:a', 'aac',
-                        '-y', outputPath
-                    ]);
-
-                    mix.on('close', (mixCode) => {
-                        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-                        if (mixCode === 0) {
-                            resolve(`media:///${outputPath.replace(/\\/g, '/')}?t=${Date.now()}`);
-                        } else reject(new Error('Music mix failed'));
-                    });
-                } catch (e) {
-                    console.error('Studio Music mix error:', e);
-                    fs.renameSync(tempPath, outputPath);
-                    resolve(`media:///${outputPath.replace(/\\/g, '/')}?t=${Date.now()}`);
+            // Build segments: [trimmed_0, trans_0→1, trimmed_1, trans_1→2, …, trimmed_N-1]
+            const segments = [];
+            for (let i = 0; i < videoFiles.length; i++) {
+                if (i > 0) {
+                    const transPath = path.join(tempDir, `trans_${i}.mp4`);
+                    await createLateralTransition(videoFiles[i - 1], videoFiles[i], whooshPath, transPath, TRANSITION_D);
+                    segments.push(transPath);
                 }
-            });
-        });
+                const startTrim = i > 0 ? TRANSITION_D : 0;
+                const endTrim = i < videoFiles.length - 1 ? TRANSITION_D : 0;
+                const body = durations[i] - startTrim - endTrim;
+                if (body <= 0.01) continue;
+                if (startTrim > 0 || endTrim > 0) {
+                    const trimmedPath = path.join(tempDir, `trimmed_${i}.mp4`);
+                    await trimClip(videoFiles[i], trimmedPath, startTrim, endTrim);
+                    segments.push(trimmedPath);
+                } else {
+                    segments.push(videoFiles[i]);
+                }
+            }
+
+            // Concat all video+audio segments (no re-encode — all segments share libx264/aac params)
+            const listPath = path.join(__dirname, 'studio_filelist.txt');
+            fs.writeFileSync(listPath, segments.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n'));
+
+            const concatPath = path.join(tempDir, `concat_${Date.now()}.mp4`);
+            await runFfmpeg([
+                '-f', 'concat', '-safe', '0', '-i', listPath,
+                '-c:v', 'libx264', '-preset', 'fast', '-pix_fmt', 'yuv420p',
+                '-c:a', 'aac',
+                '-y', concatPath
+            ]);
+            if (fs.existsSync(listPath)) fs.unlinkSync(listPath);
+
+            const outputPath = path.join(finalDir, `studio_final_${Date.now()}.mp4`);
+            fs.renameSync(concatPath, outputPath);
+            cleanTempDir(tempDir);
+
+            return `media:///${outputPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+
+        } catch (e) {
+            cleanTempDir(tempDir);
+            throw e;
+        }
     });
 }
 
@@ -1088,4 +1108,101 @@ function generateAssKaraoke(words) {
     return header + events;
 }
 
+// ────────────────────────────────────────────────────────────
+//  Transition + Whoosh helpers
+// ────────────────────────────────────────────────────────────
+
+function getVideoDuration(filePath) {
+    const str = execSync(
+        `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`
+    ).toString().trim();
+    return parseFloat(str);
+}
+
+function generateWhooshSound(outputPath) {
+    return new Promise((resolve, reject) => {
+        const child = spawn('ffmpeg', [
+            '-f', 'lavfi', '-i', 'anoisesrc=d=0.35:c=pink:a=0.4,afade=t=in:d=0.02,afade=t=out:d=0.1,aecho=0.6:0.5:25:0.3',
+            '-f', 'lavfi', '-i', "aevalsrc='sin(2*PI*T*(600-400*T/0.35))':d=0.35:c=mono,afade=t=in:d=0.02,afade=t=out:d=0.1,aecho=0.7:0.6:25:0.3",
+            '-filter_complex', '[0:a][1:a]amix=inputs=2:duration=first:weights=0.4 0.6,volume=2[a]',
+            '-map', '[a]',
+            '-acodec', 'libmp3lame', '-ar', '44100', '-y', outputPath
+        ]);
+        child.on('close', code => code === 0 ? resolve() : reject(new Error('Whoosh generation failed')));
+        child.on('error', reject);
+    });
+}
+
+function createLateralTransition(clipA, clipB, whooshPath, outputPath, duration) {
+    return new Promise((resolve, reject) => {
+        const durA = getVideoDuration(clipA);
+        const filter = [
+            `[0:v]trim=${durA - duration}:${durA},setpts=PTS-STARTPTS[tail]`,
+            `[1:v]trim=0:${duration},setpts=PTS-STARTPTS[head]`,
+            `[tail]split[tail_a][tail_b]`,
+            `[tail_a]dblur=0:30[t_blur]`,
+            `[head]format=rgba,colorchannelmixer=aa=1[head_rgba]`,
+            `[t_blur][head_rgba]overlay=x='W*(1-t/${duration})':y=0,setpts=PTS-STARTPTS,format=yuv420p[outv]`,
+            `[0:a]atrim=${durA - duration}:${durA},asetpts=PTS-STARTPTS[atail]`,
+            `[1:a]atrim=0:${duration},asetpts=PTS-STARTPTS[ahead]`,
+            `[atail][ahead]acrossfade=d=${duration}:c1=tri:c2=tri[across]`,
+            `[2:a]volume=0.8,afade=t=in:d=0.02[whoosh]`,
+            `[across][whoosh]amix=inputs=2:duration=first:weights=1 0.5[outa]`
+        ].join(';');
+
+        const child = spawn('ffmpeg', [
+            '-i', clipA, '-i', clipB, '-i', whooshPath,
+            '-filter_complex', filter,
+            '-map', '[outv]', '-map', '[outa]',
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
+            '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac',
+            '-y', outputPath
+        ]);
+        child.on('close', code => code === 0 ? resolve() : reject(new Error(`Transition failed: code ${code}`)));
+        child.on('error', reject);
+    });
+}
+
+function trimClip(inputPath, outputPath, startTrim, endTrim) {
+    return new Promise((resolve, reject) => {
+        const dur = getVideoDuration(inputPath);
+        const newDur = dur - startTrim - endTrim;
+        if (newDur <= 0.01) {
+            fs.copyFileSync(inputPath, outputPath);
+            return resolve();
+        }
+        const child = spawn('ffmpeg', [
+            '-i', inputPath,
+            '-filter_complex',
+            `[0:v]trim=${startTrim}:${dur - endTrim},setpts=PTS-STARTPTS[outv];[0:a]atrim=${startTrim}:${dur - endTrim},asetpts=PTS-STARTPTS[outa]`,
+            '-map', '[outv]', '-map', '[outa]',
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
+            '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac',
+            '-y', outputPath
+        ]);
+        child.on('close', code => code === 0 ? resolve() : reject(new Error(`Trim failed: code ${code}`)));
+        child.on('error', reject);
+    });
+}
+
+function runFfmpeg(args) {
+    return new Promise((resolve, reject) => {
+        const child = spawn('ffmpeg', args);
+        child.on('close', code => code === 0 ? resolve() : reject(new Error(`ffmpeg failed: code ${code}`)));
+        child.on('error', reject);
+    });
+}
+
+function cleanTempDir(tempDir) {
+    if (!fs.existsSync(tempDir)) return;
+    try {
+        const files = fs.readdirSync(tempDir);
+        for (const f of files) fs.unlinkSync(path.join(tempDir, f));
+        fs.rmdirSync(tempDir);
+    } catch (_) { /* best-effort */ }
+}
+
 module.exports = { synthesizeUnifiedSpeech, registerSkeletonHandlers, callPollinations };
+
