@@ -547,7 +547,7 @@ ${ideaContext}
     // ─────────────────────────────────────────────────────────────────────────
     ipcMain.handle('cartoon-generate-video', async (event, {
         sceneIndex, videoPrompt, sourceImageUrl, narrationLine,
-        projectFolder, voiceType, voiceProfile, narratorTone, dialogueParts
+        projectFolder, videoModel, voiceType, voiceProfile, narratorTone, dialogueParts
     }) => {
         console.log(`[Cartoon] Generate video (VEO3): scene=${sceneIndex} voiceType=${voiceType || 'narrator'} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
 
@@ -638,10 +638,10 @@ AMBIENT SOUND: subtle background work sounds layered under dialogue.`;
             ? path.join(CARTOON_DIRS.base, projectFolder)
             : CARTOON_DIRS.videos;
 
-        // VEO3 с аудио — пробуем veo3, фоллбэк на veo3_fast
+        // VEO 3.1 with audio. The UI controls the model variant.
         const options = {
             prompt: fullPrompt,
-            model: 'veo3',
+            model: videoModel || 'veo_31_lite',
             aspectRatio: '9:16',
             generateAudio: true,
             sectionDir,
@@ -659,10 +659,10 @@ AMBIENT SOUND: subtle background work sounds layered under dialogue.`;
             const previewPath = await reencodeForPreview(savedPath, sceneIndex, projectFolder);
             return `media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`;
         } catch (err) {
-            // Фоллбэк на veo3_fast если veo3 недоступен
-            if (err.message && (err.message.includes('veo3') || err.message.includes('model'))) {
-                console.warn(`[Cartoon] veo3 failed, trying veo3_fast: ${err.message}`);
-                options.model = 'veo3_fast';
+            // Fallback to the fast model if the selected model is unavailable.
+            if (options.model !== 'veo_31_fast' && err.message && err.message.includes('model')) {
+                console.warn(`[Cartoon] ${options.model} failed, trying veo_31_fast: ${err.message}`);
+                options.model = 'veo_31_fast';
                 const savedPath = await generateVideoViaGLabs(options);
                 const previewPath = await reencodeForPreview(savedPath, sceneIndex, projectFolder);
                 return `media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`;

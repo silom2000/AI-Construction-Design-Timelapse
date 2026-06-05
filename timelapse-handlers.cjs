@@ -1,4 +1,5 @@
 const { ipcMain } = require('electron');
+let currentMode = "construction";
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -13,6 +14,14 @@ const STAGE_COUNT = 6;
 const PROCESS_PROMPT_PATH = path.join(__dirname, 'AI_TIMELAPSE_PROCESS.md');
 const PROCESS_PROMPT = fs.existsSync(PROCESS_PROMPT_PATH)
     ? fs.readFileSync(PROCESS_PROMPT_PATH, 'utf8')
+    : '';
+const SURREAL_MASTER_PROMPT_PATH = path.join(__dirname, 'AI_SURREAL_MASTER.md');
+const SURREAL_PROCESS_PROMPT_PATH = path.join(__dirname, 'AI_SURREAL_PROCESS.md');
+const SURREAL_MASTER_PROMPT = fs.existsSync(SURREAL_MASTER_PROMPT_PATH)
+    ? fs.readFileSync(SURREAL_MASTER_PROMPT_PATH, 'utf8')
+    : '';
+const SURREAL_PROCESS_PROMPT = fs.existsSync(SURREAL_PROCESS_PROMPT_PATH)
+    ? fs.readFileSync(SURREAL_PROCESS_PROMPT_PATH, 'utf8')
     : '';
 
 const MASTER_PROMPT = `
@@ -177,10 +186,91 @@ function normalizePromptData(parsed) {
     };
 }
 
+function normalizeTimelapseMode(mode) {
+    return mode === 'surreal' ? 'surreal' : 'construction';
+}
+
+function getModeInstruction(mode) {
+    if (mode === 'surreal') {
+        return `MODE: PURE SURREALISM.
+This is NOT construction, NOT architecture, NOT renovation, and NOT engineering content.
+Generate surreal physical metamorphosis timelapse ideas about one monolithic object, natural form, artifact, landscape fragment, statue, machine-like relic, or impossible material mass transforming over time.
+ABSOLUTELY FORBIDDEN in surreal mode: construction, building, rebuilding, renovation, house, mansion, residence, architecture, workers, engineers, helmets, cranes, excavators, scaffolding, concrete pours, foundations, stairs, windows, rooms, roofs, walls, construction sites, and machinery.
+The transformation should feel like matter rearranging itself: liquid glass, obsidian, titanium, frozen smoke, mercury, stone, crystal, gravity distortion, impossible geometry, shadow, reflections, and material mutation.`;
+    }
+
+    return `MODE: CONSTRUCTION.
+Generate grounded cinematic construction/design timelapse ideas only. Do NOT use surrealism, fantasy, impossible architecture, dreamlike materials, portals, levitation, scale-shift magic, mythic locations, or uncanny visual twists.
+Every idea must be physically plausible, realistic, and focused on construction process, site work, machinery, materials, engineering, and an impressive but believable final reveal.`;
+}
+
+function getTimelapseSystemPrompt(mode) {
+    if (mode === 'surreal') {
+        return `${SURREAL_MASTER_PROMPT}
+
+${SURREAL_PROCESS_PROMPT}
+
+--- OUTPUT FORMAT (STATE 2) ---
+Return exactly this JSON object with exactly 4 ideas:
+{
+  "environments": [
+    { "id": 1, "ru": "...", "en": "..." },
+    { "id": 2, "ru": "...", "en": "..." },
+    { "id": 3, "ru": "...", "en": "..." },
+    { "id": 4, "ru": "...", "en": "..." }
+  ]
+}
+
+STATE 2 rules:
+- Generate exactly 4 rich viral TikTok surreal metamorphosis ideas, not short prompts.
+- Each idea must be 2-3 vivid sentences in both Russian and English.
+- Each idea must include a viewer-retention hook and an unforgettable final reveal.
+- Do not mention construction, building, architecture, workers, cranes, concrete, or machinery.
+- Do not output image prompts, video prompts, stage prompts, or the STATE 3 schema in STATE 2.
+
+--- OUTPUT FORMAT (STATE 3) ---
+When the user selects an idea, return exactly this JSON object:
+{
+  "projectTitle": "English viral title, 4-6 words, no hashtags",
+  "tiktokDescription": "English short video description, maximum 15 words",
+  "tiktokHashtags": "5-7 English hashtags separated by spaces, include # on each hashtag",
+  "contextConfirmation": "A technical confirmation that preserves the selected surreal subject and environment.",
+  "images": [
+    { "id": 1, "title": "Image 1 (ORIGIN STATE)", "prompt": "..." },
+    { "id": 2, "title": "Image 2 (FIRST SHIFT)", "prompt": "..." },
+    { "id": 3, "title": "Image 3 (EMERGENCE)", "prompt": "..." },
+    { "id": 4, "title": "Image 4 (STRUCTURAL RUPTURE)", "prompt": "..." },
+    { "id": 5, "title": "Image 5 (NEAR COMPLETE)", "prompt": "..." },
+    { "id": 6, "title": "Image 6 (FINAL REVELATION)", "prompt": "..." }
+  ],
+  "videos": [
+    { "id": 1, "title": "Video 1 (First Shift)", "prompt": "..." },
+    { "id": 2, "title": "Video 2 (Emergence)", "prompt": "..." },
+    { "id": 3, "title": "Video 3 (Rupture)", "prompt": "..." },
+    { "id": 4, "title": "Video 4 (Near Complete)", "prompt": "..." },
+    { "id": 5, "title": "Video 5 (Final Morph)", "prompt": "..." },
+    { "id": 6, "title": "Video 6 (Final Orbit)", "prompt": "..." }
+  ],
+  "engineerNotes": "Surreal material continuity notes, no construction language."
+}`;
+    }
+
+    return MASTER_PROMPT;
+}
+
+function getState2Request(mode, exclusionClause) {
+    if (mode === 'surreal') {
+        return `STATE 2: Generate exactly 4 pure surreal physical metamorphosis timelapse idea cards for MODE=surreal. The ideas must not be about construction, buildings, architecture, renovation, workers, cranes, concrete, or machinery. Return only JSON in the STATE 2 format.${exclusionClause}`;
+    }
+
+    return `STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards for MODE=construction. Return only JSON in the STATE 2 format.${exclusionClause}`;
+}
+
 function registerTimelapseHandlers(ipcMain) {
     let conversationHistory = [];
 
-    ipcMain.handle('timelapse-get-environments', async () => {
+    ipcMain.handle('timelapse-get-environments', async (event, { mode } = {}) => {
+        currentMode = normalizeTimelapseMode(mode);
         const excludedTopics = historyManager.getTopics('timelapse_ru');
         const excludedTopicsEn = historyManager.getTopics('timelapse_en');
         const allExcluded = [...new Set([...excludedTopics, ...excludedTopicsEn])].slice(-40);
@@ -189,14 +279,15 @@ function registerTimelapseHandlers(ipcMain) {
             : '';
 
         conversationHistory = [
-            { role: 'system', content: MASTER_PROMPT },
+            { role: 'system', content: getTimelapseSystemPrompt(currentMode) },
+            { role: 'system', content: getModeInstruction(currentMode) },
             {
                 role: 'user',
-                content: `STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards with fantastic surrealism, viral TikTok hooks, and unforgettable final reveals. Return only JSON in the STATE 2 format.${exclusionClause}`
+                content: getState2Request(currentMode, exclusionClause)
             }
         ];
 
-        console.log('[Timelapse] Requesting State 2 Environments...');
+        console.log(`[Timelapse] Requesting State 2 Environments. Mode: ${currentMode}`);
         const response = await callPollinations(conversationHistory, true);
         conversationHistory.push({ role: 'assistant', content: response });
 
@@ -244,8 +335,9 @@ function registerTimelapseHandlers(ipcMain) {
         }
     });
 
-    ipcMain.handle('timelapse-generate-custom-prompts', async (event, { customIdea, images, video }) => {
-        console.log(`[Timelapse] Requesting State 3 with CUSTOM IDEA. Images: ${images?.length || 0}, Video: ${!!video}`);
+    ipcMain.handle('timelapse-generate-custom-prompts', async (event, { customIdea, images, video, mode } = {}) => {
+        currentMode = normalizeTimelapseMode(mode);
+        console.log(`[Timelapse] Requesting State 3 with CUSTOM IDEA. Mode: ${currentMode}. Images: ${images?.length || 0}, Video: ${!!video}`);
         
         const referenceFrames = [];
         const finalImagesForLLM = [...(images || [])];
@@ -297,6 +389,9 @@ function registerTimelapseHandlers(ipcMain) {
         const content = [
             { type: 'text', text: `You are a Visual Replication Specialist. 
             
+            USER IDEA:
+            ${customIdea || 'No written idea provided. Use the uploaded reference media and the selected generation mode.'}
+            
             CRITICAL TASK: 
             Analyze the provided images/frames (sent in chronological order) and extract the 'Visual DNA'.
             1. What is the main structure and site? 
@@ -318,7 +413,8 @@ function registerTimelapseHandlers(ipcMain) {
         });
 
         const customConversation = [
-            { role: 'system', content: MASTER_PROMPT },
+            { role: 'system', content: getTimelapseSystemPrompt(currentMode) },
+            { role: 'system', content: getModeInstruction(currentMode) },
             { role: 'user', content: content }
         ];
 
@@ -368,7 +464,7 @@ function registerTimelapseHandlers(ipcMain) {
         }
 
         // Reinforce spatial consistency in the prompt
-        const stageLabels = [
+        const constructionStageLabels = [
             'STAGE 1: AS-IS STATE',
             'STAGE 2: SITE PREPARATION',
             'STAGE 3: FOUNDATION WORK',
@@ -376,13 +472,24 @@ function registerTimelapseHandlers(ipcMain) {
             'STAGE 5: SHELL COMPLETE',
             'STAGE 6: FINAL REVEAL'
         ];
+        const surrealStageLabels = [
+            'STAGE 1: ORIGIN STATE',
+            'STAGE 2: FIRST SHIFT',
+            'STAGE 3: EMERGENCE',
+            'STAGE 4: STRUCTURAL RUPTURE',
+            'STAGE 5: NEAR COMPLETE',
+            'STAGE 6: FINAL REVELATION'
+        ];
+        const stageLabels = currentMode === 'surreal' ? surrealStageLabels : constructionStageLabels;
         const consistencyPrefix = imgIndex > 0
-            ? `CRITICAL CONSISTENCY RULE: Use the provided previous image as the direct image-to-image reference. Keep the EXACT SAME SITE, same background, same close elevated 30-degree oblique camera, same lens, same perspective, same horizon line, same object scale, and same composition. Do not invent a new view or new plan. Only change construction progress for: ${stageLabels[imgIndex]}. `
+            ? `CRITICAL CONSISTENCY RULE: Use the provided previous image as the direct image-to-image reference. Keep the EXACT SAME SITE, same background, same close elevated 30-degree oblique camera, same lens, same perspective, same horizon line, same object scale, and same composition. Do not invent a new view or new plan. Only change ${currentMode === 'surreal' ? 'the surreal material transformation' : 'construction progress'} for: ${stageLabels[imgIndex]}. `
             : '';
 
-        const frameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique construction camera, like a camera mounted on a nearby crane or scaffolding looking diagonally down from the side, not a distant drone or helicopter. The main construction object must be close, large, and readable, occupying roughly 65-80% of the frame height, with workers, machinery, and immediate work zones visible around it. Absolutely NO far aerial establishing shot, NO tiny distant construction site, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
+        const constructionFrameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique construction camera, like a camera mounted on a nearby crane or scaffolding looking diagonally down from the side, not a distant drone or helicopter. The main construction object must be close, large, and readable, occupying roughly 65-80% of the frame height, with workers, machinery, and immediate work zones visible around it. Absolutely NO far aerial establishing shot, NO tiny distant construction site, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
+        const surrealFrameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique cinematic camera, not a distant drone or helicopter. The single surreal subject must be close, large, and readable, occupying roughly 65-80% of the frame height, with its material transformation clearly visible. Absolutely NO construction site, NO workers, NO helmets, NO cranes, NO excavators, NO scaffolding, NO concrete pour, NO foundation, NO architectural building process. Absolutely NO far aerial establishing shot, NO tiny distant subject, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
+        const frameRule = currentMode === 'surreal' ? surrealFrameRule : constructionFrameRule;
         const stageOneRule = imgIndex === 0
-            ? 'This is the master reference frame for the entire video. Use a close elevated 30-degree oblique view so the viewer can clearly see construction details without the site becoming tiny. Create one clean full-screen frame only; do not show the construction sequence. '
+            ? `This is the master reference frame for the entire video. Use a close elevated 30-degree oblique view so the viewer can clearly see ${currentMode === 'surreal' ? 'the surreal subject and material details' : 'construction details'} without the ${currentMode === 'surreal' ? 'subject' : 'site'} becoming tiny. Create one clean full-screen frame only; do not show the ${currentMode === 'surreal' ? 'transformation sequence' : 'construction sequence'}. `
             : '';
         const finalPrompt = frameRule + stageOneRule + consistencyPrefix + prompt;
 
@@ -409,7 +516,7 @@ function registerTimelapseHandlers(ipcMain) {
         return `data:${imgMime};base64,${imgBuffer.toString('base64')}`;
     });
 
-    ipcMain.handle('timelapse-generate-video', async (event, { videoIndex, prompt, subFolder }) => {
+    ipcMain.handle('timelapse-generate-video', async (event, { videoIndex, prompt, subFolder, videoModel }) => {
         const baseDir = subFolder ? path.join(TIMELAPSE_DIR, subFolder) : TIMELAPSE_DIR;
         
         // Helper to find the latest version of an image file (e.g. image_1_TIMESTAMP.jpg or scene_1_TIMESTAMP.jpg)
@@ -428,7 +535,8 @@ function registerTimelapseHandlers(ipcMain) {
         const videoPath = path.join(baseDir, `video_${videoIndex + 1}.mp4`);
 
         const constructionAudioRule = 'SOUND DESIGN: continuous raw construction-site ambience only: excavator engines, crane hydraulics, concrete mixers, drills, saws, hammers, metal clanks, gravel movement, wind, and dust.';
-        const videoPromptSuffix = `${constructionAudioRule} The audio track is environmental machinery and tool noise from the construction site.`;
+        const surrealAudioRule = 'SOUND DESIGN: surreal cinematic ambience only: deep sub-bass resonance, crystalline harmonics, distorted wind, slow material morphing textures, and low transformation drones.';
+        const activeAudioRule = currentMode === 'surreal' ? surrealAudioRule : constructionAudioRule;
 
         // ── Final video: Cinematic tour, uses only final image as start frame ──
         if (videoIndex === STAGE_COUNT - 1) {
@@ -439,8 +547,8 @@ function registerTimelapseHandlers(ipcMain) {
             console.log(`[Timelapse] Generating Video ${STAGE_COUNT} — Cinematic Tour (start: Image ${STAGE_COUNT})...`);
             const startB64 = fs.readFileSync(startImgPath, { encoding: 'base64' });
             const generatedVideoPath = await generateVideoViaGLabs({
-                prompt: `CINEMATIC ORBITAL REVEAL. SMOOTH DRONE ARC MOVEMENT. ${constructionAudioRule} ${prompt} ${videoPromptSuffix}`,
-                model: 'veo_31_lite',
+                prompt: `CINEMATIC ORBITAL REVEAL. SMOOTH DRONE ARC MOVEMENT. ${activeAudioRule} ${prompt}`,
+                model: videoModel || 'veo_31_lite',
                 sectionDir: TIMELAPSE_DIR,
                 subFolder: subFolder,
                 sceneIndex: videoIndex,
@@ -472,8 +580,8 @@ function registerTimelapseHandlers(ipcMain) {
 
         // Mode `start_end_image` enables smooth transition between two frames
         const generatedVideoPath = await generateVideoViaGLabs({
-            prompt: `STATIC CAMERA. TIMELAPSE TRANSITION. ${constructionAudioRule} ${prompt} ${videoPromptSuffix}`,
-            model: 'veo_31_lite', 
+            prompt: `STATIC CAMERA. TIMELAPSE TRANSITION. ${activeAudioRule} ${prompt}`,
+            model: videoModel || 'veo_31_lite', 
             sectionDir: TIMELAPSE_DIR,
             subFolder: subFolder,
             sceneIndex: videoIndex,
@@ -530,15 +638,17 @@ function registerTimelapseHandlers(ipcMain) {
             : null;
 
         return new Promise((resolve, reject) => {
-            if (!bgMusicPath) {
-                return reject(new Error('No background music found in Music/ folder. Add at least one .mp3/.mp4/.wav file.'));
-            }
-
             const concat = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', '-y', tempPath]);
 
             concat.on('close', code => {
                 if (code !== 0) return reject(new Error('FFmpeg concat failed.'));
                 try {
+                    if (!bgMusicPath) {
+                        fs.copyFileSync(tempPath, finalPath);
+                        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+                        return resolve(`media:///${finalPath.replace(/\\/g, '/')}?t=${Date.now()}`);
+                    }
+
                     const { execSync } = require('child_process');
                     const durationStr = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${tempPath}"`).toString().trim();
                     const duration = parseFloat(durationStr);
@@ -548,7 +658,7 @@ function registerTimelapseHandlers(ipcMain) {
                         '-i', tempPath,
                         '-stream_loop', '-1',
                         '-i', bgMusicPath,
-                        '-filter_complex', `[0:a]volume=0.1[main];[1:a]volume=0.9[bgm];[main][bgm]amix=inputs=2:duration=first[raw];[raw]afade=t=out:st=${fadeStart}:d=2[a]`,
+                        '-filter_complex', `[0:a]volume=1.0[main];[1:a]volume=0.9[bgm];[main][bgm]amix=inputs=2:duration=first[raw];[raw]afade=t=out:st=${fadeStart}:d=2[a]`,
                         '-map', '0:v',
                         '-map', '[a]',
                         '-c:v', 'copy',

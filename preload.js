@@ -12,12 +12,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAssemblyProgress: (callback) => ipcRenderer.on('assembly-progress', (event, data) => callback(data)),
 
   // New Cinematic Timelapse Handlers
-  timelapseGetEnvironments: () => ipcRenderer.invoke('timelapse-get-environments'),
+  timelapseGetEnvironments: (mode) => ipcRenderer.invoke('timelapse-get-environments', { mode }),
   timelapseGeneratePrompts: (selectionIndex, selectedEnv) => ipcRenderer.invoke('timelapse-generate-prompts', { selectionIndex, selectedEnv }),
-  timelapseGenerateCustomPrompts: (customIdea, images, video) => ipcRenderer.invoke('timelapse-generate-custom-prompts', { customIdea, images, video }),
+  timelapseGenerateCustomPrompts: (customIdea, images, video, mode) => ipcRenderer.invoke('timelapse-generate-custom-prompts', { customIdea, images, video, mode }),
   timelapseGenerateReversePrompts: (baseImage) => ipcRenderer.invoke('timelapse-generate-reverse-prompts', { baseImage }),
   timelapseGenerateImage: (imgIndex, prompt, model, subFolder, referenceImage) => ipcRenderer.invoke('timelapse-generate-image', { imgIndex, prompt, model, subFolder, referenceImage }),
-  timelapseGenerateVideo: (videoIndex, prompt, subFolder, referenceImages) => ipcRenderer.invoke('timelapse-generate-video', { videoIndex, prompt, subFolder, referenceImages }),
+  timelapseGenerateVideo: (videoIndex, prompt, subFolder, referenceImages, videoModel) => ipcRenderer.invoke('timelapse-generate-video', { videoIndex, prompt, subFolder, referenceImages, videoModel }),
   timelapseAssemble: (subFolder, projectTitle) => ipcRenderer.invoke('timelapse-assemble', { subFolder, projectTitle }),
 
 
@@ -88,4 +88,3 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onGLabsTaskProgress: (callback) => ipcRenderer.on('glabs-task-progress', (event, data) => callback(data)),
   removeGLabsProgressListener: () => ipcRenderer.removeAllListeners('glabs-task-progress'),
 });
-

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SkeletonScene } from './electron.d';
 
 type Language = 'en' | 'fr' | 'de' | 'es' | 'it';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'freepik-wan' | 'pollinations-ltx2' | 'pixverse-v5' | 'grok-video';
 
 const LANGUAGES: { value: Language; label: string; flag: string }[] = [
   { value: 'en', label: 'English', flag: '🇬🇧' },
@@ -9,6 +10,11 @@ const LANGUAGES: { value: Language; label: string; flag: string }[] = [
   { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
   { value: 'es', label: 'Español', flag: '🇪🇸' },
   { value: 'it', label: 'Italiano', flag: '🇮🇹' },
+];
+
+const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
+  { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Сбалансированная генерация' },
+  { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Быстрая генерация' },
 ];
 
 interface SceneState {
@@ -23,7 +29,7 @@ interface SceneState {
 export default function SkeletonTab() {
   const [language, setLanguage] = useState<Language>('en');
   const [imageModel, setImageModel] = useState<'imagen4' | 'nano_banana_2' | 'nano_banana_pro'>('imagen4');
-  const [videoModel] = useState<"veo_31_lite" | "freepik-wan" | "pollinations-ltx2" | "pixverse-v5" | "grok-video">("veo_31_lite");
+  const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
 
   // Phase 1
   const [ideasText, setIdeasText] = useState('');
@@ -317,7 +323,36 @@ export default function SkeletonTab() {
           </div>
         )}
 
-        {/* Video model selection - removed as unified in G-Labs */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '12px', color: '#aaa', display: 'block', marginBottom: '6px' }}>
+            🎬 Модель видео:
+          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {VIDEO_MODELS.map(m => (
+              <div
+                key={m.value}
+                onClick={() => setVideoModel(m.value)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
+                  backgroundColor: videoModel === m.value ? '#2d1f5c' : '#222',
+                  border: videoModel === m.value ? '1px solid #8b5cf6' : '1px solid #444',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <div style={{
+                  width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0,
+                  border: videoModel === m.value ? '4px solid #8b5cf6' : '2px solid #666',
+                  backgroundColor: videoModel === m.value ? '#fff' : 'transparent'
+                }} />
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: videoModel === m.value ? '#fff' : '#ccc' }}>{m.label}</div>
+                  <div style={{ fontSize: '10px', color: '#888' }}>{m.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Language selector */}
         <div style={{ marginBottom: '16px' }}>
@@ -763,5 +798,4 @@ export default function SkeletonTab() {
     </div>
   );
 }
-
 

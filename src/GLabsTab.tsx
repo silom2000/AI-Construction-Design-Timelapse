@@ -5,6 +5,12 @@ import { GLabsTask } from './electron.d';
 // ── Типы ──────────────────────────────────────────────────────────────────────
 type GenerateMode = 'image' | 'video';
 type StatusFilter = 'all' | 'pending' | 'running' | 'completed' | 'failed';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+
+const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
+  { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced generation' },
+  { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
+];
 
 const STATUS_COLOR: Record<string, string> = {
   pending:   '#f59e0b',
@@ -307,6 +313,28 @@ export default function GLabsTab() {
           placeholder="e.g. flux-pro, wan-2.6 …"
           style={inputStyle}
         />
+
+        {mode === 'video' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+            {VIDEO_MODELS.map(videoModel => (
+              <button
+                key={videoModel.value}
+                onClick={() => setModel(videoModel.value)}
+                title={videoModel.desc}
+                style={{
+                  ...modeBtn,
+                  justifyContent: 'flex-start',
+                  borderColor: model === videoModel.value ? '#8b5cf6' : '#333',
+                  color: model === videoModel.value ? '#c4b5fd' : '#888',
+                  background: model === videoModel.value ? 'rgba(139,92,246,0.1)' : 'transparent',
+                }}
+              >
+                <Video size={13} />
+                {videoModel.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Aspect ratio */}
         <label style={labelStyle}>Соотношение сторон</label>

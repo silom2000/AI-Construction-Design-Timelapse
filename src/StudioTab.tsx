@@ -36,12 +36,19 @@ const LLM_PROVIDERS = [
     { value: 'custom', label: 'Custom Proxy', desc: 'Local or remote endpoint' },
 ];
 
+type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+
+const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
+    { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced video generation' },
+    { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast video generation' },
+];
+
 const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [topic, setTopic] = useState('');
     const [lang, setLang] = useState('Russian');
     const [llmProvider, setLlmProvider] = useState<string>('pollinations');
     const [imageModel, setImageModel] = useState<string>('freepik-mystic');
-    const [videoModel] = useState<string>('veo_31_lite');
+    const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
     const [script, setScript] = useState<StudioScript | null>(null);
     const scriptRef = React.useRef(script);
     scriptRef.current = script;
@@ -281,7 +288,24 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                     </div>
                 </div>
 
-                {/* Video model selection - removed as unified in G-Labs */}
+                <div className="sidebar-section">
+                    <h3 className="sidebar-title">🎬 VIDEO MODEL</h3>
+                    <div className="selection-list">
+                        {VIDEO_MODELS.map(m => (
+                            <div
+                                key={m.value}
+                                className={`selection-chip ${videoModel === m.value ? 'active' : ''}`}
+                                onClick={() => setVideoModel(m.value)}
+                            >
+                                <div className="chip-radio" />
+                                <div className="chip-info">
+                                    <span className="chip-label">{m.label}</span>
+                                    <span className="chip-desc">{m.desc}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
                 <div className="sidebar-section">
                     <h3 className="sidebar-title">🌍 LANGUAGE</h3>

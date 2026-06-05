@@ -22,6 +22,8 @@ export interface CinematicPromptData {
     engineerNotes?: string;
 }
 
+type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+
 const TimelapseTab: React.FC = () => {
     // Pipeline States
     const [pipelineState, setPipelineState] = useState<'IDLE' | 'SELECTION' | 'EXECUTION'>('IDLE');
@@ -46,8 +48,10 @@ const TimelapseTab: React.FC = () => {
     const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
 
     const [selectedImageModel, setSelectedImageModel] = useState('imagen4');
+    const [selectedVideoModel, setSelectedVideoModel] = useState<VideoModel>('veo_31_lite');
     const [timelapseID, setTimelapseID] = useState('');
     const [customIdea, setCustomIdea] = useState('');
+    const [mode, setMode] = useState<'construction' | 'surreal'>('construction');
     const [referenceImages, setReferenceImages] = useState<(string | null)[]>([null, null, null, null, null, null]); // [stage1..stage6]
     const [referenceVideo, setReferenceVideo] = useState<string | null>(null);
     const [useReferencesAsFinal, setUseReferencesAsFinal] = useState(false);
@@ -58,13 +62,18 @@ const TimelapseTab: React.FC = () => {
         { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Pro Output' },
     ];
 
+    const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
+        { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced video generation' },
+        { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast video generation' },
+    ];
+
     const handleStart = async () => {
         setError(null);
         setEnvironments([]);
         setPipelineState('IDLE');
         setIsGenerating(true);
         try {
-            const envs = await window.electronAPI.timelapseGetEnvironments();
+            const envs = await window.electronAPI.timelapseGetEnvironments(mode);
             setEnvironments(envs as any);
             setPipelineState('SELECTION');
         } catch (err: any) {
@@ -82,7 +91,8 @@ const TimelapseTab: React.FC = () => {
             const data = await window.electronAPI.timelapseGenerateCustomPrompts(
                 customIdea, 
                 referenceImages.filter(img => !!img),
-                referenceVideo
+                referenceVideo,
+                mode
             );
             
             if (data.subFolder) {
@@ -215,7 +225,8 @@ const TimelapseTab: React.FC = () => {
                 videoIndex, 
                 promptData.videos[videoIndex].prompt, 
                 timelapseID,
-                refImgs
+                refImgs,
+                selectedVideoModel
             );
             setGeneratedVideos(prev => { const n = [...prev]; n[videoIndex] = url; return n; });
         } catch (e: any) {
@@ -280,10 +291,11 @@ const TimelapseTab: React.FC = () => {
                 try {
                     const refImgs = referenceImages.filter(img => !!img);
                     const url = await window.electronAPI.timelapseGenerateVideo(
-                        idx, 
+                        idx,
                         promptData.videos[idx].prompt, 
                         timelapseID,
-                        refImgs
+                        refImgs,
+                        selectedVideoModel
                     );
                     
                     currentVideos[idx] = url;
@@ -367,6 +379,28 @@ const TimelapseTab: React.FC = () => {
                             </button>
                         ))}
                     </div>
+                    <div style={{ display: 'flex', background: '#1e293b', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
+                        {VIDEO_MODELS.map(m => (
+                            <button
+                                key={m.value}
+                                onClick={() => setSelectedVideoModel(m.value)}
+                                title={m.desc}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
+                                    background: selectedVideoModel === m.value ? '#8b5cf6' : 'transparent',
+                                    color: selectedVideoModel === m.value ? 'white' : '#94a3b8',
+                                    border: 'none',
+                                    borderRadius: '0.375rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {m.label}
+                            </button>
+                        ))}
+                    </div>
                     {pipelineState === 'EXECUTION' && (
                         <button
                             onClick={handleAutoGeneration}
@@ -437,7 +471,35 @@ const TimelapseTab: React.FC = () => {
                             </div>
                         </div>
 
-                        <textarea 
+                        
+                        <div style={{ marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>РЕЖИМ ГЕНЕРАЦИИ ::</label>
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: mode === 'construction' ? '#3b82f6' : '#94a3b8', transition: 'color 0.2s' }}>
+                                    <input 
+                                        type="radio" 
+                                        name="timelapseMode" 
+                                        value="construction" 
+                                        checked={mode === 'construction'} 
+                                        onChange={() => setMode('construction')} 
+                                        style={{ accentColor: '#3b82f6' }}
+                                    />
+                                    Строительство
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: mode === 'surreal' ? '#8b5cf6' : '#94a3b8', transition: 'color 0.2s' }}>
+                                    <input 
+                                        type="radio" 
+                                        name="timelapseMode" 
+                                        value="surreal" 
+                                        checked={mode === 'surreal'} 
+                                        onChange={() => setMode('surreal')}
+                                        style={{ accentColor: '#8b5cf6' }}
+                                    />
+                                    Сюрреализм
+                                </label>
+                            </div>
+                        </div>
+<textarea 
                             value={customIdea}
                             onChange={(e) => setCustomIdea(e.target.value)}
                             placeholder="Опишите вашу идею или загрузите референсы выше..."

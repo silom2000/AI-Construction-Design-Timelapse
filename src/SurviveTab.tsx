@@ -37,6 +37,13 @@ type Script = {
   steps: Step[];
 };
 
+type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+
+const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
+  { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced generation' },
+  { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
+];
+
 const STEP_ICONS: Record<number, string> = {
   0: '🚨',
   1: '1️⃣',
@@ -58,6 +65,7 @@ const STEP_LABELS: Record<number, string> = {
 export function SurviveTab() {
   const [language, setLanguage] = useState('Russian');
   const [imageModel, setImageModel] = useState<'imagen4' | 'nano_banana_2' | 'nano_banana_pro'>('imagen4');
+  const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -202,6 +210,7 @@ export function SurviveTab() {
         videoPrompt: step.videoPrompt,
         sourceImageUrl: imgUrl,
         narrationLine: step.line,
+        videoModel,
         projectFolder
       });
       setSceneStates(prev => ({
@@ -309,6 +318,27 @@ export function SurviveTab() {
                 <span className="survive-model-desc">4K, Thinking model</span>
               </div>
             </label>
+          </div>
+        </div>
+
+        <div className="survive-form-group">
+          <label className="survive-label">Video Model</label>
+          <div className="survive-model-group">
+            {VIDEO_MODELS.map(model => (
+              <label key={model.value} className={`survive-model-option ${videoModel === model.value ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="videoModel"
+                  value={model.value}
+                  checked={videoModel === model.value}
+                  onChange={() => setVideoModel(model.value)}
+                />
+                <div className="survive-model-label">
+                  <span className="survive-model-name">{model.label}</span>
+                  <span className="survive-model-desc">{model.desc}</span>
+                </div>
+              </label>
+            ))}
           </div>
         </div>
 

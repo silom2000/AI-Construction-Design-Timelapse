@@ -789,7 +789,7 @@ ${ideaContext}
     });
 
     // 5. Generate Video with cinematic prompts
-    ipcMain.handle('story-generate-video', async (event, { sceneIndex, videoPrompt, sourceImageUrl, narrationLine, projectFolder }) => {
+    ipcMain.handle('story-generate-video', async (event, { sceneIndex, videoPrompt, sourceImageUrl, narrationLine, projectFolder, videoModel }) => {
         console.log(`[Stories] Generate video: scene=${sceneIndex} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
 
         // Build enhanced prompt — cinematic visual direction only, no audio instructions
@@ -816,7 +816,7 @@ ${ideaContext}
 
         const options = {
             prompt: enhancedPrompt,
-            model: 'veo_31_lite',
+            model: videoModel || 'veo_31_lite',
             aspectRatio: '9:16',
             sectionDir,
             subFolder: 'Videos',

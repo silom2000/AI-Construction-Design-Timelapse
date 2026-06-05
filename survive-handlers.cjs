@@ -517,7 +517,7 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
     // 5. Generate Video (VEO3 with native audio)
     // ─────────────────────────────────────────────────────────────────────────
     ipcMain.handle('survive-generate-video', async (event, {
-        sceneIndex, videoPrompt, sourceImageUrl, narrationLine, projectFolder
+        sceneIndex, videoPrompt, sourceImageUrl, narrationLine, projectFolder, videoModel
     }) => {
         console.log(`[Survive] Generate video: scene=${sceneIndex} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
 
@@ -552,7 +552,7 @@ AMBIENT SOUND: realistic environmental sounds matching the survival scenario (wi
 
         const options = {
             prompt: fullPrompt,
-            model: 'veo3',
+            model: videoModel || 'veo_31_lite',
             aspectRatio: '9:16',
             generateAudio: true,
             sectionDir: SURVIVE_DIRS.base,
@@ -565,10 +565,10 @@ AMBIENT SOUND: realistic environmental sounds matching the survival scenario (wi
             const savedPath = await generateVideoViaGLabs(options);
             return `media:///${savedPath.replace(/\\/g, '/')}?t=${Date.now()}`;
         } catch (err) {
-            // Fallback to veo3_fast if veo3 fails
-            if (err.message && (err.message.includes('veo3') || err.message.includes('model'))) {
-                console.warn(`[Survive] veo3 failed, trying veo3_fast: ${err.message}`);
-                options.model = 'veo3_fast';
+            // Fallback to the fast model if the selected model is unavailable.
+            if (options.model !== 'veo_31_fast' && err.message && err.message.includes('model')) {
+                console.warn(`[Survive] ${options.model} failed, trying veo_31_fast: ${err.message}`);
+                options.model = 'veo_31_fast';
                 const savedPath = await generateVideoViaGLabs(options);
                 return `media:///${savedPath.replace(/\\/g, '/')}?t=${Date.now()}`;
             }

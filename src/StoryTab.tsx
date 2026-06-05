@@ -43,6 +43,13 @@ type Script = {
   scenes: Scene[];
 };
 
+type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+
+const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
+  { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced generation' },
+  { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
+];
+
 const LIFE_STAGE_ICONS: Record<number, string> = {
   1: '👶',
   2: '🧒',
@@ -69,6 +76,7 @@ export function StoryTab() {
   const [language, setLanguage] = useState('English');
   const [topic, setTopic] = useState('');
   const [imageModel, setImageModel] = useState<'imagen4' | 'nano_banana_2' | 'nano_banana_pro'>('imagen4');
+  const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -194,6 +202,7 @@ export function StoryTab() {
         videoPrompt: prompt,
         sourceImageUrl: state?.imgUrl,
         narrationLine: narrationLine || '',
+        videoModel,
         projectFolder
       });
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], vidLoading: false, vidUrl: url, statusText: undefined } }));
@@ -258,6 +267,37 @@ export function StoryTab() {
                   }} />
                   <div>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: imageModel === m.value ? '#fff' : '#ccc' }}>{m.label}</div>
+                    <div style={{ fontSize: '10px', color: '#888' }}>{m.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label className="story-label" style={{ marginBottom: '6px' }}>
+              Video Generation Model:
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {VIDEO_MODELS.map(m => (
+                <div
+                  key={m.value}
+                  onClick={() => setVideoModel(m.value)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
+                    backgroundColor: videoModel === m.value ? '#2d1f5c' : '#222',
+                    border: videoModel === m.value ? '1px solid #8b5cf6' : '1px solid #444',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <div style={{
+                    width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0,
+                    border: videoModel === m.value ? '4px solid #8b5cf6' : '2px solid #666',
+                    backgroundColor: videoModel === m.value ? '#fff' : 'transparent'
+                  }} />
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: videoModel === m.value ? '#fff' : '#ccc' }}>{m.label}</div>
                     <div style={{ fontSize: '10px', color: '#888' }}>{m.desc}</div>
                   </div>
                 </div>

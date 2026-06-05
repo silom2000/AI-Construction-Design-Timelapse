@@ -1,4 +1,4 @@
-export interface GLabsTask {
+﻿export interface GLabsTask {
   task_id: string;
   type: 'image' | 'video';
   status: 'pending' | 'running' | 'completed' | 'failed';
@@ -74,12 +74,12 @@ export interface IElectronAPI {
   onSkeletonAssemblyProgress: (callback: (data: any) => void) => void,
   
   // Cinematic Timelapse
-  timelapseGetEnvironments: () => Promise<string[]>,
+  timelapseGetEnvironments: (mode?: string) => Promise<string[]>,
   timelapseGeneratePrompts: (selectionIndex: number, selectedEnv: string) => Promise<any>,
-  timelapseGenerateCustomPrompts: (customIdea: string, images: (string | null)[], video: string | null) => Promise<any>,
+  timelapseGenerateCustomPrompts: (customIdea: string, images: (string | null)[], video: string | null, mode?: string) => Promise<any>,
   timelapseGenerateReversePrompts: (baseImage: string) => Promise<any>,
   timelapseGenerateImage: (imgIndex: number, prompt: string, model?: string, subFolder?: string, referenceImage?: string | null) => Promise<string>,
-  timelapseGenerateVideo: (videoIndex: number, prompt: string, subFolder?: string, referenceImages?: (string | null)[]) => Promise<string>,
+  timelapseGenerateVideo: (videoIndex: number, prompt: string, subFolder?: string, referenceImages?: (string | null)[], videoModel?: string) => Promise<string>,
   timelapseAssemble: (subFolder?: string, projectTitle?: string) => Promise<string>,
 
   // Studio Tabs
@@ -98,7 +98,7 @@ export interface IElectronAPI {
   onStoryVideoProgress: (callback: (data: any) => void) => void,
   onStoryImageProgress: (callback: (data: any) => void) => void,
 
-  // Survive — Extreme Survival Scenarios
+  // Survive вЂ” Extreme Survival Scenarios
   surviveGenerateIdeas: (params: { language: string }) => Promise<any[]>,
   surviveGenerateScript: (params: { idea: any, language: string, projectFolder: string }) => Promise<any>,
   surviveGenerateImage: (data: any) => Promise<string>,
@@ -127,3 +127,4 @@ declare global {
     electronAPI: IElectronAPI;
   }
 }
+
