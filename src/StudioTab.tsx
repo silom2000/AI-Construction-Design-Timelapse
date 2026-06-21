@@ -31,8 +31,6 @@ const LANGUAGES = [
 
 const LLM_PROVIDERS = [
     { value: 'pollinations', label: 'Pollinations', desc: 'Free, openai-large model' },
-    { value: 'qwen', label: 'Qwen (NVIDIA)', desc: 'qwen3.5-397b-a17b' },
-    { value: 'kimi', label: 'Kimi (NVIDIA)', desc: 'kimi-k2.5' },
     { value: 'custom', label: 'Custom Proxy', desc: 'Local or remote endpoint' },
 ];
 
