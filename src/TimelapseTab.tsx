@@ -51,7 +51,7 @@ const TimelapseTab: React.FC = () => {
     const [selectedVideoModel, setSelectedVideoModel] = useState<VideoModel>('veo_31_lite');
     const [timelapseID, setTimelapseID] = useState('');
     const [customIdea, setCustomIdea] = useState('');
-    const [mode, setMode] = useState<'construction' | 'surreal'>('construction');
+    const [mode, setMode] = useState<'construction' | 'surreal' | 'transform'>('construction');
     const [referenceImages, setReferenceImages] = useState<(string | null)[]>([null, null, null, null, null, null]); // [stage1..stage6]
     const [referenceVideo, setReferenceVideo] = useState<string | null>(null);
     const [useReferencesAsFinal, setUseReferencesAsFinal] = useState(false);
@@ -209,9 +209,13 @@ const TimelapseTab: React.FC = () => {
 
     const generateVideo = async (videoIndex: number) => {
         if (!promptData) return;
-        const requiredImageIdx = videoIndex === 5 ? 5 : videoIndex;
+
+        // Transform mode: each video only needs its own corresponding image
+        const requiredImageIdx = mode === 'transform' ? videoIndex : (videoIndex === 5 ? 5 : videoIndex);
         if (!generatedImages[requiredImageIdx]) {
-            const label = videoIndex === 5
+            const label = mode === 'transform'
+                ? `Please generate Capsule Image ${videoIndex + 1} first — it is the starting frame for this transformation video.`
+                : videoIndex === 5
                 ? 'Please generate Image 6 (FINAL STATE) first — it is the starting frame for the Cinematic Tour.'
                 : `Please generate Image ${videoIndex + 1} first, it acts as the starting frame for Video ${videoIndex + 1}.`;
             setError(label);
@@ -282,7 +286,8 @@ const TimelapseTab: React.FC = () => {
                     continue;
                 }
 
-                const requiredImageIdx = idx === 5 ? 5 : idx;
+                // Transform mode: each video needs only its own image
+                const requiredImageIdx = mode === 'transform' ? idx : (idx === 5 ? 5 : idx);
                 if (!currentImages[requiredImageIdx]) {
                     throw new Error(`Cannot generate Video ${idx + 1} because Image ${requiredImageIdx + 1} is missing.`);
                 }
@@ -474,7 +479,7 @@ const TimelapseTab: React.FC = () => {
                         
                         <div style={{ marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>РЕЖИМ ГЕНЕРАЦИИ ::</label>
-                            <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: mode === 'construction' ? '#3b82f6' : '#94a3b8', transition: 'color 0.2s' }}>
                                     <input 
                                         type="radio" 
@@ -497,7 +502,23 @@ const TimelapseTab: React.FC = () => {
                                     />
                                     Сюрреализм
                                 </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: mode === 'transform' ? '#f97316' : '#94a3b8', transition: 'color 0.2s' }}>
+                                    <input 
+                                        type="radio" 
+                                        name="timelapseMode" 
+                                        value="transform" 
+                                        checked={mode === 'transform'} 
+                                        onChange={() => setMode('transform')}
+                                        style={{ accentColor: '#f97316' }}
+                                    />
+                                    🤖 Трансформация
+                                </label>
                             </div>
+                            {mode === 'transform' && (
+                                <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.9rem', background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '0.5rem', fontSize: '0.75rem', color: '#fb923c', lineHeight: 1.5 }}>
+                                    🦾 <strong>Режим Трансформации:</strong> 6 уникальных капсул → 6 независимых видео-трансформаций. Каждое видео создаётся только на основе своей картинки (старт без перехода).
+                                </div>
+                            )}
                         </div>
 <textarea 
                             value={customIdea}
@@ -619,7 +640,9 @@ const TimelapseTab: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                         {/* IMAGES COLUMN */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 2 — 6 PHOTOREALISTIC IMAGE PROMPTS</h3>
+                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>
+                                {mode === 'transform' ? 'STEP 2 — 6 CAPSULE IMAGE PROMPTS (каждая уникальна)' : 'STEP 2 — 6 PHOTOREALISTIC IMAGE PROMPTS'}
+                            </h3>
                             {promptData.images.map((img, idx) => (
                                 <div key={idx} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '0.5rem', overflow: 'hidden' }}>
                                     <div style={{ padding: '1rem', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -635,16 +658,16 @@ const TimelapseTab: React.FC = () => {
                                         </div>
                                         <button 
                                             onClick={() => generateImage(idx)} 
-                                            disabled={generatingImages[idx] || (idx > 0 && !generatedImages[idx - 1]) || isAutoGenerating} 
+                                            disabled={generatingImages[idx] || (mode !== 'transform' && idx > 0 && !generatedImages[idx - 1]) || isAutoGenerating} 
                                             className="btn-primary" 
                                             style={{ 
                                                 padding: '0.4rem 0.8rem', 
                                                 fontSize: '0.75rem',
-                                                background: generatedImages[idx] && useReferencesAsFinal ? '#059669' : undefined 
+                                                background: generatedImages[idx] && useReferencesAsFinal ? '#059669' : mode === 'transform' ? '#f97316' : undefined 
                                             }}
                                         >
                                             {generatingImages[idx] ? <RefreshCw className="spin" size={14} /> : <ImageIcon size={14} />} 
-                                            {generatedImages[idx] && useReferencesAsFinal ? 'REFERENCE LOADED' : (hasImage(idx) ? 'REGENERATE' : 'GENERATE')}
+                                            {generatedImages[idx] && useReferencesAsFinal ? 'REFERENCE LOADED' : (hasImage(idx) ? 'REGENERATE' : (mode === 'transform' ? '🤖 CAPSULE' : 'GENERATE'))}
                                         </button>
                                     </div>
                                     <div className="clamped-prompt" style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>{img.prompt}</div>
@@ -662,7 +685,9 @@ const TimelapseTab: React.FC = () => {
 
                         {/* VIDEOS COLUMN */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>STEP 3 — 6 VIDEO PROMPTS</h3>
+                            <h3 style={{ margin: 0, paddingBottom: '0.5rem', borderBottom: '1px solid #333', color: '#94a3b8', fontSize: '1rem', fontWeight: 800 }}>
+                                {mode === 'transform' ? 'STEP 3 — 6 TRANSFORMATION VIDEO PROMPTS (каждое независимо)' : 'STEP 3 — 6 VIDEO PROMPTS'}
+                            </h3>
                             {promptData.videos.map((vid, idx) => (
                                 <div key={idx} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '0.5rem', overflow: 'hidden' }}>
                                     <div style={{ padding: '1rem', borderBottom: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -676,8 +701,13 @@ const TimelapseTab: React.FC = () => {
                                                 {copiedIndex?.type === 'vid' && copiedIndex?.idx === idx ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
                                             </button>
                                         </div>
-                                        <button onClick={() => generateVideo(idx)} disabled={generatingVideos[idx] || !generatedImages[idx === 5 ? 5 : idx] || isAutoGenerating} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: '#8b5cf6' }}>
-                                            {generatingVideos[idx] ? <RefreshCw className="spin" size={14} /> : <Video size={14} />} {generatedVideos[idx] ? 'RE-ANIMATE' : 'ANIMATE'}
+                                        <button 
+                                            onClick={() => generateVideo(idx)} 
+                                            disabled={generatingVideos[idx] || !generatedImages[idx] || isAutoGenerating} 
+                                            className="btn-primary" 
+                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: mode === 'transform' ? '#f97316' : '#8b5cf6' }}
+                                        >
+                                            {generatingVideos[idx] ? <RefreshCw className="spin" size={14} /> : <Video size={14} />} {generatedVideos[idx] ? (mode === 'transform' ? '🔄 RE-TRANSFORM' : 'RE-ANIMATE') : (mode === 'transform' ? '⚡ TRANSFORM' : 'ANIMATE')}
                                         </button>
                                     </div>
                                     <div className="clamped-prompt" style={{ padding: '1rem', fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5', background: '#0f172a' }}>{vid.prompt}</div>

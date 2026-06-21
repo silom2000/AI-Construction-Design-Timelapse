@@ -1,4 +1,4 @@
-﻿// ============ SKELETON SHORTS вЂ” WAN V2.6 720P ============
+// ============ SKELETON SHORTS вЂ” WAN V2.6 720P ============
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
@@ -205,7 +205,7 @@ const synthesizeUnifiedSpeech = async (input, language = 'en', voice = 'aeb88254
     return await synthesizeCsv666Speech(input, activeVoice, language, customDir);
 };
 
-const CHARACTER_ANCHOR = `A full-body realistic humanoid SKELETON character with a semi-transparent human-shaped outer body shell. The character has: A fully exposed skull (NO skin, NO face, NO muscles). Clean, smooth, anatomically accurate skull. Large, round eye sockets with visible eyeballs. Bright yellow irises with dark pupils. Neutral to slightly vacant expression. Visible upper and lower teeth. Smooth cranium with no cracks, damage, decay, or horror elements. The body is a semi-transparent, glass-like human silhouette that clearly reveals the entire internal skeletal structure from head to toe. Skeleton details: Ivory / pale beige bones. Smooth, medical-grade surfaces. Accurate human proportions. Clearly defined rib cage, spine, pelvis, arms, hands, legs, knees, ankles, and feet. All joints, vertebrae, and phalanges visible and anatomically correct. No muscles. No veins. No organs. No skin texture. The style is: High-end medical visualization, Clean, clinical, modern. NOT horror. NOT zombie. NOT cartoon. NOT decayed. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`;
+const CHARACTER_ANCHOR = `A full-body Pixar-style animated humanoid figure rendered in a crystal-clear glass material, fully transparent outer shell revealing an ivory-white internal structural framework inside. The character's face area: two large round glowing yellow eyes with dark pupils, a friendly neutral expression, smooth rounded cranium with no surface detail. The body framework inside the glass silhouette is composed of smooth, polished ivory-colored rigid structural elements — arms, legs, torso core, joints — all anatomically proportioned but stylized for animation. Medical-illustration aesthetic: clean, modern, clinical, bright studio lighting. Style: Pixar 3D CGI, physically-based rendering, 8K, cinematic quality. NOT horror, NOT scary, NOT damaged, NOT dark. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`;
 
 // в”Ђв”Ђ Pollinations helper в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const WORKING_TEXT_MODELS = ['gemini-3.1-pro-high', 'gemini-3.1-pro', 'gpt-4o', 'gpt-4-turbo'];
@@ -471,7 +471,7 @@ For EACH scene (exactly 6), generate following JSON:
         let scenes = JSON.parse(cleanJSON).scenes.map(s => ({
             ...s,
             // TASK 2: IMAGE PROMPTS (Full character description repeated verbatim per prompt.md)
-            image_prompt: `A full-body realistic humanoid SKELETON character with a semi-transparent human-shaped outer body shell. The character has: A fully exposed skull (NO skin, NO face, NO muscles). Clean, smooth, anatomically accurate skull. Large, round eye sockets with visible eyeballs. Bright yellow irises with dark pupils. Neutral to slightly vacant expression. Visible upper and lower teeth. Smooth cranium with no cracks, damage, decay, or horror elements. The body is a semi-transparent, glass-like human silhouette that clearly reveals the entire internal skeletal structure from head to toe. Skeleton details: Ivory / pale beige bones. Smooth, medical-grade surfaces. Accurate human proportions. Clearly defined rib cage, spine, pelvis, arms, hands, legs, knees, ankles, and feet. All joints, vertebrae, and phalanges visible and anatomically correct. No muscles. No veins. No organs. No skin texture. The style is: High-end medical visualization, Clean, clinical, modern. NOT horror. NOT zombie. NOT cartoon. NOT decayed. Environment: ${s.environment}. Pose: ${s.pose_action}. ${s.visual_detail} Photorealistic cinematic realism, vibrant saturated colors, high contrast, BOLD LARGE OBJECTS in the background to ground the scene, 8k render, masterpiece quality.`,
+            image_prompt: `A full-body Pixar-style animated humanoid figure with a crystal-clear glass outer shell revealing a smooth ivory-white internal structural framework. Face: two large glowing yellow eyes with dark pupils, friendly neutral expression, rounded smooth head. Body framework: polished ivory-colored rigid structural elements — arms, legs, torso core, joints — all proportioned and stylized. Medical-illustration aesthetic: clean, modern, clinical, bright studio lighting. Pixar 3D CGI, physically-based rendering, 8K cinematic quality. NOT horror, NOT scary. Environment: ${s.environment}. Pose: ${s.pose_action}. ${s.visual_detail} Vibrant saturated colors, high contrast, BOLD LARGE OBJECTS in the background to ground the scene, masterpiece quality.`,
 
             // TASK 3: IMAGE-TO-VIDEO PROMPTS
             video_prompt: `Cinematic motion: ${s.motion_detail}. Action: character ${s.pose_action}. Cinematic camera move (smooth dolly or slow-motion zoom), vibrant saturated colors, high resolution, masterpiece quality, fluid movement.`,
@@ -882,9 +882,18 @@ For EACH scene (exactly 6), generate following JSON:
             const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
             const parsed = JSON.parse(jsonText);
             
+            let scenesArray = parsed.scenes;
+            if (!scenesArray) {
+                if (parsed.script && parsed.script.scenes) scenesArray = parsed.script.scenes;
+                else scenesArray = Object.values(parsed).find(Array.isArray);
+            }
+
+            if (!scenesArray || !Array.isArray(scenesArray)) {
+                throw new Error("AI output format error: could not find 'scenes' array. Try generating again.");
+            }
+
             // Post-processing: Replace [line] placeholders and inject Pixar Cinematic templates
-            if (parsed.scenes && Array.isArray(parsed.scenes)) {
-                parsed.scenes = parsed.scenes.map((scene, idx) => {
+            parsed.scenes = scenesArray.map((scene, idx) => {
                     // 0. Clean duplicate dialogue text (AI sometimes generates text twice)
                     if (scene.line) {
                         const parts = scene.line.split(/\s+/);
@@ -929,7 +938,6 @@ For EACH scene (exactly 6), generate following JSON:
 
                     return scene;
                 });
-            }
             
             return parsed;
         } catch (e) {

@@ -23,6 +23,10 @@ const SURREAL_MASTER_PROMPT = fs.existsSync(SURREAL_MASTER_PROMPT_PATH)
 const SURREAL_PROCESS_PROMPT = fs.existsSync(SURREAL_PROCESS_PROMPT_PATH)
     ? fs.readFileSync(SURREAL_PROCESS_PROMPT_PATH, 'utf8')
     : '';
+const TRANSFORM_MASTER_PROMPT_PATH = path.join(__dirname, 'AI_TRANSFORM_MASTER.md');
+const TRANSFORM_MASTER_PROMPT = fs.existsSync(TRANSFORM_MASTER_PROMPT_PATH)
+    ? fs.readFileSync(TRANSFORM_MASTER_PROMPT_PATH, 'utf8')
+    : '';
 
 const MASTER_PROMPT = `
 You are a Site-Specific Structural Engineer. Your goal is to recreate a construction process based STRICTLY on the provided environment.
@@ -187,7 +191,9 @@ function normalizePromptData(parsed) {
 }
 
 function normalizeTimelapseMode(mode) {
-    return mode === 'surreal' ? 'surreal' : 'construction';
+    if (mode === 'surreal') return 'surreal';
+    if (mode === 'transform') return 'transform';
+    return 'construction';
 }
 
 function getModeInstruction(mode) {
@@ -197,6 +203,14 @@ This is NOT construction, NOT architecture, NOT renovation, and NOT engineering 
 Generate surreal physical metamorphosis timelapse ideas about one monolithic object, natural form, artifact, landscape fragment, statue, machine-like relic, or impossible material mass transforming over time.
 ABSOLUTELY FORBIDDEN in surreal mode: construction, building, rebuilding, renovation, house, mansion, residence, architecture, workers, engineers, helmets, cranes, excavators, scaffolding, concrete pours, foundations, stairs, windows, rooms, roofs, walls, construction sites, and machinery.
 The transformation should feel like matter rearranging itself: liquid glass, obsidian, titanium, frozen smoke, mercury, stone, crystal, gravity distortion, impossible geometry, shadow, reflections, and material mutation.`;
+    }
+
+    if (mode === 'transform') {
+        return `MODE: MECHANICAL TRANSFORMATION.
+This is a sci-fi mechanical capsule transformation series. Each of the 6 videos is INDEPENDENT — it shows one unique capsule transforming into a robotic animal, vehicle, or weapon.
+ABSOLUTELY FORBIDDEN: construction, architecture, surrealism, cartoons, bright rainbow palettes, cheap CGI, real-world buildings or workers.
+Each capsule image must be UNIQUE: different shape (cube/cylinder/sphere/octagon/hexagon), different armored color scheme, different country flag emblem or faction symbol.
+Each video starts from its own dedicated capsule image. The camera stays static. The transformation is explosive, hyper-detailed, mechanical.`;
     }
 
     return `MODE: CONSTRUCTION.
@@ -255,12 +269,73 @@ When the user selects an idea, return exactly this JSON object:
 }`;
     }
 
+    if (mode === 'transform') {
+        return `${TRANSFORM_MASTER_PROMPT}
+
+--- WEAPON DESIGN VARIETY ---
+You must generate 6 COMPLETELY DIFFERENT weapon designs. Each artifact and weapon must be unique:
+- ARTIFACT SHAPES: token, disc, cube, crystal, sphere, hexagonal chip, triangular prism, flat capsule (no repeats)
+- WEAPON NAMES: Give each weapon a unique sci-fi name (e.g. Ghost Pistol, Plasma Repeater, Void Revolver, Rail Sidearm, Thermal Lance, Cryo Carbine, Sonic Disruptor, Photon Blade)
+- COLOR SCHEMES: matte black titanium + blue plasma, orange glowing rings, dark matter purple, white electromagnetic, red molten plasma, ice-blue crystal, green resonance, golden energy arc
+- DESIGN LANGUAGE: Each weapon must have a distinct visual identity and silhouette
+
+--- OUTPUT FORMAT (STATE 2) ---
+Return exactly this JSON object with exactly 4 themed weapon series ideas:
+{
+  "environments": [
+    { "id": 1, "ru": "...", "en": "..." },
+    { "id": 2, "ru": "...", "en": "..." },
+    { "id": 3, "ru": "...", "en": "..." },
+    { "id": 4, "ru": "...", "en": "..." }
+  ]
+}
+
+STATE 2 rules:
+- Generate exactly 4 viral TikTok weapon forge series concepts (e.g. "6 alien artifacts transform into legendary pistols", "6 ancient tokens become plasma weapons").
+- Each idea must be 2-3 vivid sentences in both Russian and English.
+- Each idea is a SERIES concept describing the theme shared by all 6 clips.
+- Do not output image prompts or video prompts in STATE 2.
+
+--- OUTPUT FORMAT (STATE 3) ---
+When the user selects an idea, return exactly this JSON object.
+CRITICAL: Each image shows a DIFFERENT compact artifact on a human palm. Each video shows THAT artifact transforming into a DIFFERENT named weapon.
+{
+  "projectTitle": "English viral series title, 4-6 words, no hashtags",
+  "tiktokDescription": "English short series description, maximum 15 words",
+  "tiktokHashtags": "5-7 English hashtags separated by spaces, include # on each hashtag",
+  "contextConfirmation": "Technical description of the 6-weapon transformation series selected.",
+  "images": [
+    { "id": 1, "title": "#1 [WEAPON_NAME]", "prompt": "Ultra realistic cinematic top-down shot of a human hand resting above a dark industrial metal table. In the center of the open palm lies a compact futuristic [ARTIFACT_SHAPE], appearing as advanced alien technology. DESIGN: [WEAPON_NAME]. [DESIGN_DETAILS: e.g. transparent energy chamber, matte black titanium, blue plasma core, minimalist futuristic pistol silhouette]. Photorealistic skin texture, realistic fingers and palm anatomy, detailed veins, natural hand position. Moody workshop lighting, dramatic shadows, metallic reflections, shallow depth of field, cinematic composition. High-end sci-fi design language, premium industrial design, hard surface details, glowing energy lines, futuristic materials. The object looks inactive and compact, as if it is about to transform into a larger advanced device. Shot on professional cinema camera, ultra realistic, HDR, extremely detailed, 8k, sharp focus. Vertical 9:16 aspect ratio. No text, no watermark, no extra hands, no distortion, no deformed fingers, no blurry details." },
+    { "id": 2, "title": "#2 [WEAPON_NAME]", "prompt": "..." },
+    { "id": 3, "title": "#3 [WEAPON_NAME]", "prompt": "..." },
+    { "id": 4, "title": "#4 [WEAPON_NAME]", "prompt": "..." },
+    { "id": 5, "title": "#5 [WEAPON_NAME]", "prompt": "..." },
+    { "id": 6, "title": "#6 [WEAPON_NAME]", "prompt": "..." }
+  ],
+  "videos": [
+    { "id": 1, "title": "#1 [WEAPON_NAME] — Transform", "prompt": "The camera remains completely stationary. A person holds an open hand above a dark metal tabletop. The small futuristic artifact resting in the palm suddenly activates. Glowing energy pulses appear across its surface. Mechanical panels unfold smoothly. Hidden components extend outward. Precision engineered parts rotate and lock into place. The object rapidly transforms into [WEAPON_NAME]: [DESIGN_DETAILS]. The person naturally closes their fingers and grabs the fully formed weapon. Subtle hand movement, realistic weight response, detailed reflections, cinematic lighting. Photorealistic skin, realistic mechanical motion, Hollywood sci-fi quality, industrial hard-surface design. Smooth camera, no shaking, no cuts, no scene changes. Ultra realistic, high detail, dramatic lighting, premium VFX, viral TikTok style. No text, no watermark, no deformed fingers, no extra digits." },
+    { "id": 2, "title": "#2 [WEAPON_NAME] — Transform", "prompt": "..." },
+    { "id": 3, "title": "#3 [WEAPON_NAME] — Transform", "prompt": "..." },
+    { "id": 4, "title": "#4 [WEAPON_NAME] — Transform", "prompt": "..." },
+    { "id": 5, "title": "#5 [WEAPON_NAME] — Transform", "prompt": "..." },
+    { "id": 6, "title": "#6 [WEAPON_NAME] — Transform", "prompt": "..." }
+  ],
+  "engineerNotes": "Series design notes: artifact shapes, weapon names, color schemes, and design details for all 6 clips."
+}
+
+FILL IN all [PLACEHOLDERS] with actual creative values. Every artifact shape, weapon name, color scheme, and design language must be DIFFERENT across all 6 entries. Write complete prompts for every entry, not just the first one.`;
+    }
+
     return MASTER_PROMPT;
 }
 
 function getState2Request(mode, exclusionClause) {
     if (mode === 'surreal') {
         return `STATE 2: Generate exactly 4 pure surreal physical metamorphosis timelapse idea cards for MODE=surreal. The ideas must not be about construction, buildings, architecture, renovation, workers, cranes, concrete, or machinery. Return only JSON in the STATE 2 format.${exclusionClause}`;
+    }
+
+    if (mode === 'transform') {
+        return `STATE 2: Generate exactly 4 viral TikTok weapon forge SERIES concepts for MODE=transform. Each idea describes a themed set of 6 clips where a compact futuristic artifact on a human palm transforms into a unique sci-fi weapon. Return only JSON in the STATE 2 format.${exclusionClause}`;
     }
 
     return `STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards for MODE=construction. Return only JSON in the STATE 2 format.${exclusionClause}`;
@@ -386,22 +461,58 @@ function registerTimelapseHandlers(ipcMain) {
             }
         }
 
-        const content = [
-            { type: 'text', text: `You are a Visual Replication Specialist. 
-            
-            USER IDEA:
-            ${customIdea || 'No written idea provided. Use the uploaded reference media and the selected generation mode.'}
-            
-            CRITICAL TASK: 
-            Analyze the provided images/frames (sent in chronological order) and extract the 'Visual DNA'.
-            1. What is the main structure and site? 
-            2. Replicate the materials, architecture, and lighting EXACTLY.
-            3. Observe the progression from the first frame to the last.
+        // Build mode-specific user message
+        let userTextContent;
+        if (currentMode === 'transform') {
+            userTextContent = `You are a Sci-Fi Weapon Design Director.
 
-            STRICT RULE: 
-            Stage 1 MUST be a 100% literal description of the FIRST image/frame provided. 
-            
-            Output the 6-stage pipeline in JSON format as per the system instructions.` }
+USER IDEA:
+${customIdea || 'No written idea provided. Generate a creative 6-weapon transformation series.'}
+
+CRITICAL TASK:
+Based on the user's idea above, design a complete 6-weapon transformation series.
+1. Create 6 DIFFERENT compact futuristic artifacts (token, disc, cube, crystal, etc.) — each resting on a human open palm above a dark industrial metal table.
+2. Each artifact transforms into a DIFFERENT named sci-fi weapon (give each weapon a unique name like Ghost Pistol, Plasma Repeater, Void Revolver, etc.).
+3. IMAGE PROMPTS must follow this template: "Ultra realistic cinematic top-down shot of a human hand resting above a dark industrial metal table. In the center of the open palm lies a compact futuristic [ARTIFACT]... DESIGN: [WEAPON_NAME]. [DESIGN_DETAILS]... Photorealistic skin, moody workshop lighting, 8k, vertical 9:16."
+4. VIDEO PROMPTS must follow this template: "The camera remains completely stationary. A person holds an open hand above a dark metal tabletop. The artifact activates... transforms into [WEAPON_NAME]... The person closes their fingers and grabs the weapon. Ultra realistic, viral TikTok style."
+
+OUTPUT: Return the complete STATE 3 JSON with projectTitle, tiktokDescription, tiktokHashtags, contextConfirmation, 6 images, 6 videos, and engineerNotes. Return ONLY valid JSON.`;
+        } else if (currentMode === 'surreal') {
+            userTextContent = `You are a Surreal Metamorphosis Specialist.
+
+USER IDEA:
+${customIdea || 'No written idea provided. Use the uploaded reference media and the selected generation mode.'}
+
+CRITICAL TASK:
+Analyze the provided images/frames (sent in chronological order) and extract the 'Visual DNA'.
+1. What is the main surreal subject and its material essence?
+2. Replicate the textures, forms, and lighting EXACTLY.
+3. Observe the metamorphosis progression from the first frame to the last.
+
+STRICT RULE:
+Stage 1 MUST be a 100% literal description of the FIRST image/frame provided.
+
+Output the 6-stage pipeline in JSON format as per the system instructions.`;
+        } else {
+            userTextContent = `You are a Visual Replication Specialist.
+
+USER IDEA:
+${customIdea || 'No written idea provided. Use the uploaded reference media and the selected generation mode.'}
+
+CRITICAL TASK:
+Analyze the provided images/frames (sent in chronological order) and extract the 'Visual DNA'.
+1. What is the main structure and site?
+2. Replicate the materials, architecture, and lighting EXACTLY.
+3. Observe the progression from the first frame to the last.
+
+STRICT RULE:
+Stage 1 MUST be a 100% literal description of the FIRST image/frame provided.
+
+Output the 6-stage pipeline in JSON format as per the system instructions.`;
+        }
+
+        const content = [
+            { type: 'text', text: userTextContent }
         ];
 
         finalImagesForLLM.forEach((base64) => {
@@ -441,10 +552,10 @@ function registerTimelapseHandlers(ipcMain) {
         if (referenceImage) {
             console.log(`[Timelapse] Using USER REFERENCE for Stage ${imgIndex + 1} (STRICT REPLICATION)`);
             finalRefImages.push({ data: referenceImage.includes('base64,') ? referenceImage : `data:image/jpeg;base64,${referenceImage}` });
-        } else if (imgIndex > 0 && fs.existsSync(baseDir)) {
+        } else if (imgIndex > 0 && fs.existsSync(baseDir) && currentMode !== 'transform') {
             // Look for the previous stage image. It is mandatory for stable timelapse geometry.
             const prevFiles = fs.readdirSync(baseDir)
-                .filter(f => (
+                .filter(f =>(
                     f.startsWith(`scene_${imgIndex}_`) ||
                     f.startsWith(`ref_frame_${imgIndex}`) ||
                     f.startsWith(`image_${imgIndex}`)
@@ -480,21 +591,38 @@ function registerTimelapseHandlers(ipcMain) {
             'STAGE 5: NEAR COMPLETE',
             'STAGE 6: FINAL REVELATION'
         ];
-        const stageLabels = currentMode === 'surreal' ? surrealStageLabels : constructionStageLabels;
-        const consistencyPrefix = imgIndex > 0
+        const transformStageLabels = [
+            'CAPSULE 1: INDEPENDENT SCI-FI CAPSULE',
+            'CAPSULE 2: INDEPENDENT SCI-FI CAPSULE',
+            'CAPSULE 3: INDEPENDENT SCI-FI CAPSULE',
+            'CAPSULE 4: INDEPENDENT SCI-FI CAPSULE',
+            'CAPSULE 5: INDEPENDENT SCI-FI CAPSULE',
+            'CAPSULE 6: INDEPENDENT SCI-FI CAPSULE'
+        ];
+        const stageLabels = currentMode === 'surreal' ? surrealStageLabels
+            : currentMode === 'transform' ? transformStageLabels
+            : constructionStageLabels;
+        // In transform mode each capsule is independent — no cross-stage consistency prefix needed
+        const consistencyPrefix = (imgIndex > 0 && currentMode !== 'transform')
             ? `CRITICAL CONSISTENCY RULE: Use the provided previous image as the direct image-to-image reference. Keep the EXACT SAME SITE, same background, same close elevated 30-degree oblique camera, same lens, same perspective, same horizon line, same object scale, and same composition. Do not invent a new view or new plan. Only change ${currentMode === 'surreal' ? 'the surreal material transformation' : 'construction progress'} for: ${stageLabels[imgIndex]}. `
             : '';
 
         const constructionFrameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique construction camera, like a camera mounted on a nearby crane or scaffolding looking diagonally down from the side, not a distant drone or helicopter. The main construction object must be close, large, and readable, occupying roughly 65-80% of the frame height, with workers, machinery, and immediate work zones visible around it. Absolutely NO far aerial establishing shot, NO tiny distant construction site, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
         const surrealFrameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique cinematic camera, not a distant drone or helicopter. The single surreal subject must be close, large, and readable, occupying roughly 65-80% of the frame height, with its material transformation clearly visible. Absolutely NO construction site, NO workers, NO helmets, NO cranes, NO excavators, NO scaffolding, NO concrete pour, NO foundation, NO architectural building process. Absolutely NO far aerial establishing shot, NO tiny distant subject, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
-        const frameRule = currentMode === 'surreal' ? surrealFrameRule : constructionFrameRule;
-        const stageOneRule = imgIndex === 0
+        const transformFrameRule = 'Ultra realistic cinematic top-down shot, elevated 25-degree angle looking down from above, 35mm full-frame lens. A human hand resting above a dark industrial metal table. In the center of the open palm lies a compact futuristic artifact, appearing as advanced alien technology. The artifact occupies roughly 35-40% of the frame height, with the full hand, table surface, and moody dark workshop background clearly visible. Photorealistic skin texture, realistic fingers and palm anatomy, detailed veins, natural hand position. Moody workshop lighting, dramatic shadows, metallic reflections, shallow depth of field, cinematic composition. High-end sci-fi design language, premium industrial design, hard surface details, glowing energy lines, futuristic materials. The object looks inactive and compact, as if it is about to transform. Shot on professional cinema camera, ultra realistic, HDR, extremely detailed, 8k, sharp focus. Vertical 9:16 aspect ratio. No text, no watermark, no extra hands, no distortion, no deformed fingers, no blurry details. ';
+        const frameRule = currentMode === 'surreal' ? surrealFrameRule
+            : currentMode === 'transform' ? transformFrameRule
+            : constructionFrameRule;
+        const stageOneRule = imgIndex === 0 && currentMode !== 'transform'
             ? `This is the master reference frame for the entire video. Use a close elevated 30-degree oblique view so the viewer can clearly see ${currentMode === 'surreal' ? 'the surreal subject and material details' : 'construction details'} without the ${currentMode === 'surreal' ? 'subject' : 'site'} becoming tiny. Create one clean full-screen frame only; do not show the ${currentMode === 'surreal' ? 'transformation sequence' : 'construction sequence'}. `
             : '';
         const finalPrompt = frameRule + stageOneRule + consistencyPrefix + prompt;
 
-        // Lower I2I strength keeps the previous frame closer and prevents camera drift.
-        const useStrength = referenceImage ? (imgIndex === 0 ? 0.2 : 0.35) : (imgIndex > 0 ? 0.35 : 0.6);
+        // In transform mode: no I2I needed (each capsule is a fresh generation from text only).
+        // For other modes: lower I2I strength keeps the previous frame closer and prevents camera drift.
+        const useStrength = currentMode === 'transform' ? 0.9
+            : referenceImage ? (imgIndex === 0 ? 0.2 : 0.35)
+            : (imgIndex > 0 ? 0.35 : 0.6);
 
         const savedPaths = await generateImageViaGLabs({
             prompt: finalPrompt,
@@ -536,7 +664,47 @@ function registerTimelapseHandlers(ipcMain) {
 
         const constructionAudioRule = 'SOUND DESIGN: continuous raw construction-site ambience only: excavator engines, crane hydraulics, concrete mixers, drills, saws, hammers, metal clanks, gravel movement, wind, and dust.';
         const surrealAudioRule = 'SOUND DESIGN: surreal cinematic ambience only: deep sub-bass resonance, crystalline harmonics, distorted wind, slow material morphing textures, and low transformation drones.';
-        const activeAudioRule = currentMode === 'surreal' ? surrealAudioRule : constructionAudioRule;
+        const transformAudioRule = 'AUDIO: mechanical activation sounds — energy hum building up, clicking panels unlocking, precision gear mechanisms locking, plasma charge-up whine, heavy metallic clank when weapon fully forms, subtle electronic power-on tone.';
+        const activeAudioRule = currentMode === 'surreal' ? surrealAudioRule
+            : currentMode === 'transform' ? transformAudioRule
+            : constructionAudioRule;
+
+        // ── TRANSFORM MODE: each video uses ONLY its own corresponding capsule image ──
+        if (currentMode === 'transform') {
+            const capsuleImgPath = findImage(videoIndex + 1);
+            if (!capsuleImgPath || !fs.existsSync(capsuleImgPath)) {
+                throw new Error(`Capsule Image ${videoIndex + 1} not found. Please generate it first.`);
+            }
+            console.log(`[Timelapse/Transform] Generating Video ${videoIndex + 1} — Transformation from Capsule ${videoIndex + 1}...`);
+            const capsuleB64 = fs.readFileSync(capsuleImgPath, { encoding: 'base64' });
+
+            const transformVideoPrefix = `DURATION: exactly 8 seconds. CAMERA: completely stationary, locked, 35mm lens, elevated 25-degree angle looking down from above, the artifact on the palm fills 35-40% of frame.
+
+CRITICAL PACING (NO INITIAL DELAY): The action must start IMMEDIATELY at 0:00. Do NOT wait or pause at the beginning.
+SCENE STRUCTURE:
+0.0-0.5 sec — Video starts and the artifact on the open palm INSTANTLY activates with a bright energy flash. No idle waiting.
+0.5-6.0 sec — EXTREMELY DETAILED, SLOW TRANSFORMATION. The object expands piece by piece into a sci-fi weapon. Show complex internal mechanisms, micro-motors, gears, and glowing energy cores. The barrel extends, the handle forms, and the sights lock into place. This process must be highly detailed, deliberate, and clearly visible, taking up the majority of the video.
+6.0-7.5 sec — The transformation completes. The person naturally closes their fingers and firmly grips the fully formed weapon. Realistic weight response and hand movement.
+7.5-8.0 sec — The weapon is held still in the hand, locked and loaded. Final energy pulse.
+
+QUALITY: Photorealistic skin, realistic mechanical motion, Hollywood sci-fi quality, industrial hard-surface design. Smooth camera, no shaking, no cuts, no scene changes. Ultra realistic, high detail, dramatic lighting, premium VFX, viral TikTok style.
+Negative: ugly hands, deformed fingers, blurry hand, extra digits, text, watermark. `;
+
+            const generatedVideoPath = await generateVideoViaGLabs({
+                prompt: `${transformVideoPrefix}${activeAudioRule} ${prompt}`,
+                model: videoModel || 'veo_31_lite',
+                sectionDir: TIMELAPSE_DIR,
+                subFolder: subFolder,
+                sceneIndex: videoIndex,
+                mode: 'start_image',
+                resolution: '720p',
+                referenceImages: [
+                    { data: `data:image/${getExt(capsuleImgPath)};base64,${capsuleB64}` }
+                ]
+            });
+            if (generatedVideoPath !== videoPath) fs.copyFileSync(generatedVideoPath, videoPath);
+            return `media:///${videoPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+        }
 
         // ── Final video: Cinematic tour, uses only final image as start frame ──
         if (videoIndex === STAGE_COUNT - 1) {
