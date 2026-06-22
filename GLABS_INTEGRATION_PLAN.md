@@ -78,6 +78,7 @@
 | Veo 3.1 Fast Relaxed | `veo_31_fast_relaxed` | 0 | ULTRA только |
 | **Veo 3.1 Lite** | `veo_31_lite` | 10 | PRO/ULTRA |
 | Veo 3.1 Fast | `veo_31_fast` | 20 | PRO/ULTRA |
+| Omni Flash | `omni_flash` | 20 | PRO/ULTRA |
 | Veo 3.1 Quality | `veo_31_quality` | 100 | PRO/ULTRA |
 
 ### Webhook API — Полное описание:

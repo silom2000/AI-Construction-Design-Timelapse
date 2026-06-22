@@ -34,11 +34,12 @@ const LLM_PROVIDERS = [
     { value: 'custom', label: 'Custom Proxy', desc: 'Local or remote endpoint' },
 ];
 
-type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
 
 const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
     { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced video generation' },
     { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast video generation' },
+    { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash video generation' },
 ];
 
 const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {

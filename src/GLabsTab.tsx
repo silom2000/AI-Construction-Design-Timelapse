@@ -5,11 +5,12 @@ import { GLabsTask } from './electron.d';
 // ── Типы ──────────────────────────────────────────────────────────────────────
 type GenerateMode = 'image' | 'video';
 type StatusFilter = 'all' | 'pending' | 'running' | 'completed' | 'failed';
-type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
 
 const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
   { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced generation' },
   { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
+  { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash generation' },
 ];
 
 const STATUS_COLOR: Record<string, string> = {

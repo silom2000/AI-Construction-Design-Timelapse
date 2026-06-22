@@ -22,7 +22,7 @@ export interface CinematicPromptData {
     engineerNotes?: string;
 }
 
-type VideoModel = 'veo_31_lite' | 'veo_31_fast';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
 
 const TimelapseTab: React.FC = () => {
     // Pipeline States
@@ -65,6 +65,7 @@ const TimelapseTab: React.FC = () => {
     const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
         { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced video generation' },
         { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast video generation' },
+        { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash video generation' },
     ];
 
     const handleStart = async () => {

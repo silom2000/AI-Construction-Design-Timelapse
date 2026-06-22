@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SkeletonScene } from './electron.d';
 
 type Language = 'en' | 'fr' | 'de' | 'es' | 'it';
-type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'freepik-wan' | 'pollinations-ltx2' | 'pixverse-v5' | 'grok-video';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'freepik-wan' | 'pollinations-ltx2' | 'pixverse-v5' | 'grok-video';
 
 const LANGUAGES: { value: Language; label: string; flag: string }[] = [
   { value: 'en', label: 'English', flag: '🇬🇧' },
@@ -15,6 +15,7 @@ const LANGUAGES: { value: Language; label: string; flag: string }[] = [
 const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
   { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Сбалансированная генерация' },
   { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Быстрая генерация' },
+  { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash генерация' },
 ];
 
 interface SceneState {
