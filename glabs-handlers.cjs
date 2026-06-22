@@ -250,17 +250,27 @@ const generateVideoViaGLabs = async (options = {}) => {
             onProgress = null
         } = options;
 
-        console.log(`[G-Labs VID Int] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${mode} subFolder=${subFolder}`);
+        let finalMode = mode;
+        let finalRefImages = referenceImages;
+
+        if (finalRefImages && finalRefImages.length > 0 && finalMode === 'text_to_video') {
+            finalMode = finalRefImages.length >= 2 ? 'start_end_image' : 'start_image';
+        }
+        
+        // Removed omni_flash restriction to allow start_end_image mode for Timelapse transitions
+
+
+        console.log(`[G-Labs VID Int] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${finalMode} subFolder=${subFolder}`);
 
         const baseDir = subFolder ? path.join(sectionDir, subFolder) : sectionDir;
         if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
 
-        const bodyData = { prompt, model, aspect_ratio: aspectRatio, resolution, mode };
+        const bodyData = { prompt, model, aspect_ratio: aspectRatio, resolution, mode: finalMode };
         if (options.generateAudio) {
             bodyData.generate_audio = true;
         }
-        if (referenceImages && referenceImages.length > 0) {
-            bodyData.reference_images = referenceImages;
+        if (finalRefImages && finalRefImages.length > 0) {
+            bodyData.reference_images = finalRefImages;
         }
 
         const { statusCode, text } = await gLabsRequest('/api/video/generate', {
@@ -427,20 +437,28 @@ function registerGLabsHandlers(ipcMain) {
         generateAudio = false
     }) => {
         return gLabsTaskQueue.enqueue('video', async () => {
-            console.log(`[G-Labs VID] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${mode} subFolder=${subFolder}`);
+            let finalMode = mode;
+            let finalRefImages = referenceImages;
+
+            if (finalRefImages && finalRefImages.length > 0 && finalMode === 'text_to_video') {
+                finalMode = finalRefImages.length >= 2 ? 'start_end_image' : 'start_image';
+            }
+            // Removed omni_flash restriction to allow start_end_image mode
+
+            console.log(`[G-Labs VID] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${finalMode} subFolder=${subFolder}`);
 
             const bodyData = {
                 prompt,
                 model,
                 aspect_ratio: aspectRatio,
                 resolution: '720p',
-                mode
+                mode: finalMode
             };
             if (generateAudio) {
                 bodyData.generate_audio = true;
             }
-            if (referenceImages && referenceImages.length > 0) {
-                bodyData.reference_images = referenceImages;
+            if (finalRefImages && finalRefImages.length > 0) {
+                bodyData.reference_images = finalRefImages;
             }
 
             const { statusCode, text } = await gLabsRequest('/api/video/generate', {

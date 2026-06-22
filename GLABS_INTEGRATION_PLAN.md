@@ -57,7 +57,7 @@
 
 | Параметр | Значение |
 |----------|----------|
-| **Исполняемый файл** | `D:\Open_Project\G-Labs-Automation-v2.0.0\G-LabsAutomation.exe` |
+| **Исполняемый файл** | `D:\Open_Project\G-Labs-Automation-v6.0.2\G-LabsAutomation.exe` |
 | **Webhook URL** | `http://127.0.0.1:8765` |
 | **Аутентификация** | `X-API-Key` header (генерируется в Settings → Webhook) |
 | **Лицензия для Webhook** | MAX план (требуется) |
