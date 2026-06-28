@@ -298,14 +298,14 @@ STATE 2 rules:
 
 --- OUTPUT FORMAT (STATE 3) ---
 When the user selects an idea, return exactly this JSON object.
-CRITICAL: Each image shows a DIFFERENT compact artifact on a human palm. Each video shows THAT artifact transforming into a DIFFERENT named weapon.
+CRITICAL: Each image shows a DIFFERENT compact artifact lying on a wooden lacquered table with worn lacquer and scratches. Each video shows THAT artifact being picked up by a hand and transforming into a DIFFERENT named weapon.
 {
   "projectTitle": "English viral series title, 4-6 words, no hashtags",
   "tiktokDescription": "English short series description, maximum 15 words",
   "tiktokHashtags": "5-7 English hashtags separated by spaces, include # on each hashtag",
   "contextConfirmation": "Technical description of the 6-weapon transformation series selected.",
   "images": [
-    { "id": 1, "title": "#1 [WEAPON_NAME]", "prompt": "Ultra realistic cinematic top-down shot of a human hand resting above a dark industrial metal table. In the center of the open palm lies a compact futuristic [ARTIFACT_SHAPE], appearing as advanced alien technology. DESIGN: [WEAPON_NAME]. [DESIGN_DETAILS: e.g. transparent energy chamber, matte black titanium, blue plasma core, minimalist futuristic pistol silhouette]. Photorealistic skin texture, realistic fingers and palm anatomy, detailed veins, natural hand position. Moody workshop lighting, dramatic shadows, metallic reflections, shallow depth of field, cinematic composition. High-end sci-fi design language, premium industrial design, hard surface details, glowing energy lines, futuristic materials. The object looks inactive and compact, as if it is about to transform into a larger advanced device. Shot on professional cinema camera, ultra realistic, HDR, extremely detailed, 8k, sharp focus. Vertical 9:16 aspect ratio. No text, no watermark, no extra hands, no distortion, no deformed fingers, no blurry details." },
+    { "id": 1, "title": "#1 [WEAPON_NAME]", "prompt": "Ultra realistic cinematic shot of a compact futuristic [ARTIFACT_SHAPE], appearing as advanced alien technology, lying alone in the center of a wooden lacquered table. The wooden surface has worn lacquer and visible scratches from time. DESIGN: [WEAPON_NAME]. [DESIGN_DETAILS: e.g. transparent energy chamber, matte black titanium, blue plasma core, minimalist futuristic pistol silhouette]. Moody lighting, dramatic shadows, reflections on the worn wood, shallow depth of field, cinematic composition. High-end sci-fi design language, premium industrial design, hard surface details, glowing energy lines, futuristic materials. The object looks inactive and compact, as if it is about to transform into a larger advanced device. Shot on professional cinema camera, ultra realistic, HDR, extremely detailed, 8k, sharp focus. Vertical 9:16 aspect ratio. No text, no watermark, no hands in the frame, no distortion, no deformed fingers, no blurry details." },
     { "id": 2, "title": "#2 [WEAPON_NAME]", "prompt": "..." },
     { "id": 3, "title": "#3 [WEAPON_NAME]", "prompt": "..." },
     { "id": 4, "title": "#4 [WEAPON_NAME]", "prompt": "..." },
@@ -313,7 +313,7 @@ CRITICAL: Each image shows a DIFFERENT compact artifact on a human palm. Each vi
     { "id": 6, "title": "#6 [WEAPON_NAME]", "prompt": "..." }
   ],
   "videos": [
-    { "id": 1, "title": "#1 [WEAPON_NAME] — Transform", "prompt": "The camera remains completely stationary. A person holds an open hand above a dark metal tabletop. The small futuristic artifact resting in the palm suddenly activates. Glowing energy pulses appear across its surface. Mechanical panels unfold smoothly. Hidden components extend outward. Precision engineered parts rotate and lock into place. The object rapidly transforms into [WEAPON_NAME]: [DESIGN_DETAILS]. The person naturally closes their fingers and grabs the fully formed weapon. Subtle hand movement, realistic weight response, detailed reflections, cinematic lighting. Photorealistic skin, realistic mechanical motion, Hollywood sci-fi quality, industrial hard-surface design. Smooth camera, no shaking, no cuts, no scene changes. Ultra realistic, high detail, dramatic lighting, premium VFX, viral TikTok style. No text, no watermark, no deformed fingers, no extra digits." },
+    { "id": 1, "title": "#1 [WEAPON_NAME] — Transform", "prompt": "The camera remains completely stationary. A compact futuristic artifact lies on a wooden lacquered table with worn lacquer and scratches. A person's hand (or both hands) enters the frame, takes the artifact from the wooden table, and the transformation starts immediately. Glowing energy pulses appear across its surface. Mechanical panels unfold smoothly. Hidden components extend outward. Precision engineered parts rotate and lock into place. The object rapidly transforms into [WEAPON_NAME]: [DESIGN_DETAILS]. The person naturally closes their fingers and firmly grips the fully formed weapon. Subtle hand movement, realistic weight response, detailed reflections on the worn wood and metallic parts, cinematic lighting. Photorealistic skin, realistic mechanical motion, Hollywood sci-fi quality, industrial hard-surface design. Smooth camera, no shaking, no cuts, no scene changes. Ultra realistic, high detail, dramatic lighting, premium VFX, viral TikTok style. No text, no watermark, no deformed fingers, no extra digits." },
     { "id": 2, "title": "#2 [WEAPON_NAME] — Transform", "prompt": "..." },
     { "id": 3, "title": "#3 [WEAPON_NAME] — Transform", "prompt": "..." },
     { "id": 4, "title": "#4 [WEAPON_NAME] — Transform", "prompt": "..." },
@@ -335,7 +335,7 @@ function getState2Request(mode, exclusionClause) {
     }
 
     if (mode === 'transform') {
-        return `STATE 2: Generate exactly 4 viral TikTok weapon forge SERIES concepts for MODE=transform. Each idea describes a themed set of 6 clips where a compact futuristic artifact on a human palm transforms into a unique sci-fi weapon. Return only JSON in the STATE 2 format.${exclusionClause}`;
+        return `STATE 2: Generate exactly 4 viral TikTok weapon forge SERIES concepts for MODE=transform. Each idea describes a themed set of 6 clips where a compact futuristic artifact lying on a wooden lacquered table with worn lacquer and scratches is picked up by a hand and transforms into a unique sci-fi weapon. Return only JSON in the STATE 2 format.${exclusionClause}`;
     }
 
     return `STATE 2: Generate exactly 4 full cinematic construction/design timelapse project idea cards for MODE=construction. Return only JSON in the STATE 2 format.${exclusionClause}`;
@@ -465,18 +465,18 @@ function registerTimelapseHandlers(ipcMain) {
         let userTextContent;
         if (currentMode === 'transform') {
             userTextContent = `You are a Sci-Fi Weapon Design Director.
-
-USER IDEA:
-${customIdea || 'No written idea provided. Generate a creative 6-weapon transformation series.'}
-
-CRITICAL TASK:
-Based on the user's idea above, design a complete 6-weapon transformation series.
-1. Create 6 DIFFERENT compact futuristic artifacts (token, disc, cube, crystal, etc.) — each resting on a human open palm above a dark industrial metal table.
-2. Each artifact transforms into a DIFFERENT named sci-fi weapon (give each weapon a unique name like Ghost Pistol, Plasma Repeater, Void Revolver, etc.).
-3. IMAGE PROMPTS must follow this template: "Ultra realistic cinematic top-down shot of a human hand resting above a dark industrial metal table. In the center of the open palm lies a compact futuristic [ARTIFACT]... DESIGN: [WEAPON_NAME]. [DESIGN_DETAILS]... Photorealistic skin, moody workshop lighting, 8k, vertical 9:16."
-4. VIDEO PROMPTS must follow this template: "The camera remains completely stationary. A person holds an open hand above a dark metal tabletop. The artifact activates... transforms into [WEAPON_NAME]... The person closes their fingers and grabs the weapon. Ultra realistic, viral TikTok style."
-
-OUTPUT: Return the complete STATE 3 JSON with projectTitle, tiktokDescription, tiktokHashtags, contextConfirmation, 6 images, 6 videos, and engineerNotes. Return ONLY valid JSON.`;
+ 
+ USER IDEA:
+ ${customIdea || 'No written idea provided. Generate a creative 6-weapon transformation series.'}
+ 
+ CRITICAL TASK:
+ Based on the user's idea above, design a complete 6-weapon transformation series.
+ 1. Create 6 DIFFERENT compact futuristic artifacts (token, disc, cube, crystal, etc.) — each lying alone in the center of a wooden lacquered table with worn lacquer and scratches. Absolutely no hands in the frame for the image prompts.
+ 2. Each artifact transforms into a DIFFERENT named sci-fi weapon (give each weapon a unique name like Ghost Pistol, Plasma Repeater, Void Revolver, etc.).
+ 3. IMAGE PROMPTS must follow this template: "Ultra realistic cinematic shot of a compact futuristic [ARTIFACT] lying on a wooden lacquered table with worn lacquer and scratches... DESIGN: [WEAPON_NAME]. [DESIGN_DETAILS]... Moody lighting, 8k, vertical 9:16, no hands in the frame."
+ 4. VIDEO PROMPTS must follow this template: "The camera remains completely stationary. A compact futuristic artifact lies on a wooden lacquered table with worn lacquer and scratches. A person's hand enters the frame, takes the artifact, and the transformation starts immediately... transforms into [WEAPON_NAME]... The person holds the weapon. Ultra realistic, viral TikTok style."
+ 
+ OUTPUT: Return the complete STATE 3 JSON with projectTitle, tiktokDescription, tiktokHashtags, contextConfirmation, 6 images, 6 videos, and engineerNotes. Return ONLY valid JSON.`;
         } else if (currentMode === 'surreal') {
             userTextContent = `You are a Surreal Metamorphosis Specialist.
 
@@ -609,7 +609,7 @@ Output the 6-stage pipeline in JSON format as per the system instructions.`;
 
         const constructionFrameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique construction camera, like a camera mounted on a nearby crane or scaffolding looking diagonally down from the side, not a distant drone or helicopter. The main construction object must be close, large, and readable, occupying roughly 65-80% of the frame height, with workers, machinery, and immediate work zones visible around it. Absolutely NO far aerial establishing shot, NO tiny distant construction site, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
         const surrealFrameRule = 'Single full-frame vertical 9:16 TikTok image. One continuous scene only. Close elevated 30-degree oblique cinematic camera, not a distant drone or helicopter. The single surreal subject must be close, large, and readable, occupying roughly 65-80% of the frame height, with its material transformation clearly visible. Absolutely NO construction site, NO workers, NO helmets, NO cranes, NO excavators, NO scaffolding, NO concrete pour, NO foundation, NO architectural building process. Absolutely NO far aerial establishing shot, NO tiny distant subject, NO 90-degree top-down view, NO nadir view, NO orthographic plan, NO blueprint/map view. Show exactly ONE photographic moment for this stage. Do NOT visualize the timelapse sequence. Do NOT show multiple stages, multiple moments, progression strips, comparisons, or several images inside the same canvas. NO collage, NO triptych, NO split screen, NO storyboard, NO before-and-after layout, NO grid, NO multiple panels. Preserve the same background, camera height, lens angle, perspective, horizon line, object scale, and proportions for timelapse stability. ';
-        const transformFrameRule = 'Ultra realistic cinematic top-down shot, elevated 25-degree angle looking down from above, 35mm full-frame lens. A human hand resting above a dark industrial metal table. In the center of the open palm lies a compact futuristic artifact, appearing as advanced alien technology. The artifact occupies roughly 35-40% of the frame height, with the full hand, table surface, and moody dark workshop background clearly visible. Photorealistic skin texture, realistic fingers and palm anatomy, detailed veins, natural hand position. Moody workshop lighting, dramatic shadows, metallic reflections, shallow depth of field, cinematic composition. High-end sci-fi design language, premium industrial design, hard surface details, glowing energy lines, futuristic materials. The object looks inactive and compact, as if it is about to transform. Shot on professional cinema camera, ultra realistic, HDR, extremely detailed, 8k, sharp focus. Vertical 9:16 aspect ratio. No text, no watermark, no extra hands, no distortion, no deformed fingers, no blurry details. ';
+        const transformFrameRule = 'Ultra realistic cinematic shot, elevated 25-degree angle looking down from above, 35mm full-frame lens. A compact futuristic artifact, appearing as advanced alien technology, lies alone on a wooden lacquered table. The wooden surface has worn lacquer and visible scratches from time. The artifact occupies roughly 35-40% of the frame height, with the full wooden table surface and moody dark background clearly visible. Absolutely NO hands or people in the frame. Moody lighting, dramatic shadows, reflections on the wood, shallow depth of field, cinematic composition. High-end sci-fi design language, premium industrial design, hard surface details, glowing energy lines, futuristic materials. The object looks inactive and compact, as if it is about to transform. Shot on professional cinema camera, ultra realistic, HDR, extremely detailed, 8k, sharp focus. Vertical 9:16 aspect ratio. No text, no watermark, no hands, no distortion, no deformed fingers, no blurry details. ';
         const frameRule = currentMode === 'surreal' ? surrealFrameRule
             : currentMode === 'transform' ? transformFrameRule
             : constructionFrameRule;
@@ -678,13 +678,13 @@ Output the 6-stage pipeline in JSON format as per the system instructions.`;
             console.log(`[Timelapse/Transform] Generating Video ${videoIndex + 1} — Transformation from Capsule ${videoIndex + 1}...`);
             const capsuleB64 = fs.readFileSync(capsuleImgPath, { encoding: 'base64' });
 
-            const transformVideoPrefix = `DURATION: exactly 8 seconds. CAMERA: completely stationary, locked, 35mm lens, elevated 25-degree angle looking down from above, the artifact on the palm fills 35-40% of frame.
+            const transformVideoPrefix = `DURATION: exactly 8 seconds. CAMERA: completely stationary, locked, 35mm lens, elevated 25-degree angle looking down from above, the artifact lies on a wooden lacquered table with worn lacquer and scratches.
 
 CRITICAL PACING (NO INITIAL DELAY): The action must start IMMEDIATELY at 0:00. Do NOT wait or pause at the beginning.
 SCENE STRUCTURE:
-0.0-0.5 sec — Video starts and the artifact on the open palm INSTANTLY activates with a bright energy flash. No idle waiting.
-0.5-6.0 sec — EXTREMELY DETAILED, SLOW TRANSFORMATION. The object expands piece by piece into a sci-fi weapon. Show complex internal mechanisms, micro-motors, gears, and glowing energy cores. The barrel extends, the handle forms, and the sights lock into place. This process must be highly detailed, deliberate, and clearly visible, taking up the majority of the video.
-6.0-7.5 sec — The transformation completes. The person naturally closes their fingers and firmly grips the fully formed weapon. Realistic weight response and hand movement.
+0.0-1.5 sec — Video starts. A person's hand (or both hands) enters the frame, takes the artifact from the wooden table, and it instantly activates with a bright energy flash as the transformation begins. No idle waiting.
+1.5-6.5 sec — EXTREMELY DETAILED, SLOW TRANSFORMATION. The object expands piece by piece into a sci-fi weapon while being held. Show complex internal mechanisms, micro-motors, gears, and glowing energy cores. The barrel extends, the handle forms, and the sights lock into place. This process must be highly detailed, deliberate, and clearly visible, taking up the majority of the video.
+6.5-7.5 sec — The transformation completes. The person firmly grips the fully formed weapon. Realistic weight response and hand movement.
 7.5-8.0 sec — The weapon is held still in the hand, locked and loaded. Final energy pulse.
 
 QUALITY: Photorealistic skin, realistic mechanical motion, Hollywood sci-fi quality, industrial hard-surface design. Smooth camera, no shaking, no cuts, no scene changes. Ultra realistic, high detail, dramatic lighting, premium VFX, viral TikTok style.
@@ -746,14 +746,14 @@ Negative: ugly hands, deformed fingers, blurry hand, extra digits, text, waterma
         const startB64 = fs.readFileSync(startImgPath, { encoding: 'base64' });
         const endB64 = fs.readFileSync(endImgPath, { encoding: 'base64' });
 
-        // Mode `start_end_image` enables smooth transition between two frames
+        // Mode `start_end_image` enables smooth transition between two frames; omni_flash does not support it, so use components
         const generatedVideoPath = await generateVideoViaGLabs({
             prompt: `STATIC CAMERA. TIMELAPSE TRANSITION. ${activeAudioRule} ${prompt}`,
             model: videoModel || 'veo_31_lite', 
             sectionDir: TIMELAPSE_DIR,
             subFolder: subFolder,
             sceneIndex: videoIndex,
-            mode: 'start_end_image',
+            mode: videoModel === 'omni_flash' ? 'components' : 'start_end_image',
             resolution: '720p',
             referenceImages: [
                 { data: `data:image/${getExt(startImgPath)};base64,${startB64}` },

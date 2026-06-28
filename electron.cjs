@@ -20,7 +20,9 @@ const { registerGLabsHandlers } = require('./glabs-handlers.cjs');
 const { registerStoryHandlers } = require('./story-handlers.cjs');
 const { registerCartoonHandlers } = require('./cartoon-handlers.cjs');
 const { registerSurviveHandlers } = require('./survive-handlers.cjs');
+const { registerLocalizeHandlers } = require('./localize-handlers.cjs');
 const { registerExportHandlers } = require('./export-handlers.cjs');
+const { registerPrimateCastHandlers } = require('./primatecast-handlers.cjs');
 
 // ── Новые модули (П.1, П.3, П.4, П.5) ──────────────────────────────────────
 const { queueManager, STATUS, TASK_TYPE } = require('./queue-manager.cjs');
@@ -38,6 +40,8 @@ const MEDIA_ROOTS = [
     'CinematicTimelapse',
     'Cartoons',
     'Survive',
+    'TikTokLocalizer',
+    'PrimateCast',
     'Audio',
     'Images',
     'Image',
@@ -260,6 +264,8 @@ app.whenReady().then(async () => {
     registerStoryHandlers(ipcMain);
     registerCartoonHandlers(ipcMain);
     registerSurviveHandlers(ipcMain);
+    registerLocalizeHandlers(ipcMain);
+    registerPrimateCastHandlers(ipcMain);
 
     createWindow();
 });

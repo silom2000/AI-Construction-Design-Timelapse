@@ -109,3 +109,8 @@ Audio/test_*.mp3
 
 # Cartoon generated assets
 Cartoons/
+
+# Generated project directories and test videos
+PrimateCast/
+TikTokLocalizer/
+Monky.mp4

@@ -254,10 +254,14 @@ const generateVideoViaGLabs = async (options = {}) => {
         let finalRefImages = referenceImages;
 
         if (finalRefImages && finalRefImages.length > 0 && finalMode === 'text_to_video') {
-            finalMode = finalRefImages.length >= 2 ? 'start_end_image' : 'start_image';
+            if (model === 'omni_flash' && finalRefImages.length >= 2) {
+                finalMode = 'components';
+            } else {
+                finalMode = finalRefImages.length >= 2 ? 'start_end_image' : 'start_image';
+            }
+        } else if (model === 'omni_flash' && finalMode === 'start_end_image') {
+            finalMode = 'components';
         }
-        
-        // Removed omni_flash restriction to allow start_end_image mode for Timelapse transitions
 
 
         console.log(`[G-Labs VID Int] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${finalMode} subFolder=${subFolder}`);
@@ -441,9 +445,14 @@ function registerGLabsHandlers(ipcMain) {
             let finalRefImages = referenceImages;
 
             if (finalRefImages && finalRefImages.length > 0 && finalMode === 'text_to_video') {
-                finalMode = finalRefImages.length >= 2 ? 'start_end_image' : 'start_image';
+                if (model === 'omni_flash' && finalRefImages.length >= 2) {
+                    finalMode = 'components';
+                } else {
+                    finalMode = finalRefImages.length >= 2 ? 'start_end_image' : 'start_image';
+                }
+            } else if (model === 'omni_flash' && finalMode === 'start_end_image') {
+                finalMode = 'components';
             }
-            // Removed omni_flash restriction to allow start_end_image mode
 
             console.log(`[G-Labs VID] prompt="${prompt.substring(0, 60)}..." model=${model} mode=${finalMode} subFolder=${subFolder}`);
 

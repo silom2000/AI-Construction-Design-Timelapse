@@ -7,9 +7,11 @@ import TimelapseTab from './TimelapseTab';
 import { StoryTab } from './StoryTab';
 import { SurviveTab } from './SurviveTab';
 import CartoonTab from './CartoonTab';
+import LocalizeTab from './LocalizeTab';
+import PrimateCastTab from './PrimateCastTab';
 import './TimelapseTab.css';
 
-type AppTab = 'timelapse' | 'skeleton' | 'health' | 'objects' | 'glabs' | 'story' | 'cartoon' | 'survive';
+type AppTab = 'timelapse' | 'skeleton' | 'health' | 'objects' | 'glabs' | 'story' | 'cartoon' | 'survive' | 'localize' | 'primatecast';
 
 function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('timelapse');
@@ -62,8 +64,16 @@ function App() {
         <button style={tabStyle('cartoon')} onClick={() => setActiveTab('cartoon')}>
           🎨 Cartoon Pro
         </button>
+        <button style={tabStyle('localize')} onClick={() => setActiveTab('localize')}>
+          🌍 Localize
+        </button>
+        {/*
         <button style={tabStyle('glabs')} onClick={() => setActiveTab('glabs')}>
           🧪 G-Labs
+        </button>
+        */}
+        <button style={tabStyle('primatecast')} onClick={() => setActiveTab('primatecast')}>
+          🎙️ PrimateCast
         </button>
       </div>
 
@@ -103,6 +113,16 @@ function App() {
       {/* ── G-LABS TAB ─────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'glabs' ? 'flex' : 'none', flexDirection: 'column' }}>
         <GLabsTab />
+      </div>
+
+      {/* ── LOCALIZE TAB ─────────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'localize' ? 'flex' : 'none', flexDirection: 'column' }}>
+        <LocalizeTab />
+      </div>
+
+      {/* ── PRIMATECAST TAB ──────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'primatecast' ? 'flex' : 'none', flexDirection: 'column', backgroundColor: '#1e1e1e' }}>
+        <PrimateCastTab />
       </div>
 
     </div>

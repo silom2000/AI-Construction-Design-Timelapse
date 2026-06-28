@@ -1,4 +1,44 @@
-﻿export interface GLabsTask {
+// TikTok Video Localizer
+export interface LocalizeCharacter {
+  name: string;
+  description: string;
+  appearance: string;
+  imagePrompt: string;
+  generatedImageUrl?: string | null;
+  bestFrameUrl?: string | null;
+}
+
+export interface DialogueSpeaker {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export interface DialogueSegment {
+  speakerId: number;
+  speakerName: string;
+  text: string;
+  translatedText?: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  videoUrl?: string;
+  audioUrl?: string;
+}
+
+export interface DialogueResult {
+  projectFolder: string;
+  transcript: string;
+  transcriptWords: Array<{ start: number; end: number; word: string }>;
+  sceneDescription: string;
+  speakers: DialogueSpeaker[];
+  segments: DialogueSegment[];
+  characters: LocalizeCharacter[];
+  frames: string[];
+  videoUrl: string;
+}
+
+export interface GLabsTask {
   task_id: string;
   type: 'image' | 'video';
   status: 'pending' | 'running' | 'completed' | 'failed';
@@ -105,6 +145,26 @@ export interface IElectronAPI {
   surviveGenerateAudio: (data: any) => Promise<string>,
   surviveGenerateVideo: (data: any) => Promise<string>,
 
+  // TikTok Video Localizer — Dialogue Processing
+  localizeAnalyzeDialogue: (videoBase64: string) => Promise<DialogueResult>,
+  localizeTranslateSegments: (projectFolder: string, segments: DialogueSegment[], targetLanguage: string) => Promise<DialogueSegment[]>,
+  localizeGenerateSegmentVideo: (data: {
+    projectFolder: string;
+    segmentIndex: number;
+    segments: DialogueSegment[];
+    targetLanguage: string;
+    characterImages: Array<{ speakerId: number; imageBase64: string }>;
+  }) => Promise<{ videoUrl: string; audioUrl: string | null }>,
+  localizeBatchGenerateSegments: (data: {
+    projectFolder: string;
+    segments: DialogueSegment[];
+    targetLanguage: string;
+    characterImages: Array<{ speakerId: number; imageBase64: string }>;
+  }) => Promise<Array<{ segmentIndex: number; videoUrl: string | null; audioUrl: string | null; status?: string; error?: string }>>,
+  localizeRegenerateCharacterImage: (projectFolder: string, characterIndex: number, customPrompt?: string) => Promise<string>,
+  localizeRetranslate: (projectFolder: string, transcript: string, targetLanguage: string) => Promise<{ translatedText: string }>,
+  localizeExtractFrames: (videoBase64: string, timestamps: number[], projectFolder?: string) => Promise<(string | null)[]>,
+
   // G-Labs Integration
   glabsHealthCheck: () => Promise<{ running: boolean; tasks_pending?: number; tasks_running?: number; error?: string }>,
   glabsLaunch: () => Promise<{ success: boolean; error?: string }>,
@@ -120,6 +180,20 @@ export interface IElectronAPI {
   }) => Promise<string>,
   onGLabsTaskProgress: (callback: (data: GLabsProgressData) => void) => void,
   removeGLabsProgressListener: () => void,
+
+  // PrimateCast
+  primatecastGenerateCharacterIdea: (data: { promptText: string, provider: string }) => Promise<any>,
+  primatecastGenerateBaseImage: (data: { visualPrompt: string, model: string }) => Promise<{ imagePath: string, base64: string }>,
+  primatecastSaveCharacter: (data: any) => Promise<any[]>,
+  primatecastGetCharacters: () => Promise<any[]>,
+  primatecastDeleteCharacter: (id: string) => Promise<any[]>,
+  primatecastGenerateEpisode: (data: any) => Promise<{ folder: string, clips: string[] }>,
+  primatecastGenerateSegment: (data: any) => Promise<{ videoPath: string, videoBase64: string, segmentIndex: number }>,
+  primatecastAutoTopic: (data: { language: string, country: string, host1Name: string, host2Name: string, mode?: 'trending' | 'custom_topic' | 'custom_text', customInput?: string }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, script: string, scriptRu?: string, overlongLines?: any[] }>,
+  primatecastAnalyzeVideo: (data: { videoBase64: string, language: string, host1Name: string, host2Name: string }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, script: string, scriptRu?: string, overlongLines?: any[] }>,
+  primatecastSaveAllPrompts: (data: any) => Promise<{ success: boolean }>,
+  onPrimatecastProgress: (callback: (data: { status: string, progress?: number }) => void) => void,
+  removePrimatecastProgressListener: () => void,
 }
 
 declare global {
