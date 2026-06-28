@@ -45,6 +45,7 @@ const PrimateCastTab: React.FC = () => {
   const [customInput, setCustomInput] = useState('');
   const [videoBase64, setVideoBase64] = useState<string>('');
   const [selectedVideoName, setSelectedVideoName] = useState<string>('');
+  const [fullVersion, setFullVersion] = useState(false);
 
   // Computed script stats
   const scriptWords = script.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -177,7 +178,8 @@ const PrimateCastTab: React.FC = () => {
           videoBase64: videoBase64,
           language: market.language,
           host1Name: host1Char.name,
-          host2Name: host2Char.name
+          host2Name: host2Char.name,
+          shortVersion: !fullVersion
         });
       } else {
         result = await window.electronAPI.primatecastAutoTopic({
@@ -186,7 +188,8 @@ const PrimateCastTab: React.FC = () => {
           host1Name: host1Char.name,
           host2Name: host2Char.name,
           mode: topicMode,
-          customInput: customInput
+          customInput: customInput,
+          shortVersion: !fullVersion
         });
       }
       setScript(result.script);
@@ -682,6 +685,42 @@ const PrimateCastTab: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Full Version Toggle Checkbox */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', marginTop: '4px' }}>
+          <input
+            type="checkbox"
+            checked={fullVersion}
+            onChange={(e) => setFullVersion(e.target.checked)}
+            id="primatecast-full-version"
+            style={{
+              width: '18px',
+              height: '18px',
+              cursor: 'pointer',
+              accentColor: '#3b82f6',
+              flexShrink: 0
+            }}
+          />
+          <label
+            htmlFor="primatecast-full-version"
+            style={{
+              fontSize: '13px',
+              color: '#f8fafc',
+              cursor: 'pointer',
+              userSelect: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              lineHeight: '1.4'
+            }}
+          >
+            <span style={{ fontWeight: 'bold' }}>Полная версия подкаста (более 1 минуты)</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+              {fullVersion 
+                ? 'Генерирует полный сценарий (13-14 реплик). Длительность видео ~60-80 секунд.' 
+                : 'Короткая версия (6-7 реплик). Экономит 50% стоимости генерации. Длительность видео ~30-40 секунд.'}
+            </span>
+          </label>
+        </div>
 
         {/* Auto topic button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

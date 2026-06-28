@@ -493,8 +493,8 @@ Return ONLY valid JSON in this format:
     }
 
     // Auto-Topic: fetch REAL trending topics from Google Trends RSS, search custom topics, or adapt custom text
-    ipcMain.handle('primatecast-auto-topic', async (event, { language, country, host1Name, host2Name, mode = 'trending', customInput = '' }) => {
-        console.log(`[PrimateCast AutoTopic] lang=${language} country=${country} mode=${mode}`);
+    ipcMain.handle('primatecast-auto-topic', async (event, { language, country, host1Name, host2Name, mode = 'trending', customInput = '', shortVersion = false }) => {
+        console.log(`[PrimateCast AutoTopic] lang=${language} country=${country} mode=${mode} shortVersion=${shortVersion}`);
 
         let trendingTopics = [];
         let topicData = null;
@@ -598,18 +598,18 @@ Output ONLY valid JSON (no other text):
             event.sender.send('primatecast-progress', { status: '🔍 Ищу информацию в сети интернет...', progress: 15 });
             searchResults = await searchWeb(customInput);
 
-            event.sender.send('primatecast-progress', { status: '🤖 Форматирую выбранную тему...', progress: 30 });
+            // Select an ironic angle and structure the custom topic
+            event.sender.send('primatecast-progress', { status: '🤖 Анализирую тему и определяю угол подачи...', progress: 40 });
             const selectPrompt = `You are a content strategist for a viral primate podcast.
-The user wants to record a podcast on this topic: "${customInput}"
-
-Here is current background information from search results (use it if relevant):
+The user has requested the following custom topic: "${customInput}"
+Here is some recent web search context about this topic:
 ${searchResults}
 
-Format this topic for the podcast. Establish a funny, sarcastic primate perspective angle (comparing human behavior to monkeys/animals).
+Choose a funny ironic angle that compares this topic to how animals/primates behave naturally, and prepare the metadata.
 
 Output ONLY valid JSON (no other text):
 {
-  "topic": "Clean topic name in ${language}",
+  "topic": "Topic name in ${language}",
   "topicEn": "Topic name in English",
   "topicRu": "Topic name translated to Russian",
   "hook": "One viral-worthy sentence hook in ${language} that makes people click",
@@ -622,34 +622,31 @@ Output ONLY valid JSON (no other text):
             ], true);
 
             const topicMatch = topicRaw.match(/\{[\s\S]*\}/);
-            if (!topicMatch) throw new Error('LLM could not format topic. Raw: ' + topicRaw.substring(0, 200));
+            if (!topicMatch) throw new Error('LLM could not select an angle. Raw: ' + topicRaw.substring(0, 200));
             topicData = JSON.parse(topicMatch[0]);
 
         } else if (mode === 'custom_text') {
-            // Mode: Custom Text/Script
-            event.sender.send('primatecast-progress', { status: '🤖 Выделяю тему из вашего текста...', progress: 20 });
-            const selectPrompt = `You are a content strategist for a viral primate podcast.
-The user provided a raw text for adaptation:
-"${customInput.substring(0, 1500)}"
-
-Extract and format the topic information.
+            // Mode: Custom Text - LLM parses topic and hook directly from raw text
+            event.sender.send('primatecast-progress', { status: '🤖 Читаю и анализирую ваш текст...', progress: 20 });
+            const parsePrompt = `Extract the main topic, hook, and write a funny primate perspective angle from this draft text:
+"${customInput}"
 
 Output ONLY valid JSON (no other text):
 {
-  "topic": "Short extracted topic title in ${language}",
-  "topicEn": "Topic title in English",
-  "topicRu": "Topic title translated to Russian",
-  "hook": "Create a viral hook sentence in ${language} based on the text",
+  "topic": "Main topic title in ${language}",
+  "topicEn": "Main topic title in English",
+  "topicRu": "Main topic title translated to Russian",
+  "hook": "Create a hook sentence in ${language} summarizing the draft",
   "hookRu": "Hook sentence translated to Russian",
-  "angle": "Primate perspective angle of this text in ${language}"
+  "angle": "Funny ironic primate perspective angle in ${language}"
 }`;
 
             const topicRaw = await callPollinations([
-                { role: 'user', content: selectPrompt }
+                { role: 'user', content: parsePrompt }
             ], true);
 
             const topicMatch = topicRaw.match(/\{[\s\S]*\}/);
-            if (!topicMatch) throw new Error('LLM could not parse text topic. Raw: ' + topicRaw.substring(0, 200));
+            if (!topicMatch) throw new Error('LLM could not parse draft. Raw: ' + topicRaw.substring(0, 200));
             topicData = JSON.parse(topicMatch[0]);
         }
 
@@ -679,7 +676,7 @@ COUNT YOUR WORDS. EVERY LINE MUST BE 10-20 WORDS MAXIMUM.
 ══════════════════════════════════════
 
 CRITICAL STRUCTURE:
-- Total: exactly 13-14 lines
+- Total: exactly ${shortVersion ? '6-7' : '13-14'} lines
 - Each line format: "${host1Name}: [dialogue]" or "${host2Name}: [dialogue]"
 - NO stage directions, NO asterisks, NO descriptions.
 - INTERACTIVE DIALOGUE: The hosts must talk TO each other and react to each other's points (e.g., "Wait, is that true?", "Exactly, {host1Name}!", "Huh?"). They must ask questions and address each other by name at least 2-3 times to make it feel like a real podcast debate.
@@ -708,7 +705,18 @@ If a line exceeds 20 words, the audio will be CUT OFF. This ruins the video.
 COUNT YOUR WORDS. EVERY LINE MUST BE 10-20 WORDS MAXIMUM.
 ══════════════════════════════════════
 
-CRITICAL TikTok STRUCTURE — FOLLOW EXACTLY:
+${shortVersion ? `CRITICAL TikTok STRUCTURE — FOLLOW EXACTLY:
+
+▶ LINE 1 — THE HOOK (1-2 seconds). THIS IS THE MOST IMPORTANT LINE. MAX 10 WORDS.
+   Must be a SHOCKING or PROVOCATIVE statement that makes a human STOP scrolling instantly.
+   FORBIDDEN first words: "Hello", "Welcome", "Today", "So,", "Did you know", "Hey", "Guys", "Bonjour", "Hallo"
+
+▶ LINES 2-3 — SETUP/DEVELOPMENT: Establish the human behavior and primate perspective. Punchy. 12-18 words each.
+
+▶ LINES 4-5 — TWIST: Surprising fact that reframes everything. 15-18 words each.
+
+▶ LINES 6-7 — PUNCHLINE: Final memorable line. Humans feel called out but laugh. MAX 15 WORDS.` 
+: `CRITICAL TikTok STRUCTURE — FOLLOW EXACTLY:
 
 ▶ LINE 1 — THE HOOK (1-2 seconds). THIS IS THE MOST IMPORTANT LINE. MAX 10 WORDS.
    Must be a SHOCKING or PROVOCATIVE statement that makes a human STOP scrolling instantly.
@@ -720,11 +728,11 @@ CRITICAL TikTok STRUCTURE — FOLLOW EXACTLY:
 
 ▶ LINES 10-12 — TWIST: Surprising fact that reframes everything. 15-18 words each.
 
-▶ LINES 13-14 — PUNCHLINE: Final memorable line. Humans feel called out but laugh. MAX 15 WORDS.
+▶ LINES 13-14 — PUNCHLINE: Final memorable line. Humans feel called out but laugh. MAX 15 WORDS.`}
 
 RULES:
 - Each line format: "${host1Name}: [dialogue]" or "${host2Name}: [dialogue]"
-- Total: exactly 13-14 lines
+- Total: exactly ${shortVersion ? '6-7' : '13-14'} lines
 - HARD LIMIT: 20 words per line — COUNT BEFORE WRITING.
 - NO stage directions, NO asterisks, NO descriptions.
 - INTERACTIVE DIALOGUE: The hosts must talk TO each other and react to each other's points (e.g., "Wait, is that true?", "Exactly, {host1Name}!", "Huh?"). They must ask questions and address each other by name at least 2-3 times.
@@ -788,8 +796,8 @@ ${scriptRaw}`;
     });
 
     // 10. Analyze Video and Generate Podcast script from it
-    ipcMain.handle('primatecast-analyze-video', async (event, { videoBase64, language, host1Name, host2Name }) => {
-        console.log(`[PrimateCast Video Analysis] Received base64 video, lang=${language}`);
+    ipcMain.handle('primatecast-analyze-video', async (event, { videoBase64, language, host1Name, host2Name, shortVersion = false }) => {
+        console.log(`[PrimateCast Video Analysis] Received base64 video, lang=${language} shortVersion=${shortVersion}`);
         
         if (!videoBase64) throw new Error("Данные видео не переданы");
 
@@ -832,13 +840,13 @@ We have transcribed a reference video. Here is the transcript:
 
 Analyze this transcript:
 1. Extract the main topic, hook, and core message.
-2. Write a new "PrimateCast" script of exactly 13-14 lines in ${language} that discusses a similar topic or uses a similar viral hook, adapted for our two hosts:
+2. Write a new "PrimateCast" script of exactly ${shortVersion ? '6-7' : '13-14'} lines in ${language} that discusses a similar topic or uses a similar viral hook, adapted for our two hosts:
    - ${host1Name} (chimpanzee): calm, intellectual, slightly philosophical, uses precise observations
    - ${host2Name} (macaque): energetic, sarcastic, street-smart, reacts emotionally
 
 Technical constraints for the script — NON-NEGOTIABLE:
 - Each line format: "Speaker: dialogue"
-- Exactly 13-14 lines
+- Exactly ${shortVersion ? '6-7' : '13-14'} lines
 - 10-20 words per line (non-negotiable, count words!)
 - NO stage directions, NO descriptions, NO asterisks.
 - The hosts must talk TO each other, react, and debate.
