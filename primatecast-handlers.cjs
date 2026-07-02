@@ -581,85 +581,32 @@ Return ONLY valid JSON in this format:
         let searchResults = '';
 
         if (mode === 'trending') {
-            // Map country to Google Trends geo code
-            const geoMap = {
-                'United States': 'US',
-                'United Kingdom': 'GB',
-                'France': 'FR',
-                'Germany': 'DE'
-            };
-            const geo = geoMap[country] || 'US';
-
-            // Step 1: Fetch REAL trending topics from Google Trends RSS feed
-            event.sender.send('primatecast-progress', { status: `🌐 Запрос к Google Trends (${country})...`, progress: 5 });
+            // Step 1: Search the web for current TikTok trends
+            event.sender.send('primatecast-progress', { status: `🌐 Поиск популярных трендов TikTok в ${country}...`, progress: 10 });
 
             try {
-                const trendsUrl = `https://trends.google.com/trending/rss?geo=${geo}`;
-                console.log(`[PrimateCast AutoTopic] Fetching: ${trendsUrl}`);
-
-                const response = await fetch(trendsUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Accept': 'application/rss+xml, application/xml, text/xml'
-                    }
-                });
-
-                if (!response.ok) throw new Error(`Google Trends returned ${response.status}`);
-
-                const xml = await response.text();
-                console.log(`[PrimateCast AutoTopic] Got RSS, length: ${xml.length}`);
-
-                // Parse topic titles from RSS <item> tags
-                const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
-                for (const itemMatch of itemMatches) {
-                    const itemXml = itemMatch[1];
-                    let titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
-                    if (!titleMatch) {
-                        titleMatch = itemXml.match(/<title>(.*?)<\/title>/);
-                    }
-                    if (titleMatch) {
-                        const title = titleMatch[1].trim()
-                            .replace(/&amp;/g, '&')
-                            .replace(/&quot;/g, '"')
-                            .replace(/&apos;/g, "'")
-                            .replace(/&#39;/g, "'")
-                            .replace(/&lt;/g, '<')
-                            .replace(/&gt;/g, '>');
-                        if (title && title.length > 2) {
-                            trendingTopics.push(title);
-                        }
-                    }
-                }
-
-                // Limit to top 15 topics
-                trendingTopics = trendingTopics.slice(0, 15);
-                console.log(`[PrimateCast AutoTopic] Found ${trendingTopics.length} trending topics:`, trendingTopics);
-
-            } catch (fetchErr) {
-                console.error('[PrimateCast AutoTopic] Google Trends fetch failed:', fetchErr.message);
-                // Fallback: use date-aware LLM prompt without real search
-                event.sender.send('primatecast-progress', { status: '⚠️ Google Trends недоступен, использую LLM...', progress: 10 });
+                const searchQuery = `viral tiktok trends challenges hashtags ${country} this week`;
+                console.log(`[PrimateCast AutoTopic] Searching web for TikTok trends: "${searchQuery}"`);
+                searchResults = await searchWeb(searchQuery);
+            } catch (searchErr) {
+                console.error('[PrimateCast AutoTopic] Web search for TikTok trends failed:', searchErr.message);
             }
 
-            // Step 2: Pass REAL trends (or fallback) to LLM
+            // Step 2: Pass search context (or fallback) to LLM to select topic
             event.sender.send('primatecast-progress', { status: '🤖 Выбираю лучшую тему для подкаста...', progress: 30 });
 
-            const topicsContext = trendingTopics.length > 0
-                ? `Here are TODAY'S REAL trending topics in ${country} from Google Trends:\n${trendingTopics.map((t, i) => `${i + 1}. ${t}`).join('\n')}\n\nPick the BEST ONE from this list that works for a primate podcast.`
-                : `Today is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. Suggest a trending topic in ${country} about human social behavior, money, work, or relationships.`;
+            const selectPrompt = `You are a content strategist for a viral primate podcast aimed at TikTok.
+We searched the web for current TikTok trends, popular hashtags, and viral challenges in ${country}:
+${searchResults}
 
-            const selectPrompt = `You are a content strategist for a viral primate podcast.
-
-${topicsContext}
-
-Choose ONE topic that:
-- Relates to human behavior, society, money, work, relationships or lifestyle
+Choose ONE trending topic, challenge, or popular meme from this list that:
+- Relates to human behavior, society, work, relationships, digital lifestyle, or current internet humor
 - Has a funny ironic angle when compared to how animals/primates actually behave
-- Will resonate with viewers in ${country}
+- Will resonate with short-form video viewers in ${country}
 
 Output ONLY valid JSON (no other text):
 {
-  "topic": "Topic name in ${language}",
+  "topic": "Topic name/challenge in ${language}",
   "topicEn": "Topic name in English",
   "topicRu": "Topic name translated to Russian",
   "hook": "One viral-worthy sentence hook in ${language} that makes people click",
