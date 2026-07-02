@@ -1,6 +1,7 @@
 const { ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const sharp = require('sharp');
 const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 const { callPollinations } = require('./skeleton-handlers.cjs');
 
@@ -92,6 +93,71 @@ function saveEpisodePromptsMetadata(episodeDir, episodeTitle, newPrompt) {
     }
     
     fs.writeFileSync(txtPath, txtContent, 'utf8');
+}
+
+/**
+ * Ensures the image at inputPath has the target aspect ratio by center-cropping it if necessary.
+ * Saves the result to outputPath and returns the path to the resized image.
+ */
+async function ensureImageAspectRatio(inputPath, targetAspectRatio, outputPath) {
+    if (!fs.existsSync(inputPath)) {
+        throw new Error(`Input image does not exist: ${inputPath}`);
+    }
+
+    try {
+        const metadata = await sharp(inputPath).metadata();
+        const originalWidth = metadata.width;
+        const originalHeight = metadata.height;
+
+        if (!originalWidth || !originalHeight) {
+            return inputPath;
+        }
+
+        const currentRatio = originalWidth / originalHeight;
+        
+        let targetRatioVal = 16 / 9;
+        if (targetAspectRatio === '9:16') {
+            targetRatioVal = 9 / 16;
+        }
+
+        // If ratio is already very close, just return inputPath
+        if (Math.abs(currentRatio - targetRatioVal) < 0.05) {
+            console.log(`[PrimateCast] Image aspect ratio matches target. Reusing original.`);
+            return inputPath;
+        }
+
+        console.log(`[PrimateCast] Mismatch in aspect ratio (current: ${currentRatio.toFixed(4)}, target: ${targetRatioVal.toFixed(4)}). Center-cropping image...`);
+
+        let newWidth, newHeight;
+        if (targetAspectRatio === '9:16') {
+            newWidth = Math.round(originalHeight * 9 / 16);
+            newHeight = originalHeight;
+            if (newWidth > originalWidth) {
+                newWidth = originalWidth;
+                newHeight = Math.round(originalWidth * 16 / 9);
+            }
+        } else { // 16:9
+            newWidth = originalWidth;
+            newHeight = Math.round(originalWidth * 9 / 16);
+            if (newHeight > originalHeight) {
+                newHeight = originalHeight;
+                newWidth = Math.round(originalHeight * 16 / 9);
+            }
+        }
+
+        await sharp(inputPath)
+            .resize(newWidth, newHeight, {
+                fit: 'cover',
+                position: 'center'
+            })
+            .toFile(outputPath);
+
+        console.log(`[PrimateCast] Cropped image saved to: ${outputPath}`);
+        return outputPath;
+    } catch (err) {
+        console.error(`[PrimateCast] Error resizing image:`, err);
+        return inputPath; // Fallback to original
+    }
 }
 
 function registerPrimateCastHandlers(ipcMain) {
@@ -224,23 +290,31 @@ Return ONLY valid JSON in this format:
         const hostImages = {};
         for (const host of [host1, host2]) {
             const hClothes = host.id === host1Id ? clothes1 : clothes2;
-            const episodeVisualPrompt = `A highly detailed, photorealistic ${host.name}. ${host.visualPrompt} Wearing ${hClothes}. Sitting in ${location}.`;
-            
-            let refBase64 = null;
-            if (fs.existsSync(host.imagePath)) {
-                refBase64 = fs.readFileSync(host.imagePath, 'base64');
-            }
+            const hasCustomClothes = hClothes && hClothes.trim() !== '';
 
-            const imgPaths = await generateImageViaGLabs({
-                prompt: episodeVisualPrompt,
-                model: 'nano_banana_2', // Good for styles/references
-                aspectRatio,
-                sectionDir: episodeDir,
-                subFolder: '',
-                sceneIndex: `host_${host.id}`,
-                referenceImages: refBase64 ? [{ data: refBase64 }] : []
-            });
-            hostImages[host.id] = imgPaths[0];
+            if (!hasCustomClothes && host.imagePath && fs.existsSync(host.imagePath)) {
+                console.log(`[PrimateCast] Using main base image for ${host.name} as no custom clothes specified.`);
+                const croppedPath = path.join(episodeDir, `host_${host.id}_cropped_${aspectRatio.replace(':', '_')}.jpg`);
+                hostImages[host.id] = await ensureImageAspectRatio(host.imagePath, aspectRatio, croppedPath);
+            } else {
+                const episodeVisualPrompt = `A highly detailed, photorealistic ${host.name}. ${host.visualPrompt} Wearing ${hClothes}. Sitting in ${location}.`;
+                
+                let refBase64 = null;
+                if (host.imagePath && fs.existsSync(host.imagePath)) {
+                    refBase64 = fs.readFileSync(host.imagePath, 'base64');
+                }
+
+                const imgPaths = await generateImageViaGLabs({
+                    prompt: episodeVisualPrompt,
+                    model: 'nano_banana_2', // Good for styles/references
+                    aspectRatio,
+                    sectionDir: episodeDir,
+                    subFolder: '',
+                    sceneIndex: `host_${host.id}`,
+                    referenceImages: refBase64 ? [{ data: refBase64 }] : []
+                });
+                hostImages[host.id] = imgPaths[0];
+            }
         }
 
         // Generate Video for each segment
@@ -317,16 +391,22 @@ Return ONLY valid JSON in this format:
         const cachedImgPath = path.join(hostImagesDir, `host_${speakerId}_${cacheSuffix}.jpg`);
         let hostImgPath;
 
-        if (fs.existsSync(cachedImgPath)) {
+        const speakerClothes = speakerId === host1Id ? clothes1 : clothes2;
+        const hasCustomClothes = speakerClothes && speakerClothes.trim() !== '';
+
+        if (!hasCustomClothes && speaker.imagePath && fs.existsSync(speaker.imagePath)) {
+            console.log(`[PrimateCast Segment] Using main base image for ${speaker.name} as no custom clothes specified.`);
+            const croppedPath = path.join(hostImagesDir, `host_${speakerId}_cropped_${aspectRatio.replace(':', '_')}.jpg`);
+            hostImgPath = await ensureImageAspectRatio(speaker.imagePath, aspectRatio, croppedPath);
+        } else if (fs.existsSync(cachedImgPath)) {
             console.log(`[PrimateCast Segment] Reusing cached image for ${speaker.name} (${aspectRatio})`);
             hostImgPath = cachedImgPath;
         } else {
             // Generate episode image for this speaker
-            const speakerClothes = speakerId === host1Id ? clothes1 : clothes2;
             const episodeVisualPrompt = `A highly detailed, photorealistic ${speaker.name}. ${speaker.visualPrompt} Wearing ${speakerClothes}. Sitting in ${location}.`;
 
             let refBase64 = null;
-            if (fs.existsSync(speaker.imagePath)) {
+            if (speaker.imagePath && fs.existsSync(speaker.imagePath)) {
                 refBase64 = fs.readFileSync(speaker.imagePath, 'base64');
             }
 
@@ -514,7 +594,7 @@ Return ONLY valid JSON in this format:
             event.sender.send('primatecast-progress', { status: `🌐 Запрос к Google Trends (${country})...`, progress: 5 });
 
             try {
-                const trendsUrl = `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`;
+                const trendsUrl = `https://trends.google.com/trending/rss?geo=${geo}`;
                 console.log(`[PrimateCast AutoTopic] Fetching: ${trendsUrl}`);
 
                 const response = await fetch(trendsUrl, {
@@ -529,21 +609,23 @@ Return ONLY valid JSON in this format:
                 const xml = await response.text();
                 console.log(`[PrimateCast AutoTopic] Got RSS, length: ${xml.length}`);
 
-                // Parse topic titles from RSS <title> tags
-                const titleMatches = xml.matchAll(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g);
-                for (const match of titleMatches) {
-                    const title = match[1].trim();
-                    if (title && title !== 'Google Trends' && title.length > 2) {
-                        trendingTopics.push(title);
+                // Parse topic titles from RSS <item> tags
+                const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
+                for (const itemMatch of itemMatches) {
+                    const itemXml = itemMatch[1];
+                    let titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
+                    if (!titleMatch) {
+                        titleMatch = itemXml.match(/<title>(.*?)<\/title>/);
                     }
-                }
-
-                // Also try simple <title> without CDATA
-                if (trendingTopics.length === 0) {
-                    const simpleTitles = xml.matchAll(/<title>(.*?)<\/title>/g);
-                    for (const match of simpleTitles) {
-                        const title = match[1].trim();
-                        if (title && title !== 'Google Trends Daily Trending Searches' && title.length > 2) {
+                    if (titleMatch) {
+                        const title = titleMatch[1].trim()
+                            .replace(/&amp;/g, '&')
+                            .replace(/&quot;/g, '"')
+                            .replace(/&apos;/g, "'")
+                            .replace(/&#39;/g, "'")
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>');
+                        if (title && title.length > 2) {
                             trendingTopics.push(title);
                         }
                     }
