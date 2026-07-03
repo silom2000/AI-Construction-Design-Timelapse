@@ -534,7 +534,7 @@ const PrimateCastTab: React.FC = () => {
               transition: 'all 0.2s'
             }}
           >
-            📈 Тренды Google Trends
+            📈 Тренды ТИК ТОК
           </button>
           <button
             onClick={() => setTopicMode('custom_topic')}
