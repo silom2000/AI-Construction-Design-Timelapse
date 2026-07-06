@@ -545,7 +545,7 @@ Output the 6-stage pipeline in JSON format as per the system instructions.`;
         // imgIndex is 0 to 3, representing Image 1 to 4
         const baseDir = subFolder ? path.join(TIMELAPSE_DIR, subFolder) : TIMELAPSE_DIR;
         if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
-        console.log(`[Timelapse] Generating Image ${imgIndex + 1} with model ${model || 'imagen4'}...`);
+        console.log(`[Timelapse] Generating Image ${imgIndex + 1} with model ${model || 'nano_banana_2'}...`);
 
         // --- Reference image: prioritize user reference if provided ---
         const finalRefImages = [];
@@ -626,7 +626,7 @@ Output the 6-stage pipeline in JSON format as per the system instructions.`;
 
         const savedPaths = await generateImageViaGLabs({
             prompt: finalPrompt,
-            model: model || 'imagen4',
+            model: model || 'nano_banana_2',
             aspectRatio: '9:16',
             count: 1,
             sectionDir: TIMELAPSE_DIR,

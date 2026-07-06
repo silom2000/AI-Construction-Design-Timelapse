@@ -461,7 +461,7 @@ function registerLocalizeHandlers(ipcMain) {
                 try {
                     const savedPaths = await generateImageViaGLabs({
                         prompt: characters[i].imagePrompt + ' Single full-frame vertical 9:16 TikTok image, one person only, photorealistic portrait, 8k detail, professional lighting, clean background.',
-                        model: 'imagen4',
+                        model: 'nano_banana_2',
                         aspectRatio: '9:16',
                         count: 1,
                         sectionDir: LOCALIZE_DIR,
@@ -666,7 +666,7 @@ function registerLocalizeHandlers(ipcMain) {
         const prompt = (customPrompt || char.imagePrompt) + ' Single full-frame vertical 9:16 TikTok image, photorealistic portrait, 8k detail, professional lighting.';
         const savedPaths = await generateImageViaGLabs({
             prompt,
-            model: 'imagen4',
+            model: 'nano_banana_2',
             aspectRatio: '9:16',
             count: 1,
             sectionDir: LOCALIZE_DIR,

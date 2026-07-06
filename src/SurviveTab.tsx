@@ -65,7 +65,7 @@ const STEP_LABELS: Record<number, string> = {
 
 export function SurviveTab() {
   const [language, setLanguage] = useState('Russian');
-  const [imageModel, setImageModel] = useState<'imagen4' | 'nano_banana_2' | 'nano_banana_pro'>('imagen4');
+  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
@@ -278,20 +278,6 @@ export function SurviveTab() {
         <div className="survive-form-group">
           <label className="survive-label">Image Model</label>
           <div className="survive-model-group">
-            <label className={`survive-model-option ${imageModel === 'imagen4' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="imageModel"
-                value="imagen4"
-                checked={imageModel === 'imagen4'}
-                onChange={(e) => setImageModel(e.target.value as any)}
-              />
-              <div className="survive-model-label">
-                <span className="survive-model-name">Imagen 4</span>
-                <span className="survive-model-desc">Google, High quality</span>
-              </div>
-            </label>
-
             <label className={`survive-model-option ${imageModel === 'nano_banana_2' ? 'selected' : ''}`}>
               <input
                 type="radio"

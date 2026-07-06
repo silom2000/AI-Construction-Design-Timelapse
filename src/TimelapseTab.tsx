@@ -47,7 +47,7 @@ const TimelapseTab: React.FC = () => {
     const [assembling, setAssembling] = useState(false);
     const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
 
-    const [selectedImageModel, setSelectedImageModel] = useState('imagen4');
+    const [selectedImageModel, setSelectedImageModel] = useState('nano_banana_2');
     const [selectedVideoModel, setSelectedVideoModel] = useState<VideoModel>('veo_31_lite');
     const [timelapseID, setTimelapseID] = useState('');
     const [customIdea, setCustomIdea] = useState('');
@@ -57,7 +57,6 @@ const TimelapseTab: React.FC = () => {
     const [useReferencesAsFinal, setUseReferencesAsFinal] = useState(false);
 
     const IMAGE_MODELS = [
-        { value: 'imagen4', label: 'Imagen 4', desc: 'Google High Quality' },
         { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Versatile' },
         { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Pro Output' },
     ];

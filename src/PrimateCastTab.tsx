@@ -107,7 +107,7 @@ const PrimateCastTab: React.FC = () => {
     try {
       const img = await window.electronAPI.primatecastGenerateBaseImage({ 
         visualPrompt: generatedIdea.visualPrompt, 
-        model: 'imagen4' 
+        model: 'nano_banana_2' 
       });
       setGeneratedImage(img);
     } catch (e: any) {

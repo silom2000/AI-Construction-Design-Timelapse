@@ -459,7 +459,7 @@ ${ideaContext}
     // ─────────────────────────────────────────────────────────────────────────
     ipcMain.handle('cartoon-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder, characterRefUrl }) => {
         try {
-            const model = (imageModel || 'imagen4').replace('freepik-', '');
+            const model = (imageModel || 'nano_banana_2').replace('freepik-', '');
             const sectionDir = projectFolder
                 ? path.join(CARTOON_DIRS.base, projectFolder)
                 : CARTOON_DIRS.images;

@@ -182,7 +182,7 @@ const generateImageViaGLabs = async (options = {}) => {
     return gLabsTaskQueue.enqueue('image', async () => {
         const {
             prompt,
-            model = 'imagen4',
+            model = 'nano_banana_2',
             aspectRatio = '9:16',
             count = 1,
             sectionDir = path.join(__dirname, 'Images'),
@@ -365,7 +365,7 @@ function registerGLabsHandlers(ipcMain) {
     // 5. Генерация изображения через G-Labs
     ipcMain.handle('glabs-generate-image', async (event, {
         prompt,
-        model = 'imagen4',
+        model = 'nano_banana_2',
         aspectRatio = '9:16',
         count = 1,
         section = 'skeleton',
@@ -508,7 +508,7 @@ function registerGLabsHandlers(ipcMain) {
     ipcMain.handle('glabs-skeleton-generate-image', async (event, {
         sceneIndex,
         imagePrompt,
-        imageModel = 'imagen4',
+        imageModel = 'nano_banana_2',
     }) => {
         return await ipcMain.emit('glabs-generate-image', event, {
             prompt: imagePrompt,

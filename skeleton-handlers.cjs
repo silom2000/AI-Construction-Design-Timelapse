@@ -43,30 +43,30 @@ const OBJECT_CATEGORIES = [
     { theme: 'Fun & Viral', objects: ['emojis', 'alphabet letters', 'numbers', 'colors', 'sounds', 'emotions', 'habits', 'daily routines', 'time periods', 'life stages'] }
 ];
 
-// в”Ђв”Ђ Pixar Cinematic Image Prompt Variants в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// —— Pixar Cinematic Image Prompt Variants ———————————————————————
 const PIXAR_IMAGE_VARIANTS = [
     {
         id: 'A', name: 'Heroic Drama',
-        template: (character) => `heroic Pixar anthropomorphic object ${character}, physically still the original object, expressive eyes and mouth attached directly to the object surface, no human head or body, extreme low angle hero shot, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, single hard spotlight from above, deep object-surface shadows, cinematic 2.39:1 crop ratio, lens distortion at edges, teal shadows + warm highlights color grading, action-movie energy, about to reveal a lifehack`
+        template: (character) => `heroic Pixar 3D style anthropomorphic object ${character}, the physical object has expressive cartoon eyes and mouth on its surface, extreme low angle shot, placed in its natural detailed environment, hard spotlight from above, sharp object shadows, cinematic 2.39:1 crop, action-movie mood`
     },
     {
         id: 'B', name: 'Discovery Moment',
-        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, huge shocked eyes wide open, mouth on the object surface, eyebrows raised to maximum, split-second freeze-frame energy, motion lines around the object, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, dramatic backlighting, rim light halo effect, fisheye lens distortion`
+        template: (character) => `shocked Pixar 3D style anthropomorphic object ${character}, the physical object has huge expressive eyes and mouth on its surface, motion lines around the object, placed in its natural detailed environment, dramatic backlighting, rim light halo, fisheye lens distortion`
     },
     {
         id: 'C', name: 'Noir Moody',
-        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, in moody cinematic scene, placed in a highly detailed contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, noir lighting вЂ” single neon light source (blue or orange), rain reflections on surface below, low angle shot looking up, determined confident object expression, shadow play on background wall, film grain overlay, dramatic 2.39:1 widescreen composition`
+        template: (character) => `moody Pixar 3D style anthropomorphic object ${character}, the physical object has cartoon eyes and mouth on its surface, placed in its natural detailed environment, single neon light source, rain reflections, low angle shot, confident expression, dramatic shadows, 2.39:1 widescreen`
     },
     {
         id: 'D', name: 'Fun Chaos',
-        template: (character) => `Pixar 3D anthropomorphic object ${character}, physically still the original object, in chaotic funny action scene, placed in a highly detailed, busy contextual everyday environment (e.g., home, office, kitchen, or desk), clear and visible background, extreme fisheye lens, dutch tilt 15 degrees, bright saturated colors, cartoon speed lines, depth layering, mischievous grin expression, eyebrow raised`
+        template: (character) => `funny Pixar 3D style anthropomorphic object ${character}, the physical object has a mischievous grin and cartoon eyes on its surface, placed in its natural detailed environment, extreme fisheye lens, dutch tilt, bright saturated colors, speed lines, high-energy mood`
     }
 ];
 
-// в”Ђв”Ђ Pixar Base Image Prompt (appended to every variant) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-const PIXAR_IMAGE_BASE = `Pixar 3D animation style, ultra-cinematic lighting, moderate depth of field with a clear and detailed background environment, physically-based rendering, 8K, award-winning CGI, bold graphic shadows, teal-orange color grade, NOT: fog, blurry background, blank background, storm clouds, flat lighting, centered symmetrical boring composition, white background, soft pastel mood, static feel, eye-level midshot`;
+// —— Pixar Base Image Prompt (appended to every variant) ————————
+const PIXAR_IMAGE_BASE = `Pixar 3D CGI animation, ultra-cinematic lighting, clear detailed background, physically-based rendering, bold shadows, teal-orange color grading`;
 
-const TALKING_OBJECT_IMAGE_LOCK = `OBJECTWARS VISUAL LOCK: The main character is ONLY the physical object named in CHARACTER — rendered with expressive cartoon eyes and a lip-sync-ready mouth placed directly on its surface. The object explains a TikTok lifehack through expression and pose-like tilt. Background environment contains only contextual props relevant to the object.`;
+const TALKING_OBJECT_IMAGE_LOCK = `The character is only the physical object named in CHARACTER, with cartoon eyes and a mouth on its surface. The background environment contains only contextual props relevant to this object.`;
 
 // в”Ђв”Ђ VEO Video Motion Variants в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const PIXAR_VIDEO_VARIANTS = [
@@ -329,6 +329,45 @@ const callPollinations = async (messages, jsonMode = false, forcedProvider = nul
     throw lastError || new Error('All models exhausted or failed');
 };
 
+// ── Real-time trend search via Perplexity (web search) ──────────────────────
+const searchTrends = async (langName, mode, season, month, year) => {
+    const pollinationsUrl = process.env.POLLINATIONS_API_URL || 'https://gen.pollinations.ai/v1/chat/completions';
+    const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+
+    const trendQuery = mode === 'health'
+        ? `What are the top 5 trending health and wellness topics on TikTok and Instagram Reels RIGHT NOW in ${month} ${year} for ${langName}-speaking audiences? Focus on: viral health hacks, body/nutrition tips, seasonal health issues. Return ONLY a short bullet list of trending topics, no explanations.`
+        : `What are the top 5 trending lifehack and DIY topics on TikTok and Instagram Reels RIGHT NOW in ${month} ${year} for ${langName}-speaking audiences? Focus on: home hacks, productivity tricks, money-saving tips, seasonal problems (${season}). Return ONLY a short bullet list of trending topics, no explanations.`;
+
+    try {
+        console.log(`[Trend Search] Searching trends via perplexity-fast for ${langName} (${month} ${year})...`);
+        const { request } = require('undici');
+        const headers = { 'Content-Type': 'application/json' };
+        if (pollinationsKey) headers['Authorization'] = `Bearer ${pollinationsKey}`;
+
+        const { statusCode, body: resBody } = await request(pollinationsUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                model: 'perplexity-fast',
+                messages: [{ role: 'user', content: trendQuery }]
+            })
+        });
+
+        const text = await resBody.text();
+        if (statusCode === 200) {
+            const data = JSON.parse(text);
+            const trends = data.choices?.[0]?.message?.content || '';
+            console.log(`[Trend Search] Found trends: ${trends.substring(0, 200)}...`);
+            return trends;
+        }
+        console.warn(`[Trend Search] perplexity-fast returned ${statusCode}, falling back to seasonal context`);
+        return null;
+    } catch (e) {
+        console.warn(`[Trend Search] Failed: ${e.message}, falling back to seasonal context`);
+        return null;
+    }
+};
+
 // `uploadToImgBB`, `createVideoViaFreepikPixVerse`, `createVideoViaPollinationsLTX2TextOnly` and other legacy generation functions were removed in favor of `glabs-handlers.cjs`
 
 // в”Ђв”Ђ РћС‡РёСЃС‚РєР° РїР°РїРєРё Audio РїРµСЂРµРґ РЅРѕРІРѕР№ РіРµРЅРµСЂР°С†РёРµР№ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
@@ -495,7 +534,7 @@ For EACH scene (exactly 6), generate following JSON:
         const filePath = path.join(skeletonDir, `scene_${sceneIndex + 1}.jpg`);
 
         // We use G-Labs for image generation
-        const cleanModel = imageModel ? imageModel.replace('freepik-', '') : 'imagen4';
+        const cleanModel = imageModel ? imageModel.replace('freepik-', '') : 'nano_banana_2';
         
         event.sender.send('skeleton-image-progress', { sceneIndex, status: 'generating' });
         
@@ -701,51 +740,124 @@ For EACH scene (exactly 6), generate following JSON:
 
         const randomSeed = Math.floor(Math.random() * 100000);
 
+        // Build seasonal/trend context from current date
+        const now = new Date();
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const currentMonth = monthNames[now.getMonth()];
+        const currentYear = now.getFullYear();
+        const seasonMap = { 0:'winter',1:'winter',2:'spring',3:'spring',4:'spring',5:'summer',6:'summer',7:'summer',8:'autumn',9:'autumn',10:'autumn',11:'winter' };
+        const currentSeason = seasonMap[now.getMonth()];
+
+        // Country-specific seasonal trends
+        const seasonalTrends = {
+            'English': {
+                'winter': 'New Year resolutions, cold weather hacks, heating bills, holiday cleanup, winter skincare',
+                'spring': 'spring cleaning, allergy season, gardening start, decluttering, tax season tips',
+                'summer': 'heat survival, vacation packing, sunscreen hacks, outdoor living, energy saving',
+                'autumn': 'back to school, fall organization, cold prevention, daylight saving, cozy home setup'
+            },
+            'Russian': {
+                'winter': 'новогодняя подготовка, экономия на отоплении, зимний уход за авто, лайфхаки от холода, сухой воздух в квартире',
+                'spring': 'весенняя уборка, дача/огород, аллергия на пыльцу, смена шин, расхламление балкона',
+                'summer': 'спасение от жары, комары и мошки, отпуск и путешествия, дача, защита от солнца',
+                'autumn': 'школа и учёба, осенняя хандра, подготовка авто к зиме, сезон простуд, утепление окон'
+            },
+            'French': {
+                'winter': 'fêtes de fin d\'année, chauffage économique, soldes d\'hiver, ski et montagne, soins peau sèche',
+                'spring': 'ménage de printemps, jardinage, allergies, Tour de France prep, rangement maison',
+                'summer': 'canicule, vacances, plage, anti-moustiques, économies d\'énergie',
+                'autumn': 'rentrée scolaire, vendanges, bricolage maison, rhume et grippe, changement d\'heure'
+            },
+            'German': {
+                'winter': 'Weihnachtsvorbereitung, Heizkosten sparen, Winterreifen, Erkältung vorbeugen, Silvester',
+                'spring': 'Frühjahrsputz, Garten, Pollenallergie, Steuererklärung, Balkon bepflanzen',
+                'summer': 'Hitze-Tipps, Urlaub, Grillen, Energiesparen, Insektenschutz',
+                'autumn': 'Schulanfang, Herbstdeko, Auto winterfest, Erkältungszeit, Zeitumstellung'
+            },
+            'Spanish': {
+                'winter': 'Navidad, ahorro calefacción, rebajas, resaca Año Nuevo, piel seca',
+                'spring': 'limpieza primaveral, alergia, Semana Santa, organización armarios, jardín',
+                'summer': 'ola de calor, vacaciones, playa, mosquitos, ahorro energía',
+                'autumn': 'vuelta al cole, otoño en casa, resfriados, cambio de hora, ahorro'
+            },
+            'Polish': {
+                'winter': 'święta Bożego Narodzenia, ogrzewanie, zimowe hacki, sylwester, suche powietrze',
+                'spring': 'wiosenne porządki, ogród, alergia, działka, rozchlamienie',
+                'summer': 'upały, wakacje, komary, działka, oszczędzanie energii',
+                'autumn': 'powrót do szkoły, jesienne przeziębienia, przygotowanie auta na zimę, zmiana czasu'
+            }
+        };
+
+        const langTrends = seasonalTrends[langName] || seasonalTrends['English'];
+        const fallbackTrendContext = langTrends[currentSeason] || langTrends['winter'];
+
+        // 🔍 Real-time web search for current trends via Perplexity
+        const liveTrends = await searchTrends(langName, mode, currentSeason, currentMonth, currentYear);
+        const trendContext = liveTrends
+            ? `🔍 LIVE WEB SEARCH RESULTS (real trending topics RIGHT NOW):\n${liveTrends}\n\n📋 Seasonal fallback: ${fallbackTrendContext}`
+            : `📋 Seasonal trends: ${fallbackTrendContext}`;
+
         const prompt = mode === 'health'
-            ? `РЁРђР“ 1 вЂ” РџРћРРЎРљ РР”Р•Р (Topic Finder) [Seed: ${randomSeed}]
-               Provide me 5 highly viral LIFEHACK topic ideas for health-niche talking-object AI Shorts/Reels, where fruits, vegetables, or healthy foods become anthropomorphic expert characters inside the human body and reveal insider secrets about what they ACTUALLY do.
+            ? `ШАГ 1 — ПОИСК ИДЕЙ (Topic Finder) [Seed: ${randomSeed}]
+               📅 TODAY: ${currentMonth} ${currentYear}, season: ${currentSeason}.
+               🔥 CURRENT TRENDS for ${langName}-speaking audience:
+               ${trendContext}
+
+               Provide me 3 highly viral LIFEHACK topic ideas for health-niche talking-object AI Shorts/Reels, where fruits, vegetables, or healthy foods become anthropomorphic expert characters inside the human body and reveal insider secrets about what they ACTUALLY do.
+
+               IDEAS MUST BE RELEVANT TO THE CURRENT SEASON AND MONTH. Think about what health problems people face RIGHT NOW in ${currentMonth}.
 
                FORMAT RULES:
                - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
                - Topic must center on ONE mass-interest health goal: fat burn, digestion, immunity, energy, hormones, skin, heart, blood sugar, or sleep.
-               - The food characters are NOT fighting вЂ” they are EXPERT INSIDERS sharing secrets.
+               - The food characters are NOT fighting — they are EXPERT INSIDERS sharing secrets.
                - Each idea must include: Hook line + Food type + Core lifehack angle + Emotional payoff.
-               - Visual-friendly for AI animation, 60вЂ“90 second format.
+               - Visual-friendly for AI animation, 60–90 second format.
                ${exclusionClause}
                Target Language: ${langName}.
 
-               Output ONLY a JSON object with an "ideas" array:
-               {"ideas": [{"original": "HOOK: [Hook Line]. TITLE: [Catchy Name]. FOODS: [Items]. HACK: [Secret]. PAYOFF: [Benefit]", "translation": "РџРѕР»РЅС‹Р№ РїРµСЂРµРІРѕРґ РёРґРµРё РЅР° СЂСѓСЃСЃРєРёР№ СЏР·С‹Рє: РҐРЈРљ: [Hook Line]. РќРђР—Р’РђРќРР•: [Catchy Name]. Р•Р”Рђ: [Items]. Р›РђР™Р¤РҐРђРљ: [Secret]. Р’Р«Р“РћР”Рђ: [Benefit]"}]}`
-            : `РЁРђР“ 1 вЂ” РџРћРРЎРљ РР”Р•Р (Topic Finder) [Seed: ${randomSeed}]
-               Provide me 5 highly viral LIFEHACK topic ideas for a talking-objects Short/Reel, optimized for Instagram Reels and YouTube Shorts.
+               Output ONLY a JSON object with an "ideas" array (EXACTLY 3 ideas):
+               {"ideas": [{"original": "HOOK: [Hook Line]. TITLE: [Catchy Name]. FOODS: [Items]. HACK: [Secret]. PAYOFF: [Benefit]", "translation": "Полный перевод идеи на русский язык: ХУК: [Hook Line]. НАЗВАНИЕ: [Catchy Name]. ЕДА: [Items]. ЛАЙФХАК: [Secret]. ВЫГОДА: [Benefit]"}]}`
+            : `ШАГ 1 — ПОИСК ИДЕЙ (Topic Finder) [Seed: ${randomSeed}]
+               📅 TODAY: ${currentMonth} ${currentYear}, season: ${currentSeason}.
+               🔥 CURRENT TRENDS for ${langName}-speaking audience:
+               ${trendContext}
 
-               рџЋЇ THIS TIME, USE OBJECTS FROM THESE SPECIFIC CATEGORIES:
+               Provide me 3 highly viral LIFEHACK topic ideas for a talking-objects Short/Reel, optimized for TikTok, Instagram Reels and YouTube Shorts.
+
+               🎯 THIS TIME, USE OBJECTS FROM THESE SPECIFIC CATEGORIES:
                ${randomCats.map((c, i) => `${i + 1}. ${c}`).join('\n               ')}
 
-               рџЊЌ CULTURAL ADAPTATION FOR ${langName.toUpperCase()}:
+               🌍 CULTURAL ADAPTATION FOR ${langName.toUpperCase()}:
                ${cultureNote}
 
-               IMPORTANT: Adapt lifehacks to match the lifestyle, climate, living conditions, and daily challenges specific to ${langName}-speaking countries. What's relevant in one culture may not resonate in another.
+               📆 SEASONAL RELEVANCE (CRITICAL):
+               Your ideas MUST be relevant to ${currentMonth} ${currentYear}. Think about what people in ${langName}-speaking countries are dealing with RIGHT NOW:
+               - Current seasonal challenges: ${trendContext}
+               - What everyday problems are people solving this month?
+               - What objects become especially relevant in ${currentSeason}?
 
-               Pick DIFFERENT, UNUSUAL, UNEXPECTED objects from those categories. DO NOT use generic items like "water bottle", "pillow", "toothbrush", "alarm clock" вЂ” those are overused. Be CREATIVE and SPECIFIC.
+               IMPORTANT: Adapt lifehacks to match the lifestyle, climate, living conditions, and daily challenges specific to ${langName}-speaking countries.
 
-               вќЊ STRICTLY FORBIDDEN:
-               - NO food items (fruits, vegetables, meals, snacks, drinks, ingredients)
-               - NO kitchen utensils related to food preparation
-               - NO eating or cooking-related objects
+               Pick DIFFERENT, UNUSUAL, UNEXPECTED objects from those categories. Be CREATIVE and SPECIFIC. Avoid generic overused items like "water bottle", "pillow", "toothbrush", "alarm clock".
+
+               STRICTLY FORBIDDEN:
+               - Food items (fruits, vegetables, meals, snacks, drinks, ingredients)
+               - Kitchen utensils related to food preparation
+               - Eating or cooking-related objects
                - Focus on NON-FOOD lifehacks only
 
                FORMAT RULES:
                - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
                - The hook must sound like the object is revealing a secret, exposing a mistake, or sharing a trick that saves time/money/health.
                - Topic must center on ONE mass-interest problem: health, money, productivity, sleep, habits, fitness, or home organization.
-               - The object is not fighting вЂ” it's TEACHING. It has an insider secret and can't wait to tell it.
+               - The object is not fighting — it's TEACHING. It has an insider secret and can't wait to tell it.
                - Each idea must include: Hook line + Object name + Core lifehack angle + Emotional payoff.
-               - Visual-friendly for AI animation, 30вЂ“60 second format.
-               - ALL 5 ideas must use DIFFERENT objects. Maximum variety!
+               - Visual-friendly for AI animation, 30-60 second format.
+               - ALL 3 ideas must use DIFFERENT objects. Maximum variety!
                ${exclusionClause}
                Target Language: ${langName}.
-               Output ONLY a JSON object with an "ideas" array: {"ideas": [{"original": "Hook: [Your Hook Line]. Idea: [Your Idea Details]", "translation": "РџРѕР»РЅС‹Р№ РїРµСЂРµРІРѕРґ РёРґРµРё РЅР° СЂСѓСЃСЃРєРёР№ СЏР·С‹Рє: РҐСѓРє: [Your Hook Line]. РРґРµСЏ: [Your Idea Details]"}]}`;
+               Output ONLY a JSON object with an "ideas" array (EXACTLY 3 ideas): {"ideas": [{"original": "Hook: [Your Hook Line]. Idea: [Your Idea Details]", "translation": "Полный перевод идеи на русский язык: Хук: [Your Hook Line]. Идея: [Your Idea Details]"}]}`;
 
         const raw = await callPollinations([{ role: 'user', content: prompt }], true, provider);
         console.log(`[Studio Ideas] Categories used: ${randomCats.join(' | ')}`);
@@ -835,25 +947,69 @@ For EACH scene (exactly 6), generate following JSON:
             }`;
         } else {
             systemInstruction = `You are a viral Short/Reel LIFEHACK scriptwriter specialized in "Talking Objects Revelation".
+            You write scripts that feel alive — every line has tension, personality, and purpose.
+
             CRITICAL RULES:
             1. ALL dialogue for "line", "intro", "character" MUST be in ${langName}.
             2. "imagePrompt" and "videoPrompt" MUST be written EXCLUSIVELY in English.
             3. "videoPrompt" MUST include the EXACT FULL DIALOGUE word-for-word from "line" using the placeholder [line].
             4. IMAGE STYLE (PIXAR CINEMATIC): Use Pixar 3D animation style, ultra-cinematic lighting, dramatic depth of field, teal-orange color grade.
                - Variants: A (Heroic), B (Discovery), C (Noir), D (Chaos).
-               - The visual subject is always a talking physical object, not a person wearing an object costume.
-               - Put expressive eyes and a lip-sync mouth directly on the object's surface.
-               - Show object tilt, bounce, lean, or object-specific motion instead of human body posing.
+               - The visual subject is always a talking physical object with expressive eyes and a lip-sync mouth directly on the object's surface.
+               - Show object tilt, bounce, lean, or object-specific motion.
             5. VIDEO MOTION (PIXAR DYNAMIC):
                - Variants: A (Energetic), B (Reveal), C (Rise), D (TikTok Hook).
-            6. ABSOLUTE RULES: NO PEOPLE IN FRAME. NO HUMAN HEADS. NO HUMAN SKIN. NO HUMAN FACES. NO HUMAN BODY. NO HANDS, ARMS, LEGS, OR FEET. Object MUST stay as the physical object.
-            7. **STRICT BACKGROUND/HABITAT RULE**: You MUST explicitly place the object in its logical, real-world outdoor, industrial, or corresponding environment if it is not a household item. For example, a parking meter MUST be on a city sidewalk or street next to cars. A gas pump MUST be at a gas station. NEVER place outdoor, street, or industrial items inside a house, kitchen, or on a table with books/cups/dishes. You MUST explicitly describe the correct natural background environment in EVERY "imagePrompt" and "videoPrompt".
-            8. Each "line" must include an emotion tag: [shocked], [proud], etc.
-            9. The CTA SCENE (Scene 5) MUST be delivered with deep respect and warmth, explicitly inviting the viewer to subscribe AND leave a comment for more lifehack secrets and benefits.
-            10. The FINAL PAYOFF (Scene 6) ends the video on a high note.
-            11. ABSOLUTE VIDEO VISUAL RULE: Never show spoken dialogue as visible text. No subtitles, captions, karaoke text, speech bubbles, quote overlays, title cards, or any written words inside video frames. Voice/audio only.`;
+            6. Only describe what is present in the scene. The image and video depict only the physical object itself. Do not write negative constraints or exclusions; describe the scene positively, focused entirely on the object.
+            7. **STRICT BACKGROUND/HABITAT RULE**: Place the object in its logical, real-world environment. A parking meter belongs on a city sidewalk. A gas pump belongs at a gas station. Always describe the correct natural background in every "imagePrompt" and "videoPrompt".
+            8. Each "line" must include an emotion tag: [shocked], [proud], [whispering], [excited], [warmly], [smug], etc.
+            9. ABSOLUTE VIDEO VISUAL RULE: Voice/audio only. The spoken dialogue must never appear as visible text, subtitles, captions, or speech bubbles in the video.
+
+            10. 🎬 DRAMATIC ARC & DIALOGUE LENGTH (THIS IS THE MOST IMPORTANT RULE):
+                Each video clip is exactly 8 seconds. The dialogue must fill the clip appropriately. Follow these STRICT word counts:
+
+                📍 Scene 1 — THE HOOK (6-10 words):
+                   Scroll-stopper. Short, punchy, confrontational. Address the viewer informally ("ты" in Russian, informal "you" otherwise).
+                   The silence after the hook builds suspense. The object stares at the viewer.
+                   Example tone: "Ты опять делаешь это неправильно?" / "Хватит игнорировать меня каждое утро!"
+
+                📍 Scene 2 — THE INTRIGUE (16-20 words, MINIMUM 16!):
+                   The object explains what's really going on. Builds curiosity. The viewer thinks "wait, what?"
+                   Must fill 6-7 seconds of the 8-second clip. Dense, informative, but still conversational. Write at least 2 full sentences.
+
+                📍 Scene 3 — THE REVELATION (16-20 words, MINIMUM 16!):
+                   The emotional twist. The "aha!" moment. The object reveals something surprising.
+                   Dense speech, 6-7 seconds of dialogue. This is where the viewer gets hooked for good. Write at least 2 full sentences.
+
+                📍 Scene 4 — THE PRACTICAL TIP (15-22 words):
+                   The actual lifehack advice. Concrete, specific, actionable.
+                   The most informative scene. Tell the viewer exactly what to do and when.
+                   Must fill nearly the full 8 seconds with useful speech.
+
+                📍 Scene 5 — THE WARM CTA (12-18 words):
+                   Gentle, personal, human appeal. NOT corporate "like and subscribe".
+                   Speak like a friend: "Если тебе помогло — подпишись, и напиши в комментах, какой лайфхак хочешь следующим."
+                   Warm, caring tone. The object genuinely wants to help.
+
+                📍 Scene 6 — THE MIC-DROP (8-12 words):
+                   Memorable closing line. A punchline, a callback to the hook, or a thought that lingers.
+                   Short and impactful. The viewer remembers this line and wants to rewatch.
+
+            11. VIRAL STYLE:
+                * The object 'comes alive' and speaks directly to the viewer.
+                * Light surrealism, humor, and a slight sense of strangeness.
+                * Always create a feeling of "why is this object talking to me?"
+                * Every scene has ACTION and CONFLICT — never just description or aesthetics.`;
 
             userPrompt = `Create a viral short LIFEHACK script with exactly 6 scenes for "${topic}".
+
+            STRICT DIALOGUE LENGTH RULES (count the words carefully!):
+            - Scene 1 (HOOK): 6-10 words. Short, punchy, confrontational. Address viewer as "ты".
+            - Scene 2 (INTRIGUE): 16-20 words MINIMUM 16. Build curiosity, explain what's happening. At least 2 sentences.
+            - Scene 3 (REVELATION): 16-20 words MINIMUM 16. Emotional twist, the "aha!" moment. At least 2 sentences.
+            - Scene 4 (PRACTICAL TIP): 15-22 words. The actual concrete lifehack advice.
+            - Scene 5 (WARM CTA): 12-18 words. Gentle, friendly appeal to subscribe and comment. Speak like a caring friend.
+            - Scene 6 (MIC-DROP): 8-12 words. Memorable punchline or callback.
+
             Rotate Variants (A, B, C, D) for each scene.
 
             Output JSON:
@@ -866,8 +1022,8 @@ For EACH scene (exactly 6), generate following JSON:
                   "line": "Dialogue [emotion]",
                   "imageVariant": "B",
                   "videoVariant": "B",
-                  "imagePrompt": "In English: the named physical object only, alive with eyes and mouth on the object surface, revealing the lifehack in a non-human environment. No people, no human face/body/skin/hands/legs.",
-                  "videoPrompt": "In English: object-only motion. LIP-SYNC: \"[line]\". No people, no human face/body/skin/hands/legs."
+                  "imagePrompt": "In English: a clear, positive description of the physical object with cartoon eyes and mouth, placed in its natural real-world environment. Describe only what is present.",
+                  "videoPrompt": "In English: object-only motion in its environment. LIP-SYNC: \"[line]\". Describe the motion positively."
                 }
               ]
             }`;

@@ -76,7 +76,7 @@ const LIFE_STAGE_LABELS: Record<number, string> = {
 export function StoryTab() {
   const [language, setLanguage] = useState('English');
   const [topic, setTopic] = useState('');
-  const [imageModel, setImageModel] = useState<'imagen4' | 'nano_banana_2' | 'nano_banana_pro'>('imagen4');
+  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
@@ -246,7 +246,6 @@ export function StoryTab() {
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               {([
-                { value: 'imagen4', label: 'Imagen 4', desc: 'Google, High quality' },
                 { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Improved generation' },
                 { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: '4K, Thinking model' },
               ] as const).map(m => (

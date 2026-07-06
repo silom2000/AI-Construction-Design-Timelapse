@@ -732,7 +732,7 @@ ${ideaContext}
     ipcMain.handle('story-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder }) => {
         try {
             const prompt = imagePrompt;
-            const model = imageModel || 'imagen4';
+            const model = imageModel || 'nano_banana_2';
 
             // Clean up model name if needed
             const cleanModel = model.replace('freepik-', '');

@@ -4,6 +4,7 @@ const fs = require('fs');
 const sharp = require('sharp');
 const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 const { callPollinations } = require('./skeleton-handlers.cjs');
+const historyManager = require('./history-manager.cjs');
 
 const PRIMATECAST_DIR = path.join(__dirname, 'PrimateCast');
 const CHARACTERS_FILE = path.join(PRIMATECAST_DIR, 'characters.json');
@@ -198,8 +199,8 @@ Return ONLY valid JSON in this format:
 
     // 2. Generate Base Image for Character
     ipcMain.handle('primatecast-generate-base-image', async (event, { visualPrompt, model }) => {
-        // model can be 'imagen4' or 'nano_banana_2'
-        const imageModel = model || 'imagen4'; 
+        // model can be 'nano_banana_2'
+        const imageModel = model || 'nano_banana_2'; 
         const imagePaths = await generateImageViaGLabs({
             prompt: visualPrompt,
             model: imageModel,
@@ -595,9 +596,18 @@ Return ONLY valid JSON in this format:
             // Step 2: Pass search context (or fallback) to LLM to select topic
             event.sender.send('primatecast-progress', { status: '🤖 Выбираю лучшую тему для подкаста...', progress: 30 });
 
+            const historyKey = `primatecast_${language || 'en'}`;
+            const completedTopics = historyManager.getTopics(historyKey);
+            let completedText = '';
+            if (completedTopics && completedTopics.length > 0) {
+                completedText = `\nALREADY GENERATED AND FORBIDDEN (DO NOT SELECT THEM OR ANYTHING SIMILAR):\n- ${completedTopics.slice(-40).join('\n- ')}\n`;
+            }
+
             const selectPrompt = `You are a content strategist for a viral primate podcast aimed at TikTok.
 We searched the web for current TikTok trends, popular hashtags, and viral challenges in ${country}:
 ${searchResults}
+
+${completedText}
 
 Choose ONE trending topic, challenge, or popular meme from this list that:
 - Relates to human behavior, society, work, relationships, digital lifestyle, or current internet humor
@@ -807,6 +817,11 @@ ${scriptRaw}`;
                     overlongLines.push({ line: i + 1, words: wordCount, text: scriptLines[i].substring(0, 60) });
                 }
             }
+        }
+
+        if (topicData && topicData.topic) {
+            const historyKey = `primatecast_${language || 'en'}`;
+            historyManager.addTopic(historyKey, topicData.topic);
         }
 
         event.sender.send('primatecast-progress', { status: '', progress: 0 });

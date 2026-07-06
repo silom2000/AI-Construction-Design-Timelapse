@@ -11,23 +11,52 @@ FORMAT RULES:
 - ABSOLUTE RULES: NO MUSIC in any generated prompts. Use only the language specified in the prompt (NO independent translations). Character must strictly follow the provided text for lip-sync.
 
 📌 ШАГ 2 — СЦЕНАРИЙ (Lifehack Script)
-Create a viral short LIFEHACK script with maximum 5 scenes for [IDEA / OBJECT NAME].
+Create a viral short LIFEHACK script with exactly 6 scenes for [IDEA / OBJECT NAME].
 
 CONCEPT: The object(s) are alive and acting as insider experts — they know things about themselves that humans don't, and they're finally spilling the secrets. This is NOT a fight. This is a REVELATION.
 
 SCRIPT RULES:
-- Scene 1 = HOOK: Object says something that stops the scroll instantly (a shocking fact, a common mistake, or a "you've been doing this wrong" opener)
-- Scenes 2–4 = THE LIFEHACK THREAD: 2–3 concrete tips, tricks, or facts delivered fast, with personality — one per scene. Each line must feel like a new discovery. Use reactions, gasps, or "wait, really?" moments between objects
-- Scene 5 = PAYOFF + CTA: End with a clear benefit summary OR a cliffhanger that makes viewers comment or save the video
+
+🎬 DRAMATIC ARC & DIALOGUE LENGTH (each video clip = 8 seconds):
+
+📍 Scene 1 — THE HOOK (6-10 words):
+   Scroll-stopper. Short, punchy, confrontational.
+   Address the viewer informally ("ты" in Russian, informal "you" otherwise).
+   The silence after the hook builds suspense. The object stares at the viewer.
+
+📍 Scene 2 — THE INTRIGUE (16-20 words):
+   The object explains what's really going on. Builds curiosity.
+   Must fill 6-7 seconds of the 8-second clip. Dense but conversational. At least 2 full sentences.
+
+📍 Scene 3 — THE REVELATION (16-20 words):
+   The emotional twist. The "aha!" moment. Something surprising is revealed.
+   Dense speech, 6-7 seconds of dialogue. At least 2 full sentences.
+
+📍 Scene 4 — THE PRACTICAL TIP (15-22 words):
+   The actual lifehack advice. Concrete, specific, actionable.
+   Tell the viewer exactly what to do and when. Fills nearly the full 8 seconds.
+
+📍 Scene 5 — THE WARM CTA (12-18 words):
+   Gentle, personal, human appeal. Speak like a caring friend.
+   Example: "Если тебе помогло — подпишись, и напиши в комментах, какой лайфхак хочешь следующим."
+
+📍 Scene 6 — THE MIC-DROP (8-12 words):
+   Memorable closing line. A punchline, a callback to the hook, or a lingering thought.
+   Short and impactful. The viewer remembers this and wants to rewatch.
+
+- VIRAL STYLE:
+  * The object 'comes alive' and speaks directly to the viewer.
+  * Light surrealism, humor, a slight sense of strangeness.
+  * Always create a feeling of 'why is this object talking to me?'.
+  * Every scene has ACTION and CONFLICT — never just description or aesthetics.
 - ABSOLUTE SCRIPT RULES: NO MUSIC. Use ONLY the language requested (no translations). The dialogue script must be followed STERNLY for the lip-sync animation.
 
 FORMAT:
 - Dialogue only (no narration)
-- 1–2 lines per scene
 - Tone: direct, confident, slightly cheeky — like a friend who actually knows stuff
-- Each line must include emotion tag: [shocked], [proud], [whispering], [excited], [smug], [revealing]
+- Each line must include emotion tag: [shocked], [proud], [whispering], [excited], [warmly], [smug]
 - Objects sound human but own their identity (a lemon KNOWS it's acidic, a pillow KNOWS what bad sleep does)
-- Label: Scene 1 to Scene 5, format: "Object [emotion]: dialogue"
+- Label: Scene 1 to Scene 6, format: "Object [emotion]: dialogue"
 
 INPUTS:
 - Talking object idea / name: [...]
@@ -39,31 +68,29 @@ INPUTS:
 Based on the script above, create a detailed text-to-image prompt for each character individually.
 
 CHARACTER REQUIREMENTS:
-- Object must look ALIVE and KNOWLEDGEABLE — like an expert, not a brawler
-- ABSOLUTE VISUAL LOCK: the character is the physical object itself, not a human, not a person in a costume, not a mascot with a human body
-- NO PEOPLE IN FRAME: no human faces, heads, skin, hands, arms, legs, feet, silhouettes, presenters, owners, or background humans
-- Put the expressive eyes and lip-sync-ready mouth directly on the object's own surface/material
-- Use object-specific posing: tilt, lean, bounce, wobble, lid opening, cable bending, screen glow, fabric folding, steam puff, etc. Do NOT use human body posing
-- Facial expression must match the lifehack moment: excited to reveal, proud of knowing, whispering a secret, shocked at human ignorance
-- Clearly visible expressive mouth, lips, or anthropomorphic talking feature optimized for lip-sync animation
-- Eyes should convey intelligence, warmth, or mischief — NOT anger
+- Object must look ALIVE and KNOWLEDGEABLE — like an expert.
+- Describe the character positively: the physical object itself, with expressive cartoon eyes and a lip-sync-ready mouth placed directly on the object's own surface/material.
+- Only describe what is present in the scene. Focus purely on the object in its natural environment without mentioning or listing human features.
+- Use object-specific posing: tilt, lean, bounce, wobble, lid opening, cable bending, screen glow, fabric folding, steam puff, etc.
+- Facial expression must match the lifehack moment: excited to reveal, proud of knowing, whispering a secret, shocked.
+- Clearly visible expressive mouth, lips, or anthropomorphic talking feature optimized for lip-sync animation.
+- Eyes should convey intelligence, warmth, or mischief.
 
 VISUAL STYLE:
-- High-quality cinematic 3D / Pixar-style cartoon
-- Clean textures, sharp detail, expressive eyes, clear mouth shapes
-- Consistent art style, lighting, and proportions across ALL characters
-- Each character gets their own "expert personality" visual identity
+- High-quality cinematic 3D / Pixar-style cartoon.
+- Clean textures, sharp detail, expressive eyes, clear mouth shapes.
+- Consistent art style, lighting, and proportions.
+- Each character gets their own "expert personality" visual identity.
 
 EACH PROMPT MUST INCLUDE:
-1. Object appearance + material + color
-2. Facial structure + mouth/lip placement
-3. Dominant emotion for this character
-4. Signature object pose/motion (tilting toward camera, leaning on its edge, wobbling proudly, lid half-open like whispering, screen glowing smugly, etc.)
-5. Camera angle (close-up for secrets, medium for dialogue)
-6. Lighting (warm studio / dramatic spotlight / soft kitchen light)
-7. Background environment matching the setting
-8. Ultra-high detail, render-ready
-9. Negative prompt: no human, no person, no human face, no human head, no human skin, no hands, no arms, no legs, no feet, no human body, no presenter, no realistic portrait
+1. Object appearance + material + color.
+2. Facial structure + mouth/lip placement.
+3. Dominant emotion for this character.
+4. Signature object pose/motion (tilting toward camera, leaning on its edge, wobbling proudly, lid half-open like whispering, screen glowing smugly, etc.).
+5. Camera angle (close-up for secrets, medium for dialogue).
+6. Lighting (warm studio / dramatic spotlight / soft kitchen light).
+7. Background environment matching the setting.
+8. Ultra-high detail, render-ready.
 
 OUTPUT: Separate clearly labeled prompts for every character, ready for direct use in image-generation or video tools. 
 ABSOLUTE PROMPT RULES: STERNLY FOLLOW the text for lip-sync. NO MUSIC allowed. NO independent translations; use strictly the language specified in the prompt.
@@ -72,11 +99,13 @@ ABSOLUTE PROMPT RULES: STERNLY FOLLOW the text for lip-sync. NO MUSIC allowed. N
 Generate 5 alternative HOOK LINES for this video concept: [OBJECT + LIFEHACK TOPIC]
 
 Hook must follow ONE of these proven formats:
-1. "You've been using me wrong for [X] years..."
-2. "Nobody tells you this about [topic] — until now."
-3. "I've been sitting in your [place] watching you make this mistake every day."
-4. "Stop. Before you do that again — let me explain something."
-5. "[Shocking number/fact] — and you had no idea."
+1. Informal direct address ("ты") + viewer's mistake/action (e.g. "Ты опять пользуешься мной неправильно...", "Ты губишь себя этим действием...")
+2. Informal direct address ("ты") + accusation/question (e.g. "Зачем ты продолжаешь это делать?", "Почему ты до сих пор не знаешь этого?")
+3. Object addressing the viewer directly (e.g. "Я вижу, как ты совершаешь эту ошибку каждый день.")
+4. Urgent/confrontational stop instruction (e.g. "Быстро прекрати это делать.")
+5. A short shocking question/fact directed at the viewer (e.g. "Сколько лет ты совершаешь эту глупость?")
+
+Each hook must be very short, maximum 6-10 words, designed to instantly capture attention in the first 1-2 seconds.
 
 Each hook = 1 sentence. No fluff. Scroll-stopping from word one.
 

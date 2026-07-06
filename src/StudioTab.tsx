@@ -65,7 +65,6 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [projectFolder, setProjectFolder] = useState('');
 
     const IMAGE_MODELS = [
-        { value: 'imagen4', label: 'Imagen 4', desc: 'Google High Quality (Safe/Detailed)' },
         { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Improved Versatility' },
         { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Professional High Output' },
     ];
