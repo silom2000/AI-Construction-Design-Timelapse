@@ -246,7 +246,7 @@ Return ONLY valid JSON in this format:
     });
 
     // 6. Generate Episode
-    ipcMain.handle('primatecast-generate-episode', async (event, { script, host1Id, host2Id, clothes1, clothes2, location, episodeTitle, aspectRatio = '16:9' }) => {
+    ipcMain.handle('primatecast-generate-episode', async (event, { script, host1Id, host2Id, clothes1, clothes2, location, episodeTitle, aspectRatio = '16:9', language = null }) => {
         const characters = getCharacters();
         const host1 = characters.find(c => c.id === host1Id);
         const host2 = characters.find(c => c.id === host2Id);
@@ -338,7 +338,21 @@ Return ONLY valid JSON in this format:
                 ? "head is turned in a half-turn to the left (three-quarters profile), facing and looking towards the other host" 
                 : "head is turned in a half-turn to the right (three-quarters profile), facing and looking towards the other host";
 
-            const videoPrompt = `Photorealistic podcast video. Subject: ${seg.speaker.name}, ${seg.speaker.personality || 'an expressive character'}, showing a ${emotion}, seated at a podcast desk. The character's voice is: ${seg.speaker.voiceDescription || 'a natural speaking voice'}. The character's ${headTurn}, and says: "${seg.text}". Natural mouth movements matching the spoken words, slight head nods, hand gestures. Warm studio lighting, background of ${location} softly blurred. Medium chest-up shot. Cinematic, 8K quality, ${aspectRatio}. No text overlay.`;
+            // Determine language for the voice description
+            let lang = language;
+            if (!lang) {
+                if (/[\u0400-\u04FF]/.test(seg.text)) {
+                    lang = 'Russian';
+                } else {
+                    lang = 'English';
+                }
+            }
+
+            let voiceDesc = seg.speaker.voiceDescription || 'natural speaking voice';
+            voiceDesc = voiceDesc.trim().replace(/^(a|an|the)\s+/i, '');
+            voiceDesc = `${lang} ${voiceDesc.charAt(0).toLowerCase() + voiceDesc.slice(1)}`;
+
+            const videoPrompt = `Photorealistic podcast video. Subject: ${seg.speaker.name}, ${seg.speaker.personality || 'an expressive character'}, showing a ${emotion}, seated at a podcast desk. The character's voice is: ${voiceDesc}. The character's ${headTurn}, and says: "${seg.text}". Natural mouth movements matching the spoken words, slight head nods, hand gestures. Warm studio lighting, background of ${location} softly blurred. Medium chest-up shot. Cinematic, 8K quality, ${aspectRatio}. No text overlay.`;
 
             const videoPath = await generateVideoViaGLabs({
                 prompt: videoPrompt,
@@ -371,7 +385,8 @@ Return ONLY valid JSON in this format:
     ipcMain.handle('primatecast-generate-segment', async (event, {
         segmentIndex, speakerId, dialogueText,
         host1Id, host2Id, clothes1, clothes2,
-        location, episodeTitle, aspectRatio = '16:9'
+        location, episodeTitle, aspectRatio = '16:9',
+        language = null
     }) => {
         const characters = getCharacters();
         const speaker = characters.find(c => c.id === speakerId);
@@ -437,7 +452,21 @@ Return ONLY valid JSON in this format:
             ? "head is turned in a half-turn to the left (three-quarters profile), facing and looking towards the other host" 
             : "head is turned in a half-turn to the right (three-quarters profile), facing and looking towards the other host";
 
-        const videoPrompt = `Photorealistic podcast video. Subject: ${speaker.name}, ${speaker.personality || 'an expressive character'}, showing a ${emotion}, seated at a podcast desk. The character's voice is: ${speaker.voiceDescription || 'a natural speaking voice'}. The character's ${headTurn}, and says: "${dialogueText}". Natural mouth movements matching the spoken words, slight head nods, hand gestures. Warm studio lighting, background of ${location} softly blurred. Medium chest-up shot. Cinematic, 8K quality, ${aspectRatio}. No text overlay.`;
+        // Determine language for the voice description
+        let lang = language;
+        if (!lang) {
+            if (/[\u0400-\u04FF]/.test(dialogueText)) {
+                lang = 'Russian';
+            } else {
+                lang = 'English';
+            }
+        }
+
+        let voiceDesc = speaker.voiceDescription || 'natural speaking voice';
+        voiceDesc = voiceDesc.trim().replace(/^(a|an|the)\s+/i, '');
+        voiceDesc = `${lang} ${voiceDesc.charAt(0).toLowerCase() + voiceDesc.slice(1)}`;
+
+        const videoPrompt = `Photorealistic podcast video. Subject: ${speaker.name}, ${speaker.personality || 'an expressive character'}, showing a ${emotion}, seated at a podcast desk. The character's voice is: ${voiceDesc}. The character's ${headTurn}, and says: "${dialogueText}". Natural mouth movements matching the spoken words, slight head nods, hand gestures. Warm studio lighting, background of ${location} softly blurred. Medium chest-up shot. Cinematic, 8K quality, ${aspectRatio}. No text overlay.`;
 
         const videoPath = await generateVideoViaGLabs({
             prompt: videoPrompt,

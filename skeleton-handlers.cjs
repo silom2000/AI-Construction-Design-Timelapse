@@ -124,7 +124,54 @@ function getRandomCategories(n = 3) {
 // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 const _voiseApiAxios = require('axios');
 
+async function synthesizeDirectElevenLabs(text, voiceId, outputPath, options = {}) {
+    const apiKey = process.env.ElevenLabs_API;
+    if (!apiKey) throw new Error('[Voice] ElevenLabs_API key not set');
+
+    console.log(`[Voice] Direct ElevenLabs TTS: voice=${voiceId} text=${text.length}chars`);
+    
+    const response = await _voiseApiAxios.post(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+        {
+            text: text,
+            model_id: options.model_id || 'eleven_multilingual_v2',
+            voice_settings: {
+                stability: options.stability ?? 0.85,
+                similarity_boost: options.similarity_boost ?? 0.75,
+                style: options.style ?? 0.0,
+                use_speaker_boost: options.use_speaker_boost !== false
+            }
+        },
+        {
+            headers: {
+                'xi-api-key': apiKey,
+                'Content-Type': 'application/json'
+            },
+            responseType: 'arraybuffer'
+        }
+    );
+
+    const buf = Buffer.from(response.data);
+    if (buf.length < 100) throw new Error(`[Voice] Direct ElevenLabs result too small: ${buf.length}B`);
+    
+    // Check if it's actually audio (ID3 or MPEG sync)
+    const isID3  = buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33;
+    const isSync = buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0;
+    if (!isID3 && !isSync) {
+        throw new Error(`[Voice] Direct ElevenLabs returned invalid audio buffer`);
+    }
+
+    const dir = require('path').dirname(outputPath);
+    if (!require('fs').existsSync(dir)) require('fs').mkdirSync(dir, { recursive: true });
+    require('fs').writeFileSync(outputPath, buf);
+    console.log(`[Voice] Direct ElevenLabs Saved: ${outputPath} (${buf.length}B)`);
+    return outputPath;
+}
+
 async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
+    if (process.env.ElevenLabs_API) {
+        return await synthesizeDirectElevenLabs(text, voiceId, outputPath, options);
+    }
     const apiKey = process.env.VOICEAPI_KEY || process.env.VOICE_AI_KEY;
     if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set');
 
@@ -296,17 +343,19 @@ const callPollinations = async (messages, jsonMode = false, forcedProvider = nul
                     }
                 }
 
-                const { statusCode, body: resBody } = await request(p.url, {
+                const res = await fetch(p.url, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(reqBody)
                 });
 
-                const text = await resBody.text();
-                if (statusCode === 200) {
+                const text = await res.text();
+                if (res.ok) {
                     const data = JSON.parse(text);
                     return data.choices?.[0]?.message?.content || '';
                 }
+                
+                const statusCode = res.status;
                 
                 console.warn(`[AI Call] provider=${p.id} model=${p.model} failed with ${statusCode}: ${text.substring(0, 100)}`);
                 
@@ -1368,5 +1417,5 @@ function cleanTempDir(tempDir) {
     } catch (_) { /* best-effort */ }
 }
 
-module.exports = { synthesizeUnifiedSpeech, registerSkeletonHandlers, callPollinations };
+module.exports = { synthesizeUnifiedSpeech, registerSkeletonHandlers, callPollinations, synthesizeDirectElevenLabs };
 

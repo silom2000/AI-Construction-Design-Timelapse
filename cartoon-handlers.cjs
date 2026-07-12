@@ -14,7 +14,7 @@ Object.values(CARTOON_DIRS).forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const { callPollinations } = require('./skeleton-handlers.cjs');
+const { callPollinations, synthesizeDirectElevenLabs } = require('./skeleton-handlers.cjs');
 const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 const { spawn } = require('child_process');
 const axios = require('axios');
@@ -25,9 +25,6 @@ const historyManager = require('./history-manager.cjs');
 // VoiseAPI TTS — same pattern as story-handlers.cjs
 // ─────────────────────────────────────────────────────────────────────────────
 async function cartoonGenerateVoice(text, language, outputDir) {
-    const apiKey = process.env.VOICEAPI_KEY;
-    if (!apiKey) throw new Error('[CartoonVoice] VOICEAPI_KEY not set in .env');
-
     const voiceId = process.env.STORY_VOICE_ID || process.env.TEST_VOICE_ID;
     if (!voiceId) throw new Error('[CartoonVoice] Set STORY_VOICE_ID or TEST_VOICE_ID in .env');
 
@@ -53,6 +50,13 @@ async function cartoonGenerateVoice(text, language, outputDir) {
             fs.unlinkSync(outputPath);
         }
     }
+
+    if (process.env.ElevenLabs_API) {
+        return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
+    }
+
+    const apiKey = process.env.VOICEAPI_KEY;
+    if (!apiKey) throw new Error('[CartoonVoice] VOICEAPI_KEY not set in .env');
 
     const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
 

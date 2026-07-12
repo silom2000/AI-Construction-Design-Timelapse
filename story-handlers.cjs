@@ -14,7 +14,7 @@ Object.values(STORY_DIRS).forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const { callPollinations, synthesizeUnifiedSpeech } = require('./skeleton-handlers.cjs');
+const { callPollinations, synthesizeUnifiedSpeech, synthesizeDirectElevenLabs } = require('./skeleton-handlers.cjs');
 const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 const { spawn } = require('child_process');
 const axios = require('axios');
@@ -25,9 +25,6 @@ const crypto = require('crypto');
 // POST /tasks → {task_id} → poll GET /tasks/{id} → download binary MP3
 // ─────────────────────────────────────────────────────────────────────────────
 async function storyGenerateVoice(text, language, outputDir, sceneIndex = null) {
-    const apiKey = process.env.VOICEAPI_KEY;
-    if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set in .env');
-
     // Voice ID: configure STORY_VOICE_ID in .env (or falls back to TEST_VOICE_ID)
     const voiceId = process.env.STORY_VOICE_ID || process.env.TEST_VOICE_ID;
     if (!voiceId) throw new Error('[Voice] Set STORY_VOICE_ID or TEST_VOICE_ID in .env');
@@ -69,6 +66,13 @@ async function storyGenerateVoice(text, language, outputDir, sceneIndex = null) 
             fs.unlinkSync(outputPath);
         }
     }
+
+    if (process.env.ElevenLabs_API) {
+        return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
+    }
+
+    const apiKey = process.env.VOICEAPI_KEY;
+    if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set in .env');
 
     const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
 

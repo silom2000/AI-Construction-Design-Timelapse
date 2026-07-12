@@ -331,6 +331,7 @@ const PrimateCastTab: React.FC = () => {
       alert('Заполните Episode Title и выберите оба хоста!');
       return;
     }
+    const market = MARKETS.find(m => m.id === selectedMarket)!;
     updateSegment(seg.index, { status: 'generating', errorMsg: undefined });
     try {
       const result = await window.electronAPI.primatecastGenerateSegment({
@@ -340,7 +341,8 @@ const PrimateCastTab: React.FC = () => {
         host1Id: host1,
         host2Id: host2,
         clothes1, clothes2, location, episodeTitle,
-        aspectRatio
+        aspectRatio,
+        language: market.language
       });
       updateSegment(seg.index, {
         status: 'done',

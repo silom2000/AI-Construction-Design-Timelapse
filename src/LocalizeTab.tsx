@@ -7,7 +7,7 @@ import {
 import type { DialogueResult, DialogueSegment } from './electron.d';
 
 // ── Types ──────────────────────────────────────────────────────────────────
-type PipelineState = 'IDLE' | 'PROCESSING' | 'RESULTS';
+type PipelineState = 'IDLE' | 'PROCESSING' | 'STEP1_DONE' | 'STEP2_DONE' | 'STEP3_DONE' | 'RESULTS';
 type LanguageTab = 'german' | 'french';
 type ResultsMode = 'overview' | 'segments';
 
@@ -76,6 +76,9 @@ const LocalizeTab: React.FC = () => {
   // Pipeline
   const [pipelineState, setPipelineState] = useState<PipelineState>('IDLE');
   const [error, setError] = useState<string | null>(null);
+  const [stepData, setStepData] = useState<any>({});
+  const [editableJson, setEditableJson] = useState<string>('');
+  const [processingMessage, setProcessingMessage] = useState<string>('');
 
   // Input
   const [videoBase64, setVideoBase64] = useState<string | null>(null);
@@ -98,6 +101,8 @@ const LocalizeTab: React.FC = () => {
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [segmentVideosDE, setSegmentVideosDE] = useState<Record<number, string>>({});
   const [segmentVideosFR, setSegmentVideosFR] = useState<Record<number, string>>({});
+  const [customPrompts, setCustomPrompts] = useState<Record<number, string>>({});
+  const [generatingPrompts, setGeneratingPrompts] = useState(false);
 
   // UI state
   const [resultsMode, setResultsMode] = useState<ResultsMode>('overview');
@@ -134,14 +139,93 @@ const LocalizeTab: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleAnalyze = async () => {
+  const handleStep1 = async () => {
     if (!videoBase64) return;
     setError(null);
+    setProcessingMessage('Extracting Audio & Transcribing...');
     setPipelineState('PROCESSING');
     try {
-      const data = await window.electronAPI.localizeAnalyzeDialogue(videoBase64);
-      setResult(data);
+      const data = await window.electronAPI.localizeStep1STT({ videoBase64 });
+      setStepData(data);
       setProjectFolder(data.projectFolder);
+      setEditableJson(JSON.stringify({ transcript: data.transcript, utterances: data.utterances }, null, 2));
+      setPipelineState('STEP1_DONE');
+    } catch (err: any) {
+      setError(err?.message || 'Step 1 failed');
+      setPipelineState('IDLE');
+    }
+  };
+
+  const handleStep2 = async () => {
+    setError(null);
+    setProcessingMessage('Running Speaker Diarization...');
+    setPipelineState('PROCESSING');
+    try {
+      // Parse edited JSON
+      const parsed = JSON.parse(editableJson);
+      const data = await window.electronAPI.localizeStep2Diarize({
+        projectFolder,
+        transcriptWords: stepData.transcriptWords,
+        utterances: parsed.utterances || stepData.utterances,
+        frames: stepData.frames
+      });
+      setStepData({ ...stepData, ...data, utterances: parsed.utterances || stepData.utterances });
+      setEditableJson(JSON.stringify({ speakers: data.speakers, timeline: data.timeline, segments: data.segments }, null, 2));
+      setPipelineState('STEP2_DONE');
+    } catch (err: any) {
+      setError(err?.message || 'Step 2 failed');
+      setPipelineState('STEP1_DONE');
+    }
+  };
+
+  const handleStep3 = async () => {
+    setError(null);
+    setProcessingMessage('Analyzing Character Appearances...');
+    setPipelineState('PROCESSING');
+    try {
+      const parsed = JSON.parse(editableJson);
+      const data = await window.electronAPI.localizeStep3Characters({
+        projectFolder,
+        frames: stepData.frames,
+        speakers: parsed.speakers || stepData.speakers
+      });
+      setStepData({ ...stepData, ...data, speakers: parsed.speakers || stepData.speakers });
+      setEditableJson(JSON.stringify({ characters: data.characters, sceneDescription: data.sceneDescription }, null, 2));
+      setPipelineState('STEP3_DONE');
+    } catch (err: any) {
+      setError(err?.message || 'Step 3 failed');
+      setPipelineState('STEP2_DONE');
+    }
+  };
+
+  const handleStep4 = async () => {
+    setError(null);
+    setProcessingMessage('Analyzing Voices & Matching...');
+    setPipelineState('PROCESSING');
+    try {
+      const parsed = JSON.parse(editableJson);
+      const data = await window.electronAPI.localizeStep4Voices({
+        projectFolder,
+        segments: stepData.segments,
+        speakers: stepData.speakers
+      });
+      
+      const finalResult = {
+        projectFolder,
+        transcript: stepData.transcript,
+        transcriptWords: stepData.transcriptWords,
+        sceneDescription: parsed.sceneDescription || stepData.sceneDescription,
+        speakers: stepData.speakers,
+        segments: stepData.segments,
+        characters: parsed.characters || stepData.characters,
+        frames: stepData.frames.map((f:any) => f.url),
+        sceneFrames: stepData.sceneFrames,
+        voiceProfiles: data.voiceProfiles,
+        speakerVoices: data.speakerVoices,
+        videoUrl: stepData.videoUrl
+      };
+      
+      setResult(finalResult as any);
       setTranslatedSegmentsDE(null);
       setTranslatedSegmentsFR(null);
       setSegmentVideosDE({});
@@ -149,8 +233,8 @@ const LocalizeTab: React.FC = () => {
       setPipelineState('RESULTS');
       setResultsMode('segments');
     } catch (err: any) {
-      setError(err?.message || 'Analysis failed');
-      setPipelineState('IDLE');
+      setError(err?.message || 'Step 4 failed');
+      setPipelineState('STEP3_DONE');
     }
   };
 
@@ -170,6 +254,28 @@ const LocalizeTab: React.FC = () => {
     } finally { setTranslating(false); }
   };
 
+  const handleGeneratePrompts = async () => {
+    if (!result || !projectFolder) return;
+    setGeneratingPrompts(true);
+    try {
+      const promptsData = await window.electronAPI.localizeGenerateVideoPrompts({
+        projectFolder,
+        segments: result.segments,
+        characters: result.characters,
+        sceneDescription: result.sceneDescription || ''
+      });
+      const promptMap: Record<number, string> = {};
+      for (const p of promptsData) {
+        promptMap[p.segmentIndex] = p.videoPrompt;
+      }
+      setCustomPrompts(promptMap);
+    } catch (err: any) {
+      console.error('Failed to generate video prompts:', err);
+    } finally {
+      setGeneratingPrompts(false);
+    }
+  };
+
   const handleGenerateVideo = async (segmentIndex: number, lang: LanguageTab) => {
     if (!result || !projectFolder) return;
     setGeneratingLang(lang);
@@ -184,6 +290,11 @@ const LocalizeTab: React.FC = () => {
         projectFolder, segmentIndex, segments,
         targetLanguage: lang === 'german' ? 'German' : 'French',
         characterImages: charImages,
+        sceneFrames: result.sceneFrames || undefined,
+        characters: result.characters || undefined,
+        sceneDescription: result.sceneDescription || undefined,
+        speakerVoices: result.speakerVoices || undefined,
+        customPrompt: customPrompts[segmentIndex] || undefined
       });
       if (lang === 'german') setSegmentVideosDE(p => ({ ...p, [segmentIndex]: videoUrl }));
       else setSegmentVideosFR(p => ({ ...p, [segmentIndex]: videoUrl }));
@@ -210,6 +321,10 @@ const LocalizeTab: React.FC = () => {
         projectFolder, segments,
         targetLanguage: lang === 'german' ? 'German' : 'French',
         characterImages: charImages,
+        sceneFrames: result.sceneFrames || undefined,
+        characters: result.characters || undefined,
+        sceneDescription: result.sceneDescription || undefined,
+        speakerVoices: result.speakerVoices || undefined
       });
       const videoMap: Record<number, string> = {};
       for (const r of batchResults) { if (r.videoUrl) videoMap[r.segmentIndex] = r.videoUrl; }
@@ -236,6 +351,7 @@ const LocalizeTab: React.FC = () => {
     setResult(null); setProjectFolder(''); setError(null);
     setTranslatedSegmentsDE(null); setTranslatedSegmentsFR(null);
     setSegmentVideosDE({}); setSegmentVideosFR({});
+    setCustomPrompts({}); setGeneratingPrompts(false);
     setResultsMode('overview');
   };
 
@@ -296,13 +412,13 @@ const LocalizeTab: React.FC = () => {
           </div>
 
           {/* Analyze button */}
-          <button onClick={handleAnalyze} disabled={!videoBase64}
+          <button onClick={handleStep1} disabled={!videoBase64}
             style={btn({
               padding: '16px 40px', fontSize: 15,
               background: videoBase64 ? `linear-gradient(135deg, ${C.accent}, ${C.accent2})` : '#374151',
               cursor: videoBase64 ? 'pointer' : 'not-allowed', opacity: videoBase64 ? 1 : 0.5,
             })}>
-            <Zap size={18} /> ANALYZE & LOCALIZE
+            <Zap size={18} /> STEP 1: EXTRACT & TRANSCRIBE
           </button>
 
           {error && (
@@ -321,14 +437,62 @@ const LocalizeTab: React.FC = () => {
       <div style={{ width: '100%', height: '100%', overflowY: 'auto', backgroundColor: C.bg, color: C.text, fontFamily: 'system-ui, sans-serif', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <div style={{ textAlign: 'center' }}>
           <RefreshCw size={48} color={C.accent} style={{ animation: 'spin 1.5s linear infinite', marginBottom: 20 }} />
-          <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>Analyzing Your Video</h2>
-          <p style={{ color: C.subtext, margin: 0, fontSize: 13, lineHeight: 1.6 }}>
-            Extracting audio & transcribing...<br />
-            Detecting speakers & analyzing frames...<br />
-            Generating character references...
-          </p>
+          <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>{processingMessage || 'Processing...'}</h2>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // WIZARD STEPS
+  // ══════════════════════════════════════════════════════════════════════════
+  if (['STEP1_DONE', 'STEP2_DONE', 'STEP3_DONE'].includes(pipelineState)) {
+    return (
+      <div style={{ width: '100%', height: '100%', overflowY: 'auto', backgroundColor: C.bg, color: C.text, fontFamily: 'system-ui, sans-serif', padding: '20px' }}>
+        <div style={{ maxWidth: 900, margin: '20px auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ margin: 0, fontSize: 20 }}>🛠️ Manual Verification Step</h2>
+            <button onClick={resetWorkflow} style={btnSm({ backgroundColor: '#374151' })}>🔄 Abort</button>
+          </div>
+          
+          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+             <div style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: pipelineState === 'STEP1_DONE' ? C.accent : (pipelineState === 'STEP2_DONE' || pipelineState === 'STEP3_DONE' ? C.success : C.surface) }} />
+             <div style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: pipelineState === 'STEP2_DONE' ? C.accent : (pipelineState === 'STEP3_DONE' ? C.success : C.surface) }} />
+             <div style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: pipelineState === 'STEP3_DONE' ? C.accent : C.surface }} />
+          </div>
+
+          <div style={card}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 16 }}>
+              {pipelineState === 'STEP1_DONE' && 'Step 1 Complete: Transcription & Utterances'}
+              {pipelineState === 'STEP2_DONE' && 'Step 2 Complete: Speaker Diarization'}
+              {pipelineState === 'STEP3_DONE' && 'Step 3 Complete: Character Analysis'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.subtext, marginBottom: 16 }}>
+              Review and edit the raw JSON data below. This data will be sent to the next step.
+            </p>
+            
+            <textarea
+              value={editableJson}
+              onChange={(e) => setEditableJson(e.target.value)}
+              spellCheck={false}
+              style={{ width: '100%', height: '400px', backgroundColor: '#0d0d1a', color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16, fontFamily: 'monospace', fontSize: 13, resize: 'vertical' }}
+            />
+            {error && <div style={{ marginTop: 16, color: '#ef4444' }}>{error}</div>}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+            {pipelineState === 'STEP1_DONE' && (
+              <button onClick={handleStep2} style={btn({ backgroundColor: C.accent })}>Next: Run Diarization →</button>
+            )}
+            {pipelineState === 'STEP2_DONE' && (
+              <button onClick={handleStep3} style={btn({ backgroundColor: C.accent })}>Next: Analyze Characters →</button>
+            )}
+            {pipelineState === 'STEP3_DONE' && (
+              <button onClick={handleStep4} style={btn({ backgroundColor: C.accent2 })}>Next: Match Voices & Finish →</button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -389,7 +553,13 @@ const LocalizeTab: React.FC = () => {
                     <span style={{ display: 'inline-block', width: 24, height: 24, borderRadius: '50%', backgroundColor: i === 0 ? C.accent : C.accent2, textAlign: 'center', lineHeight: '24px', fontSize: 12, marginRight: 8 }}>{sp.id}</span>
                     {sp.name}
                   </div>
-                  <div style={{ fontSize: 12, color: C.subtext }}>{sp.description}</div>
+                  <div style={{ fontSize: 12, color: C.subtext, marginBottom: 6 }}>{sp.description}</div>
+                  {sp.voiceProfile && (
+                    <div style={{ fontSize: 11, color: C.subtext, borderTop: `1px solid ${C.border}`, paddingTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <div>🗣️ <strong>Characteristics:</strong> {sp.voiceProfile.gender}, {sp.voiceProfile.ageRange}, {sp.voiceProfile.timbre} timbre ({sp.voiceProfile.style})</div>
+                      {sp.voiceName && <div>🎙️ <strong>Matched Voice:</strong> <span style={{ color: C.success }}>{sp.voiceName}</span></div>}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -505,6 +675,10 @@ const LocalizeTab: React.FC = () => {
                 style={btnSm({ backgroundColor: isTranslating ? '#374151' : C.accent2, cursor: isTranslating ? 'not-allowed' : 'pointer' })}>
                 {isTranslating ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Translating...</> : <><Languages size={12} /> {hasTranslations ? 'Re-translate All' : 'Translate All'}</>}
               </button>
+              <button onClick={handleGeneratePrompts} disabled={generatingPrompts || !hasTranslations}
+                style={btnSm({ backgroundColor: (hasTranslations && !generatingPrompts) ? C.accent : '#374151', cursor: (hasTranslations && !generatingPrompts) ? 'pointer' : 'not-allowed' })}>
+                {generatingPrompts ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Prompts...</> : <><Zap size={12} /> Generate Video Prompts</>}
+              </button>
               <button onClick={() => handleBatchGenerate(activeLang)} disabled={isBatchGenerating || !hasTranslations}
                 style={btnSm({
                   background: (hasTranslations && !isBatchGenerating) ? `linear-gradient(135deg, ${C.accent}, ${C.accent2})` : '#374151',
@@ -517,8 +691,8 @@ const LocalizeTab: React.FC = () => {
 
           {/* Segments table */}
           <div style={{ ...card, padding: '12px 0' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '40px 100px 1fr 80px 110px', gap: 8, padding: '0 16px 8px', borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 600, color: C.subtext, textTransform: 'uppercase' }}>
-              <span>#</span><span>Speaker</span><span>Text</span><span>Duration</span><span>Actions</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '40px 80px 100px 1fr 80px 110px', gap: 8, padding: '0 16px 8px', borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 600, color: C.subtext, textTransform: 'uppercase' }}>
+              <span>#</span><span>Frame</span><span>Speaker</span><span>Text</span><span>Duration</span><span>Actions</span>
             </div>
 
             {segmentsForLang.map((seg, i) => {
@@ -527,12 +701,20 @@ const LocalizeTab: React.FC = () => {
               const isGen = generatingLang === activeLang && (generatingIndex === i || generatingIndex === null);
               const expanded = expandedSegment === i;
               const spId = seg.speakerId || originalSeg?.speakerId || 1;
+              const frameUrl = seg.sceneFrameUrl || originalSeg?.sceneFrameUrl || null;
 
               return (
                 <div key={i}>
                   <div onClick={() => setExpandedSegment(expanded ? null : i)}
-                    style={{ display: 'grid', gridTemplateColumns: '40px 100px 1fr 80px 110px', gap: 8, padding: '10px 16px', alignItems: 'center', borderBottom: `1px solid ${C.border}`, cursor: 'pointer', backgroundColor: expanded ? C.surfaceHover : 'transparent' }}>
+                    style={{ display: 'grid', gridTemplateColumns: '40px 80px 100px 1fr 80px 110px', gap: 8, padding: '10px 16px', alignItems: 'center', borderBottom: `1px solid ${C.border}`, cursor: 'pointer', backgroundColor: expanded ? C.surfaceHover : 'transparent' }}>
                     <span style={{ fontSize: 12, color: C.subtext }}>{i + 1}</span>
+                    <div style={{ width: 64, height: 36, borderRadius: 4, overflow: 'hidden', backgroundColor: '#000', border: `1px solid ${C.border}` }}>
+                      {frameUrl ? (
+                        <img src={frameUrl} alt={`Scene ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: C.subtext }}>—</div>
+                      )}
+                    </div>
                     <span style={chip(spId === 1 ? 'rgba(59,130,246,0.2)' : 'rgba(139,92,246,0.2)', spId === 1 ? C.accent : C.accent2)}>
                       {seg.speakerName || originalSeg?.speakerName || `S${spId}`}
                     </span>
@@ -558,15 +740,30 @@ const LocalizeTab: React.FC = () => {
                   {expanded && (
                     <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, backgroundColor: C.surfaceHover }}>
                       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                        {frameUrl && (
+                          <div style={{ width: 140, flexShrink: 0 }}>
+                            <div style={{ fontSize: 10, color: C.subtext, marginBottom: 4, textTransform: 'uppercase' }}>Scene Start Frame</div>
+                            <img src={frameUrl} alt="Start frame" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 6, border: `1px solid ${C.border}` }} />
+                          </div>
+                        )}
                         <div style={{ flex: 1, minWidth: 200 }}>
                           <div style={{ fontSize: 10, color: C.subtext, marginBottom: 4, textTransform: 'uppercase' }}>Original ({formatDuration(seg.startTime || 0)}—{formatDuration(seg.endTime || 0)})</div>
                           <div style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 8 }}>{seg.text}</div>
                           {seg.translatedText && (
                             <>
                               <div style={{ fontSize: 10, color: C.subtext, marginBottom: 4, textTransform: 'uppercase' }}>{activeLang === 'german' ? 'German' : 'French'} Translation</div>
-                              <div style={{ fontSize: 12, lineHeight: 1.5, color: C.accent2 }}>{seg.translatedText}</div>
+                              <div style={{ fontSize: 12, lineHeight: 1.5, color: C.accent2, marginBottom: 8 }}>{seg.translatedText}</div>
                             </>
                           )}
+                          <div style={{ marginTop: 8 }}>
+                            <div style={{ fontSize: 10, color: C.subtext, marginBottom: 4, textTransform: 'uppercase' }}>Video Prompt (Omni Flash / Veo)</div>
+                            <textarea 
+                              value={customPrompts[i] || originalSeg?.videoPrompt || ''}
+                              onChange={(e) => setCustomPrompts(p => ({ ...p, [i]: e.target.value }))}
+                              placeholder="Enter custom prompt or click 'Generate Video Prompts' to fill automatically..."
+                              style={{ width: '100%', minHeight: 60, backgroundColor: '#0d0d1a', border: `1px solid ${C.border}`, borderRadius: 6, padding: 8, color: '#fff', fontSize: 11, fontFamily: 'monospace', resize: 'vertical' }}
+                            />
+                          </div>
                         </div>
                         {vidUrl && (
                           <div style={{ width: 160, flexShrink: 0 }}>

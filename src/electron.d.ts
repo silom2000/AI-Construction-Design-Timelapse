@@ -12,6 +12,18 @@ export interface DialogueSpeaker {
   id: number;
   name: string;
   description: string;
+  voiceProfile?: {
+    gender: 'male' | 'female';
+    ageRange: string;
+    timbre: string;
+    style: string;
+    speed: number;
+    pitch: string;
+    emotionalTone: string;
+    voiceSearchKeywords: string[];
+  };
+  voiceId?: string;
+  voiceName?: string;
 }
 
 export interface DialogueSegment {
@@ -24,18 +36,36 @@ export interface DialogueSegment {
   duration: number;
   videoUrl?: string;
   audioUrl?: string;
+  sceneFrameUrl?: string;
+  sceneFrameBase64?: string;
+  videoPrompt?: string;
 }
 
 export interface DialogueResult {
   projectFolder: string;
   transcript: string;
-  transcriptWords: Array<{ start: number; end: number; word: string }>;
+  transcriptWords: any[];
   sceneDescription: string;
   speakers: DialogueSpeaker[];
   segments: DialogueSegment[];
   characters: LocalizeCharacter[];
   frames: string[];
+  sceneFrames?: Array<{ index: number; timestamp: number; url: string | null }>;
+  voiceProfiles?: Record<number, any>;
+  speakerVoices?: Record<number, { voice_id: string; name: string; public_owner_id: string | null }>;
   videoUrl: string;
+}
+
+export interface VideoPromptData {
+  segmentIndex: number;
+  videoPrompt: string;
+  cameraAngle: string;
+  emotion: string;
+  action: string;
+  environmentDescription: string;
+  isAnimated: boolean;
+  duration: number;
+  status: string;
 }
 
 export interface GLabsTask {
@@ -146,24 +176,42 @@ export interface IElectronAPI {
   surviveGenerateVideo: (data: any) => Promise<string>,
 
   // TikTok Video Localizer — Dialogue Processing
-  localizeAnalyzeDialogue: (videoBase64: string) => Promise<DialogueResult>,
+  localizeStep1STT: (params: { videoBase64: string }) => Promise<{ projectFolder: string, transcript: string, transcriptWords: any[], utterances: any[], frames: any[], videoUrl: string }>,
+  localizeStep2Diarize: (params: { projectFolder: string, transcriptWords: any[], utterances: any[], frames: any[] }) => Promise<{ speakers: any[], timeline: any[], segments: any[], sceneFrames: any[] }>,
+  localizeStep3Characters: (params: { projectFolder: string, frames: any[], speakers: any[] }) => Promise<{ characters: any[], sceneDescription: string }>,
+  localizeStep4Voices: (params: { projectFolder: string, segments: any[], speakers: any[] }) => Promise<{ voiceProfiles: any, speakerVoices: any, speakers: any[] }>,
   localizeTranslateSegments: (projectFolder: string, segments: DialogueSegment[], targetLanguage: string) => Promise<DialogueSegment[]>,
-  localizeGenerateSegmentVideo: (data: {
+  localizeGenerateSegmentVideo: (params: {
     projectFolder: string;
     segmentIndex: number;
     segments: DialogueSegment[];
     targetLanguage: string;
     characterImages: Array<{ speakerId: number; imageBase64: string }>;
-  }) => Promise<{ videoUrl: string; audioUrl: string | null }>,
+    sceneFrames?: Array<{ index: number; timestamp: number; url: string | null; base64?: string | null }>;
+    characters?: LocalizeCharacter[];
+    sceneDescription?: string;
+    speakerVoices?: Record<number, { voice_id: string; name: string }>;
+    customPrompt?: string;
+  }) => Promise<{ videoUrl: string; audioUrl: string | null; segmentIndex: number; videoPrompt?: string; promptData?: any }>,
   localizeBatchGenerateSegments: (data: {
     projectFolder: string;
     segments: DialogueSegment[];
     targetLanguage: string;
     characterImages: Array<{ speakerId: number; imageBase64: string }>;
+    sceneFrames?: Array<{ index: number; timestamp: number; url: string | null }>;
+    characters?: LocalizeCharacter[];
+    sceneDescription?: string;
+    speakerVoices?: Record<number, { voice_id: string; name: string }>;
   }) => Promise<Array<{ segmentIndex: number; videoUrl: string | null; audioUrl: string | null; status?: string; error?: string }>>,
   localizeRegenerateCharacterImage: (projectFolder: string, characterIndex: number, customPrompt?: string) => Promise<string>,
   localizeRetranslate: (projectFolder: string, transcript: string, targetLanguage: string) => Promise<{ translatedText: string }>,
   localizeExtractFrames: (videoBase64: string, timestamps: number[], projectFolder?: string) => Promise<(string | null)[]>,
+  localizeGenerateVideoPrompts: (params: {
+    projectFolder: string;
+    segments: DialogueSegment[];
+    characters: LocalizeCharacter[];
+    sceneDescription: string;
+  }) => Promise<VideoPromptData[]>,
 
   // G-Labs Integration
   glabsHealthCheck: () => Promise<{ running: boolean; tasks_pending?: number; tasks_running?: number; error?: string }>,

@@ -16,7 +16,7 @@ Object.values(SURVIVE_DIRS).forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const { callPollinations } = require('./skeleton-handlers.cjs');
+const { callPollinations, synthesizeDirectElevenLabs } = require('./skeleton-handlers.cjs');
 const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 const historyManager = require('./history-manager.cjs');
 
@@ -36,9 +36,6 @@ const LANG_NAMES = {
 // VoiceAPI Integration (same as Cartoon)
 // ─────────────────────────────────────────────────────────────────────────────
 async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null) {
-    const apiKey = process.env.VOICEAPI_KEY;
-    if (!apiKey) throw new Error('[Survive Voice] VOICEAPI_KEY not set in .env');
-
     // Voice ID: try SURVIVE_VOICE_ID, fallback to STORY_VOICE_ID, then TEST_VOICE_ID
     const voiceId = process.env.SURVIVE_VOICE_ID || process.env.STORY_VOICE_ID || process.env.TEST_VOICE_ID;
     if (!voiceId) throw new Error('[Survive Voice] Set SURVIVE_VOICE_ID, STORY_VOICE_ID, or TEST_VOICE_ID in .env');
@@ -74,6 +71,13 @@ async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null
             fs.unlinkSync(outputPath);
         }
     }
+
+    if (process.env.ElevenLabs_API) {
+        return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
+    }
+
+    const apiKey = process.env.VOICEAPI_KEY;
+    if (!apiKey) throw new Error('[Survive Voice] VOICEAPI_KEY not set in .env');
 
     const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
     const headers = {

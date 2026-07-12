@@ -79,13 +79,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   surviveGenerateVideo: (data) => ipcRenderer.invoke('survive-generate-video', data),
 
   // TikTok Video Localizer — Dialogue Processing
-  localizeAnalyzeDialogue: (videoBase64) => ipcRenderer.invoke('localize-analyze-dialogue', { videoBase64 }),
+  localizeStep1STT: (params) => ipcRenderer.invoke('localize-step1-stt', params),
+  localizeStep2Diarize: (params) => ipcRenderer.invoke('localize-step2-diarize', params),
+  localizeStep3Characters: (params) => ipcRenderer.invoke('localize-step3-characters', params),
+  localizeStep4Voices: (params) => ipcRenderer.invoke('localize-step4-voices', params),
   localizeTranslateSegments: (projectFolder, segments, targetLanguage) => ipcRenderer.invoke('localize-translate-segments', { projectFolder, segments, targetLanguage }),
   localizeGenerateSegmentVideo: (data) => ipcRenderer.invoke('localize-generate-segment-video', data),
   localizeBatchGenerateSegments: (data) => ipcRenderer.invoke('localize-batch-generate-segments', data),
   localizeRegenerateCharacterImage: (projectFolder, characterIndex, customPrompt) => ipcRenderer.invoke('localize-regenerate-character-image', { projectFolder, characterIndex, customPrompt }),
   localizeRetranslate: (projectFolder, transcript, targetLanguage) => ipcRenderer.invoke('localize-retranslate', { projectFolder, transcript, targetLanguage }),
   localizeExtractFrames: (videoBase64, timestamps, projectFolder) => ipcRenderer.invoke('localize-extract-frames', { videoBase64, timestamps, projectFolder }),
+  localizeGenerateVideoPrompts: (params) => ipcRenderer.invoke('localize-generate-video-prompts', params),
 
   // G-Labs Integration
   glabsHealthCheck: () => ipcRenderer.invoke('glabs-health-check'),
