@@ -238,6 +238,7 @@ export interface IElectronAPI {
   primatecastGenerateEpisode: (data: any) => Promise<{ folder: string, clips: string[] }>,
   primatecastGenerateSegment: (data: any) => Promise<{ videoPath: string, videoBase64: string, segmentIndex: number }>,
   primatecastAutoTopic: (data: { language: string, country: string, host1Name: string, host2Name: string, mode?: 'trending' | 'custom_topic' | 'custom_text', customInput?: string, shortVersion?: boolean }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, script: string, scriptRu?: string, overlongLines?: any[] }>,
+  primatecastGetSeoKeywords: (data: { country: string, language: string }) => Promise<string[]>,
   primatecastAnalyzeVideo: (data: { videoBase64: string, language: string, host1Name: string, host2Name: string, shortVersion?: boolean }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, script: string, scriptRu?: string, overlongLines?: any[] }>,
   primatecastSaveAllPrompts: (data: any) => Promise<{ success: boolean }>,
   onPrimatecastProgress: (callback: (data: { status: string, progress?: number }) => void) => void,

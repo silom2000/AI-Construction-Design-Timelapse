@@ -602,6 +602,51 @@ Return ONLY valid JSON in this format:
         }
     }
 
+    // SEO Keywords: fetch actual high-volume search queries for a country
+    ipcMain.handle('primatecast-get-seo-keywords', async (event, { language, country }) => {
+        console.log(`[PrimateCast SEO] Fetching keywords for lang=${language} country=${country}`);
+        try {
+            event.sender.send('primatecast-progress', { status: `🔎 Ищу высокочастотные запросы в ${country}...`, progress: 10 });
+            
+            const searchQuery = `Most searched TikTok queries keywords ${country} ${language} this week top viral trends`;
+            let searchResults = '';
+            try {
+                searchResults = await searchWeb(searchQuery);
+            } catch (e) {
+                console.warn('[PrimateCast SEO] Web search failed', e.message);
+            }
+
+            event.sender.send('primatecast-progress', { status: `🤖 Анализирую SEO и поисковые объемы...`, progress: 50 });
+
+            const prompt = `You are an expert TikTok SEO analyst for ${country}.
+Based on recent search trends and web data:
+${searchResults}
+
+Identify the top 5 to 10 absolute MOST SEARCHED queries that users in ${country} are actively typing into the TikTok search bar right now. 
+These should be queries with high search volume (Search Intent), such as popular questions, viral topics, or highly searched phrases.
+They MUST be in ${language}.
+Focus on conversational and psychological topics (e.g. money, relationships, lifestyle, facts) rather than just dances or songs.
+
+Output ONLY a raw JSON array of strings (no markdown, no other text).
+Example: ["query 1", "query 2", "query 3"]`;
+
+            const rawJson = await callPollinations([
+                { role: 'user', content: prompt }
+            ], true);
+
+            const match = rawJson.match(/\[[\s\S]*\]/);
+            if (!match) throw new Error('Failed to parse SEO keywords JSON from AI: ' + rawJson);
+            
+            const keywords = JSON.parse(match[0]);
+            if (!Array.isArray(keywords)) throw new Error('Result is not an array');
+            
+            return keywords.slice(0, 10);
+        } catch (e) {
+            console.error('[PrimateCast SEO] Error fetching keywords:', e);
+            throw e;
+        }
+    });
+
     // Auto-Topic: fetch REAL trending topics from Google Trends RSS, search custom topics, or adapt custom text
     ipcMain.handle('primatecast-auto-topic', async (event, { language, country, host1Name, host2Name, mode = 'trending', customInput = '', shortVersion = false }) => {
         console.log(`[PrimateCast AutoTopic] lang=${language} country=${country} mode=${mode} shortVersion=${shortVersion}`);
@@ -891,8 +936,15 @@ ${scriptRaw}`;
             // Step 1: Extract audio using ffmpeg
             event.sender.send('primatecast-progress', { status: '🎵 Извлечение аудиодорожки из видео...', progress: 15 });
             const execSync = require('child_process').execSync;
-            execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 -y "${audioPath}"`, { stdio: 'pipe' });
-
+            try {
+                execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 -y "${audioPath}"`, { stdio: 'pipe' });
+            } catch (ffmpegErr) {
+                const errOutput = ffmpegErr.stderr ? ffmpegErr.stderr.toString() : (ffmpegErr.message || '');
+                if (errOutput.includes('does not contain any stream') || errOutput.includes('Invalid argument')) {
+                    throw new Error("В выбранном видео нет аудиодорожки. Пожалуйста, выберите видео со звуком для анализа текста.");
+                }
+                throw ffmpegErr;
+            }
             // Step 2: Transcribe using existing transcribeAudio (whisper via pollinations)
             event.sender.send('primatecast-progress', { status: '🗣️ Транскрибация аудио (STT)...', progress: 40 });
             const { transcribeAudio } = require('./localize-handlers.cjs'); 

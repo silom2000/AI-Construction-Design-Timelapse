@@ -26,23 +26,39 @@ type Step = {
   id: number;
   stepNumber: string;
   line: string;
+  line_ru?: string;
   imagePrompt: string;
   videoPrompt: string;
+  videoPrompt2?: string;
 };
 
 type Script = {
   title: string;
   category: string;
   hook: string;
+  characterPrompt?: string;
   steps: Step[];
 };
 
-type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'meta';
+type TtsService = 'voiceapi' | 'elevenlabs';
+type AiTextModel = 'custom' | 'pollinations';
 
 const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
   { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced generation' },
   { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
   { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash generation' },
+  { value: 'meta', label: 'Meta AI (i2v)', desc: 'Meta image-to-video' },
+];
+
+const TTS_SERVICES: { value: TtsService; label: string; desc: string }[] = [
+  { value: 'voiceapi', label: 'VoiceAPI', desc: 'Default — voiceapi.csv666.ru' },
+  { value: 'elevenlabs', label: 'ElevenLabs', desc: 'Direct ElevenLabs API' },
+];
+
+const AI_TEXT_MODELS: { value: AiTextModel; label: string; desc: string }[] = [
+  { value: 'custom', label: 'Custom Proxy', desc: 'Local Gemini proxy (CUSTOM_AI_URL)' },
+  { value: 'pollinations', label: 'Pollinations', desc: 'Free fallback (openai-large)' },
 ];
 
 const STEP_ICONS: Record<number, string> = {
@@ -67,6 +83,8 @@ export function SurviveTab() {
   const [language, setLanguage] = useState('Russian');
   const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
+  const [ttsService, setTtsService] = useState<TtsService>('voiceapi');
+  const [aiModel, setAiModel] = useState<AiTextModel>('custom');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -76,6 +94,8 @@ export function SurviveTab() {
   const [projectFolder, setProjectFolder] = useState<string>('');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [characterRefUrl, setCharacterRefUrl] = useState<string | null>(null);
+  const [isGeneratingCharacter, setIsGeneratingCharacter] = useState(false);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   const handleGenerateIdeas = async () => {
     setIsLoadingIdeas(true);
@@ -86,13 +106,22 @@ export function SurviveTab() {
     setProjectFolder('');
     setCharacterRefUrl(null);
     try {
-      const result = await window.electronAPI.surviveGenerateIdeas({ language });
+      const result = await window.electronAPI.surviveGenerateIdeas({ language, aiModel });
       setIdeas(result || []);
     } catch (err: any) {
       alert('Failed to generate ideas: ' + err.message);
     } finally {
       setIsLoadingIdeas(false);
     }
+  };
+
+  const handleReset = () => {
+    setIdeas([]);
+    setSelectedIdea(null);
+    setScript(null);
+    setSceneStates({});
+    setProjectFolder('');
+    setCharacterRefUrl(null);
   };
 
   const handleSelectIdea = async (idea: Idea) => {
@@ -110,13 +139,38 @@ export function SurviveTab() {
       const scriptData = await window.electronAPI.surviveGenerateScript({
         idea,
         language,
-        projectFolder: folderName
+        projectFolder: folderName,
+        aiModel
       });
       setScript(scriptData);
+      
+      // Automatically generate the main character reference once the script is ready
+      if (scriptData.characterPrompt) {
+        handleGenerateCharacter(scriptData.characterPrompt, folderName);
+      }
     } catch (err: any) {
       alert('Failed to generate script: ' + err.message);
     } finally {
       setIsLoadingScript(false);
+    }
+  };
+
+  const handleGenerateCharacter = async (prompt: string, folder: string) => {
+    setIsGeneratingCharacter(true);
+    setCharacterRefUrl(null);
+    try {
+      const imgUrl = await window.electronAPI.surviveGenerateImage({
+        sceneIndex: -1, // -1 becomes scene_0.jpg
+        imagePrompt: prompt,
+        imageModel,
+        projectFolder: folder,
+        referenceImageUrl: undefined
+      });
+      setCharacterRefUrl(imgUrl);
+    } catch (err: any) {
+      alert('Failed to generate main character: ' + err.message);
+    } finally {
+      setIsGeneratingCharacter(false);
     }
   };
 
@@ -139,16 +193,13 @@ export function SurviveTab() {
         imagePrompt: step.imagePrompt,
         imageModel,
         projectFolder,
-        referenceImageUrl: sceneIndex > 0 ? refUrl : undefined
+        referenceImageUrl: refUrl, // Use the main character ref for ALL scenes
+        oldFileUrl: sceneStates[sceneIndex]?.imgUrl
       });
       setSceneStates(prev => ({
         ...prev,
         [sceneIndex]: { ...prev[sceneIndex], imgUrl, imgLoading: false, statusText: 'Image ready' }
       }));
-      // Store scene 0 image as character reference for subsequent scenes
-      if (sceneIndex === 0 && imgUrl) {
-        setCharacterRefUrl(imgUrl);
-      }
       return imgUrl;
     } catch (err: any) {
       alert(`Image generation failed for step ${sceneIndex}: ${err.message}`);
@@ -174,7 +225,8 @@ export function SurviveTab() {
         sceneIndex,
         narrationLine: step.line,
         language,
-        projectFolder
+        projectFolder,
+        ttsService
       });
       setSceneStates(prev => ({
         ...prev,
@@ -209,10 +261,12 @@ export function SurviveTab() {
       const vidUrl = await window.electronAPI.surviveGenerateVideo({
         sceneIndex,
         videoPrompt: step.videoPrompt,
+        videoPrompt2: step.videoPrompt2,
         sourceImageUrl: imgUrl,
         narrationLine: step.line,
         videoModel,
-        projectFolder
+        projectFolder,
+        oldFileUrl: sceneStates[sceneIndex]?.vidUrl
       });
       setSceneStates(prev => ({
         ...prev,
@@ -229,17 +283,26 @@ export function SurviveTab() {
 
   const handleGenerateAll = async () => {
     if (!script) return;
-    // Track ref URL locally to avoid stale closure across async loop iterations
+    
+    // Ensure character reference exists
     let localRefUrl: string | null = characterRefUrl;
+    if (!localRefUrl && script.characterPrompt) {
+      // If missing, generate it first before proceeding
+      await handleGenerateCharacter(script.characterPrompt, projectFolder);
+      // characterRefUrl state won't update in time for this function block, so we grab it indirectly
+      // But ideally it was generated automatically. If it failed, we can't easily proceed.
+      // We will assume the user has a characterRefUrl by now.
+      if (!characterRefUrl) {
+         alert("Main character is still generating or failed. Please wait.");
+         return;
+      }
+      localRefUrl = characterRefUrl;
+    }
+
     for (let i = 0; i < script.steps.length; i++) {
       let imgUrl = sceneStates[i]?.imgUrl;
       if (!imgUrl) {
         imgUrl = await handleGenerateImage(i, localRefUrl);
-      }
-      // Once scene 0 image is ready, store as character ref for all subsequent scenes
-      if (i === 0 && imgUrl) {
-        localRefUrl = imgUrl;
-        setCharacterRefUrl(imgUrl);
       }
       if (!sceneStates[i]?.audioUrl) await handleGenerateAudio(i);
       await handleGenerateVideo(i, imgUrl);
@@ -329,12 +392,54 @@ export function SurviveTab() {
           </div>
         </div>
 
+        <div className="survive-form-group">
+          <label className="survive-label">Voice Service</label>
+          <div className="survive-model-group">
+            {TTS_SERVICES.map(svc => (
+              <label key={svc.value} className={`survive-model-option ${ttsService === svc.value ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="ttsService"
+                  value={svc.value}
+                  checked={ttsService === svc.value}
+                  onChange={() => setTtsService(svc.value)}
+                />
+                <div className="survive-model-label">
+                  <span className="survive-model-name">{svc.label}</span>
+                  <span className="survive-model-desc">{svc.desc}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="survive-form-group">
+          <label className="survive-label">AI Text Model</label>
+          <div className="survive-model-group">
+            {AI_TEXT_MODELS.map(m => (
+              <label key={m.value} className={`survive-model-option ${aiModel === m.value ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="aiModel"
+                  value={m.value}
+                  checked={aiModel === m.value}
+                  onChange={() => setAiModel(m.value)}
+                />
+                <div className="survive-model-label">
+                  <span className="survive-model-name">{m.label}</span>
+                  <span className="survive-model-desc">{m.desc}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <button
           className="survive-btn"
           onClick={handleGenerateIdeas}
           disabled={isLoadingIdeas}
         >
-          {isLoadingIdeas ? '⏳ Generating...' : '🎲 Generate 5 Survival Scenarios'}
+          {isLoadingIdeas ? '⏳ Generating...' : '🎲 Generate 3 Survival Scenarios'}
         </button>
 
         {/* ── Idea Cards ──────────────────────────────────────────────────── */}
@@ -350,7 +455,12 @@ export function SurviveTab() {
                 <div className="survive-idea-category">{idea.category}</div>
                 <div className="survive-idea-title">{idea.scenario}</div>
                 <div className="survive-idea-hook">{idea.hook}</div>
-                <div className="survive-idea-meta">
+                {language !== 'Russian' && idea.translation_ru && (
+                  <div className="survive-idea-translation" style={{ marginTop: '8px', padding: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', fontSize: '0.8rem', color: '#999', fontStyle: 'italic', borderLeft: '2px solid #555', textAlign: 'left' }}>
+                    {idea.translation_ru}
+                  </div>
+                )}
+                <div className="survive-idea-meta" style={{ marginTop: '10px' }}>
                   <span>📝 {idea.stepsCount} Steps</span>
                   <span className={`survive-idea-difficulty difficulty-${idea.difficulty}`}>
                     {idea.difficulty === 'низкая' ? '🟢 Easy' : idea.difficulty === 'средняя' ? '🟡 Medium' : '🔴 Hard'}
@@ -384,9 +494,45 @@ export function SurviveTab() {
               <h3 className="survive-script-title">{script.title}</h3>
               <p className="survive-script-category">Category: {script.category}</p>
               <p className="survive-script-hook">{script.hook}</p>
-              <button className="survive-generate-all-btn" onClick={handleGenerateAll}>
-                ⚡ Generate All (Images + Audio + Videos)
-              </button>
+              
+              {script.characterPrompt && (
+                <div className="survive-character-ref-block">
+                  <div className="survive-character-ref-content">
+                    <h4>👤 Main Character Reference</h4>
+                    <p className="survive-character-prompt">{script.characterPrompt}</p>
+                    <button 
+                      className="survive-generate-character-btn"
+                      disabled={isGeneratingCharacter}
+                      onClick={() => handleGenerateCharacter(script.characterPrompt!, projectFolder)}
+                    >
+                      {isGeneratingCharacter ? 'Generating Character...' : '🔄 Regenerate Character'}
+                    </button>
+                  </div>
+                  <div className="survive-character-ref-image">
+                    {isGeneratingCharacter ? (
+                      <div className="survive-spinner"></div>
+                    ) : characterRefUrl ? (
+                      <img 
+                        src={characterRefUrl} 
+                        alt="Character Reference" 
+                        onClick={() => setEnlargedImage(characterRefUrl)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    ) : (
+                      <div className="survive-character-placeholder">No character generated</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="survive-script-actions">
+                <button className="survive-generate-all-btn" onClick={handleGenerateAll}>
+                  ⚡ Generate All (Images + Audio + Videos)
+                </button>
+                <button className="survive-reset-btn" onClick={handleReset}>
+                  🔄 Reset
+                </button>
+              </div>
             </div>
 
             <div className="survive-scenes-grid">
@@ -403,6 +549,11 @@ export function SurviveTab() {
                     <div className="survive-scene-narration">
                       <strong>Narration:</strong>
                       <p>{step.line}</p>
+                      {language !== 'Russian' && step.line_ru && (
+                        <p style={{ marginTop: '6px', fontSize: '0.85rem', color: '#999', fontStyle: 'italic', borderLeft: '2px solid #555', paddingLeft: '8px' }}>
+                          {step.line_ru}
+                        </p>
+                      )}
                     </div>
 
                     <div className="survive-scene-actions">
@@ -411,7 +562,7 @@ export function SurviveTab() {
                         onClick={() => handleGenerateImage(idx)}
                         disabled={state.imgLoading}
                       >
-                        {state.imgLoading ? '⏳ Image...' : state.imgUrl ? '✅ Image' : '🖼️ Generate Image'}
+                        {state.imgLoading ? '⏳ Image...' : state.imgUrl ? '🔄 Regen Image' : '🖼️ Generate Image'}
                       </button>
                       <button
                         className="survive-scene-btn"
@@ -425,7 +576,7 @@ export function SurviveTab() {
                         onClick={() => handleGenerateVideo(idx)}
                         disabled={state.vidLoading || !state.imgUrl}
                       >
-                        {state.vidLoading ? '⏳ Video...' : state.vidUrl ? '✅ Video' : '🎬 Generate Video'}
+                        {state.vidLoading ? '⏳ Video...' : state.vidUrl ? '🔄 Regen Video' : '🎬 Generate Video'}
                       </button>
                     </div>
 
@@ -435,7 +586,12 @@ export function SurviveTab() {
 
                     {state.imgUrl && (
                       <div className="survive-scene-preview">
-                        <img src={state.imgUrl} alt={`Step ${idx}`} />
+                        <img 
+                          src={state.imgUrl} 
+                          alt={`Step ${idx}`} 
+                          onClick={() => setEnlargedImage(state.imgUrl!)}
+                          style={{ cursor: 'pointer' }}
+                        />
                       </div>
                     )}
 
@@ -467,11 +623,20 @@ export function SurviveTab() {
                         <strong>Video Prompt:</strong>
                         <button
                           className="survive-copy-btn"
-                          onClick={() => handleCopyPrompt(step.videoPrompt, idx * 2 + 1)}
+                          onClick={() => handleCopyPrompt(step.videoPrompt + (step.videoPrompt2 ? `\n\nPart 2: ${step.videoPrompt2}` : ''), idx * 2 + 1)}
                         >
-                          {copiedIdx === idx * 2 + 1 ? '✅ Copied' : '📋 Copy'}
+                          {copiedIdx === idx * 2 + 1 ? 'Copied!' : 'Copy Video Prompt'}
                         </button>
-                        <pre>{step.videoPrompt}</pre>
+                        <div className="survive-prompts-content">
+                          <p><strong>Video Prompt:</strong></p>
+                          <pre>{step.videoPrompt}</pre>
+                          {step.videoPrompt2 && (
+                            <>
+                              <p><strong>Video Prompt (Part 2):</strong></p>
+                              <pre>{step.videoPrompt2}</pre>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </details>
                   </div>
@@ -481,6 +646,16 @@ export function SurviveTab() {
           </>
         )}
       </main>
+
+      {/* ── IMAGE MODAL ────────────────────────────────────────────────────── */}
+      {enlargedImage && (
+        <div className="survive-image-modal" onClick={() => setEnlargedImage(null)}>
+          <div className="survive-image-modal-content" onClick={(e) => e.stopPropagation()}>
+            <img src={enlargedImage} alt="Enlarged view" />
+            <button className="survive-image-modal-close" onClick={() => setEnlargedImage(null)}>✕</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

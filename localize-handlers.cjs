@@ -99,6 +99,16 @@ RULES:
 - The speaker's personality should come through
 OUTPUT: Return ONLY the translated text, nothing else. No JSON, no quotes, no explanations.`;
 
+// ── System Prompt for Segment Translation (English) ────────────────────────────
+const TRANSLATION_EN_PROMPT = `You are a professional English localizer for TikTok dialogue content.
+Translate the provided dialogue line into natural, colloquial English suitable for a TikTok audience.
+RULES:
+- Use casual, engaging English
+- Keep the translation concise — similar length to the original
+- Preserve the emotional tone and intent of the original
+- The speaker's personality should come through
+OUTPUT: Return ONLY the translated text, nothing else. No JSON, no quotes, no explanations.`;
+
 // ── System Prompt for Voice Characteristics Analysis ───────────────────────────
 const VOICE_ANALYSIS_PROMPT = `You are a professional voice and audio analyst. Analyze the provided audio sample of a speaker and determine their vocal characteristics.
 
@@ -206,23 +216,99 @@ function muxAudioIntoVideo(videoPath, audioPath, outputPath) {
     });
 }
 
+// ── STT: Transcribe audio with custom proxy (Primary) ──────────────────────────
+async function transcribeAudioGemini(audioPath, model) {
+    const audioBuffer = fs.readFileSync(audioPath);
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+    const body = Buffer.concat([
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="audio.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n`),
+        audioBuffer,
+        Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\n${model}\r\n`),
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="response_format"\r\n\r\nverbose_json\r\n`),
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="timestamp_granularities[]"\r\n\r\nword\r\n`),
+        Buffer.from(`--${boundary}--\r\n`)
+    ]);
+
+    const apiKey = process.env.CUSTOM_AI_API_KEY || process.env.GEMINI_API_KEY || 'dummy-key';
+    console.log(`[Localize] Sending audio to Custom STT (model: ${model})...`);
+    const { statusCode, body: resBody } = await request('http://127.0.0.1:8045/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body,
+        headersTimeout: 180000,
+        bodyTimeout: 180000
+    });
+
+    const rawText = await resBody.text();
+    if (statusCode !== 200) {
+        throw new Error(`Custom Transcription failed (${statusCode}): ${rawText.substring(0, 200)}`);
+    }
+
+    let data;
+    try {
+        data = JSON.parse(rawText);
+    } catch (parseErr) {
+        throw new Error(`Custom Transcription response is not valid JSON: ${rawText.substring(0, 200)}`);
+    }
+
+    if (!data.words || data.words.length === 0) {
+        throw new Error("Custom Transcription missing 'words' timestamps. Diarization requires word-level timestamps.");
+    }
+
+    console.log(`[Localize] Custom Transcription complete: ${data.words.length} words`);
+    return {
+        text: data.text || '',
+        words: data.words.map(w => ({
+            start: w.start || 0,
+            end: w.end || 0,
+            word: w.word || ''
+        }))
+    };
+}
+
+async function transcribeAudioCustomProxy(audioPath) {
+    return await transcribeAudioGemini(audioPath, 'gemini-2.5-flash');
+}
+
 // ── STT: Transcribe audio with retry logic ──────────────────────────────────────
 async function transcribeAudioWithRetry(audioPath, retries = 3) {
-    let lastError = null;
+    let customLastError = null;
+
+    // Try custom service 3 times
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             if (attempt > 1) {
-                console.log(`[Localize] Waiting 6 seconds before retry attempt ${attempt}...`);
-                await new Promise(r => setTimeout(r, 6000));
+                console.log(`[Localize] Custom STT: Waiting 2 seconds before retry attempt ${attempt}...`);
+                await new Promise(r => setTimeout(r, 2000));
             }
-            console.log(`[Localize] Sending audio for transcription (attempt ${attempt}/${retries})...`);
-            return await transcribeAudio(audioPath);
+            return await transcribeAudioCustomProxy(audioPath);
         } catch (e) {
-            console.error(`[Localize] STT attempt ${attempt} failed: ${e.message}`);
-            lastError = e;
+            console.error(`[Localize] Custom STT attempt ${attempt} failed: ${e.message}`);
+            customLastError = e;
         }
     }
-    throw lastError;
+
+    console.warn('[Localize] Custom STT failed 3 times. Falling back to Pollinations...');
+
+    let pollLastError = null;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            if (attempt > 1) {
+                console.log(`[Localize] Pollinations STT: Waiting 6 seconds before retry attempt ${attempt}...`);
+                await new Promise(r => setTimeout(r, 6000));
+            }
+            console.log(`[Localize] Pollinations STT: Sending audio for transcription (attempt ${attempt}/${retries})...`);
+            return await transcribeAudio(audioPath);
+        } catch (e) {
+            console.error(`[Localize] Pollinations STT attempt ${attempt} failed: ${e.message}`);
+            pollLastError = e;
+        }
+    }
+
+    throw new Error(`Both custom STT and Pollinations failed. Last Pollinations error: ${pollLastError?.message}`);
 }
 
 // ── STT: Transcribe audio using Pollinations scribe endpoint ───────────────────
@@ -814,9 +900,10 @@ function registerLocalizeHandlers(ipcMain) {
     ipcMain.handle('localize-translate-segments', async (event, { projectFolder, segments, targetLanguage }) => {
         const projectDir = path.join(LOCALIZE_DIR, projectFolder);
         const isGerman = targetLanguage === 'german' || targetLanguage === 'German' || targetLanguage === 'de';
-        const langLabel = isGerman ? 'German' : 'French';
-        const langFile = isGerman ? 'segments_german.json' : 'segments_french.json';
-        const systemPrompt = isGerman ? TRANSLATION_DE_PROMPT : TRANSLATION_FR_PROMPT;
+        const isEnglish = targetLanguage === 'english' || targetLanguage === 'English' || targetLanguage === 'en';
+        const langLabel = isGerman ? 'German' : isEnglish ? 'English' : 'French';
+        const langFile = isGerman ? 'segments_german.json' : isEnglish ? 'segments_english.json' : 'segments_french.json';
+        const systemPrompt = isGerman ? TRANSLATION_DE_PROMPT : isEnglish ? TRANSLATION_EN_PROMPT : TRANSLATION_FR_PROMPT;
 
         console.log(`[Localize] Translating ${segments.length} segments to ${langLabel}...`);
         const translated = [];
@@ -1010,8 +1097,9 @@ function registerLocalizeHandlers(ipcMain) {
     // ═══════════════════════════════════════════════════════════════════════════
     ipcMain.handle('localize-retranslate', async (event, { projectFolder, transcript, targetLanguage }) => {
         const isGerman = targetLanguage === 'german' || targetLanguage === 'German' || targetLanguage === 'de';
-        const systemPrompt = isGerman ? TRANSLATION_DE_PROMPT : TRANSLATION_FR_PROMPT;
-        const langLabel = isGerman ? 'German' : 'French';
+        const isEnglish = targetLanguage === 'english' || targetLanguage === 'English' || targetLanguage === 'en';
+        const systemPrompt = isGerman ? TRANSLATION_DE_PROMPT : isEnglish ? TRANSLATION_EN_PROMPT : TRANSLATION_FR_PROMPT;
+        const langLabel = isGerman ? 'German' : isEnglish ? 'English' : 'French';
 
         const msg = [
             { role: 'system', content: systemPrompt },

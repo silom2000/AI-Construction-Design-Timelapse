@@ -762,34 +762,8 @@ For EACH scene (exactly 6), generate following JSON:
 
     ipcMain.handle('studio-generate-ideas', async (event, { mode, language, provider }) => {
         const langName = LANG_NAMES[language] || 'English';
+        console.log(`[Studio SEO] Fetching SEO keywords for lang=${langName} mode=${mode}`);
 
-        // Cultural context mapping for different languages/countries
-        const culturalContext = {
-            'English': 'Western lifestyle (USA, UK, Canada, Australia): focus on productivity hacks, tech gadgets, work-from-home, fitness culture, time management',
-            'German': 'German lifestyle: focus on engineering precision, efficiency, eco-friendly solutions, punctuality, quality tools, organized living',
-            'French': 'French lifestyle: focus on style, elegance, home comfort, work-life balance, aesthetic solutions, culinary tools (non-food), fashion accessories',
-            'Spanish': 'Spanish lifestyle: focus on social life, family time, siesta culture, outdoor living, warm climate solutions, festive preparations',
-            'Italian': 'Italian lifestyle: focus on design, craftsmanship, family traditions, home aesthetics, fashion, artisan tools',
-            'Russian': 'Russian lifestyle: focus on practical solutions, winter survival, apartment living, DIY repairs, resourcefulness, durability',
-            'Polish': 'Polish lifestyle: focus on home improvement, practical hacks, seasonal challenges, family gatherings, budget-friendly solutions',
-            'Portuguese': 'Portuguese/Brazilian lifestyle: focus on tropical climate, beach culture, compact living, resourcefulness, social gatherings',
-            'Chinese': 'Chinese lifestyle: focus on space-saving, urban living, efficiency, traditional wisdom meets modern tech, family harmony',
-            'Japanese': 'Japanese lifestyle: focus on minimalism, organization, small spaces, precision, quality over quantity, seasonal living'
-        };
-
-        const cultureNote = culturalContext[langName] || culturalContext['English'];
-
-        // Get random categories for variety + exclusion list to avoid repeats
-        const randomCats = getRandomCategories(3);
-        const historyKey = `studio_${mode}_${language}`;
-        const completedTopics = historyManager.getTopics(historyKey);
-        const exclusionClause = completedTopics.length > 0
-            ? `\nEXCLUSION LIST вЂ” DO NOT repeat or rephrase any of these previously generated ideas:\n${completedTopics.slice(-30).join('\n')}\n`
-            : '';
-
-        const randomSeed = Math.floor(Math.random() * 100000);
-
-        // Build seasonal/trend context from current date
         const now = new Date();
         const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const currentMonth = monthNames[now.getMonth()];
@@ -797,154 +771,45 @@ For EACH scene (exactly 6), generate following JSON:
         const seasonMap = { 0:'winter',1:'winter',2:'spring',3:'spring',4:'spring',5:'summer',6:'summer',7:'summer',8:'autumn',9:'autumn',10:'autumn',11:'winter' };
         const currentSeason = seasonMap[now.getMonth()];
 
-        // Country-specific seasonal trends
-        const seasonalTrends = {
-            'English': {
-                'winter': 'New Year resolutions, cold weather hacks, heating bills, holiday cleanup, winter skincare',
-                'spring': 'spring cleaning, allergy season, gardening start, decluttering, tax season tips',
-                'summer': 'heat survival, vacation packing, sunscreen hacks, outdoor living, energy saving',
-                'autumn': 'back to school, fall organization, cold prevention, daylight saving, cozy home setup'
-            },
-            'Russian': {
-                'winter': 'новогодняя подготовка, экономия на отоплении, зимний уход за авто, лайфхаки от холода, сухой воздух в квартире',
-                'spring': 'весенняя уборка, дача/огород, аллергия на пыльцу, смена шин, расхламление балкона',
-                'summer': 'спасение от жары, комары и мошки, отпуск и путешествия, дача, защита от солнца',
-                'autumn': 'школа и учёба, осенняя хандра, подготовка авто к зиме, сезон простуд, утепление окон'
-            },
-            'French': {
-                'winter': 'fêtes de fin d\'année, chauffage économique, soldes d\'hiver, ski et montagne, soins peau sèche',
-                'spring': 'ménage de printemps, jardinage, allergies, Tour de France prep, rangement maison',
-                'summer': 'canicule, vacances, plage, anti-moustiques, économies d\'énergie',
-                'autumn': 'rentrée scolaire, vendanges, bricolage maison, rhume et grippe, changement d\'heure'
-            },
-            'German': {
-                'winter': 'Weihnachtsvorbereitung, Heizkosten sparen, Winterreifen, Erkältung vorbeugen, Silvester',
-                'spring': 'Frühjahrsputz, Garten, Pollenallergie, Steuererklärung, Balkon bepflanzen',
-                'summer': 'Hitze-Tipps, Urlaub, Grillen, Energiesparen, Insektenschutz',
-                'autumn': 'Schulanfang, Herbstdeko, Auto winterfest, Erkältungszeit, Zeitumstellung'
-            },
-            'Spanish': {
-                'winter': 'Navidad, ahorro calefacción, rebajas, resaca Año Nuevo, piel seca',
-                'spring': 'limpieza primaveral, alergia, Semana Santa, organización armarios, jardín',
-                'summer': 'ola de calor, vacaciones, playa, mosquitos, ahorro energía',
-                'autumn': 'vuelta al cole, otoño en casa, resfriados, cambio de hora, ahorro'
-            },
-            'Polish': {
-                'winter': 'święta Bożego Narodzenia, ogrzewanie, zimowe hacki, sylwester, suche powietrze',
-                'spring': 'wiosenne porządki, ogród, alergia, działka, rozchlamienie',
-                'summer': 'upały, wakacje, komary, działka, oszczędzanie energii',
-                'autumn': 'powrót do szkoły, jesienne przeziębienia, przygotowanie auta na zimę, zmiana czasu'
-            }
-        };
-
-        const langTrends = seasonalTrends[langName] || seasonalTrends['English'];
-        const fallbackTrendContext = langTrends[currentSeason] || langTrends['winter'];
-
-        // 🔍 Real-time web search for current trends via Perplexity
-        const liveTrends = await searchTrends(langName, mode, currentSeason, currentMonth, currentYear);
-        const trendContext = liveTrends
-            ? `🔍 LIVE WEB SEARCH RESULTS (real trending topics RIGHT NOW):\n${liveTrends}\n\n📋 Seasonal fallback: ${fallbackTrendContext}`
-            : `📋 Seasonal trends: ${fallbackTrendContext}`;
-
-        const prompt = mode === 'health'
-            ? `ШАГ 1 — ПОИСК ИДЕЙ (Topic Finder) [Seed: ${randomSeed}]
-               📅 TODAY: ${currentMonth} ${currentYear}, season: ${currentSeason}.
-               🔥 CURRENT TRENDS for ${langName}-speaking audience:
-               ${trendContext}
-
-               Provide me 3 highly viral LIFEHACK topic ideas for health-niche talking-object AI Shorts/Reels, where fruits, vegetables, or healthy foods become anthropomorphic expert characters inside the human body and reveal insider secrets about what they ACTUALLY do.
-
-               IDEAS MUST BE RELEVANT TO THE CURRENT SEASON AND MONTH. Think about what health problems people face RIGHT NOW in ${currentMonth}.
-
-               FORMAT RULES:
-               - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
-               - Topic must center on ONE mass-interest health goal: fat burn, digestion, immunity, energy, hormones, skin, heart, blood sugar, or sleep.
-               - The food characters are NOT fighting — they are EXPERT INSIDERS sharing secrets.
-               - Each idea must include: Hook line + Food type + Core lifehack angle + Emotional payoff.
-               - Visual-friendly for AI animation, 60–90 second format.
-               ${exclusionClause}
-               Target Language: ${langName}.
-
-               Output ONLY a JSON object with an "ideas" array (EXACTLY 3 ideas):
-               {"ideas": [{"original": "HOOK: [Hook Line]. TITLE: [Catchy Name]. FOODS: [Items]. HACK: [Secret]. PAYOFF: [Benefit]", "translation": "Полный перевод идеи на русский язык: ХУК: [Hook Line]. НАЗВАНИЕ: [Catchy Name]. ЕДА: [Items]. ЛАЙФХАК: [Secret]. ВЫГОДА: [Benefit]"}]}`
-            : `ШАГ 1 — ПОИСК ИДЕЙ (Topic Finder) [Seed: ${randomSeed}]
-               📅 TODAY: ${currentMonth} ${currentYear}, season: ${currentSeason}.
-               🔥 CURRENT TRENDS for ${langName}-speaking audience:
-               ${trendContext}
-
-               Provide me 3 highly viral LIFEHACK topic ideas for a talking-objects Short/Reel, optimized for TikTok, Instagram Reels and YouTube Shorts.
-
-               🎯 THIS TIME, USE OBJECTS FROM THESE SPECIFIC CATEGORIES:
-               ${randomCats.map((c, i) => `${i + 1}. ${c}`).join('\n               ')}
-
-               🌍 CULTURAL ADAPTATION FOR ${langName.toUpperCase()}:
-               ${cultureNote}
-
-               📆 SEASONAL RELEVANCE (CRITICAL):
-               Your ideas MUST be relevant to ${currentMonth} ${currentYear}. Think about what people in ${langName}-speaking countries are dealing with RIGHT NOW:
-               - Current seasonal challenges: ${trendContext}
-               - What everyday problems are people solving this month?
-               - What objects become especially relevant in ${currentSeason}?
-
-               IMPORTANT: Adapt lifehacks to match the lifestyle, climate, living conditions, and daily challenges specific to ${langName}-speaking countries.
-
-               Pick DIFFERENT, UNUSUAL, UNEXPECTED objects from those categories. Be CREATIVE and SPECIFIC. Avoid generic overused items like "water bottle", "pillow", "toothbrush", "alarm clock".
-
-               STRICTLY FORBIDDEN:
-               - Food items (fruits, vegetables, meals, snacks, drinks, ingredients)
-               - Kitchen utensils related to food preparation
-               - Eating or cooking-related objects
-               - Focus on NON-FOOD lifehacks only
-
-               FORMAT RULES:
-               - Each idea must open with a HOOK LINE (1 sentence) that creates instant curiosity or shock.
-               - The hook must sound like the object is revealing a secret, exposing a mistake, or sharing a trick that saves time/money/health.
-               - Topic must center on ONE mass-interest problem: health, money, productivity, sleep, habits, fitness, or home organization.
-               - The object is not fighting — it's TEACHING. It has an insider secret and can't wait to tell it.
-               - Each idea must include: Hook line + Object name + Core lifehack angle + Emotional payoff.
-               - Visual-friendly for AI animation, 30-60 second format.
-               - ALL 3 ideas must use DIFFERENT objects. Maximum variety!
-               ${exclusionClause}
-               Target Language: ${langName}.
-               Output ONLY a JSON object with an "ideas" array (EXACTLY 3 ideas): {"ideas": [{"original": "Hook: [Your Hook Line]. Idea: [Your Idea Details]", "translation": "Полный перевод идеи на русский язык: Хук: [Your Hook Line]. Идея: [Your Idea Details]"}]}`;
-
-        const raw = await callPollinations([{ role: 'user', content: prompt }], true, provider);
-        console.log(`[Studio Ideas] Categories used: ${randomCats.join(' | ')}`);
-        console.log(`[Studio Ideas] Raw AI Result:`, raw);
-
         try {
-            const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw.match(/\[[\s\S]*\]/)?.[0] || raw;
-            const parsed = JSON.parse(jsonText);
+            // 🔍 Real-time web search for current trends via Perplexity
+            const liveTrends = await searchTrends(langName, mode, currentSeason, currentMonth, currentYear);
             
-            let items = [];
-            if (Array.isArray(parsed)) {
-                items = parsed;
-            } else if (parsed && Array.isArray(parsed.ideas)) {
-                items = parsed.ideas;
-            } else if (parsed && typeof parsed.original === 'string') {
-                items = [parsed]; // AI only generated one object
-            } else if (parsed && typeof parsed === 'object') {
-                // Fallback: look for the first array value
-                const firstArray = Object.values(parsed).find(Array.isArray);
-                if (firstArray) items = firstArray;
-            }
+            const niche = mode === 'health' 
+                ? 'health, wellness, food benefits, anatomy, daily habits, life hacks' 
+                : 'household items, daily problems, lifehacks, room organization, productivity';
 
-            const ideas = items.map(item => ({
-                original: typeof item === 'string' ? item : (item.original || ''),
-                translation: item.translation || item.russian || ''
+            const prompt = `You are an expert TikTok SEO analyst for ${langName}-speaking audience.
+Based on recent search trends and web data for ${currentMonth} ${currentYear} (${currentSeason}):
+${liveTrends || 'No live data, use your best knowledge of current viral trends.'}
+
+Identify the top 5 to 10 absolute MOST SEARCHED queries that users are actively typing into the TikTok search bar right now regarding: ${niche}. 
+These should be queries with high search volume (Search Intent), such as popular questions, viral topics, or highly searched phrases.
+They MUST be in ${langName} language.
+
+Output ONLY a raw JSON array of strings (no markdown, no other text).
+Example: ["query 1", "query 2", "query 3"]`;
+
+            const rawJson = await callPollinations([
+                { role: 'user', content: prompt }
+            ], true, provider);
+
+            const match = rawJson.match(/\[[\s\S]*\]/);
+            if (!match) throw new Error('Failed to parse SEO keywords JSON from AI: ' + rawJson);
+            
+            const keywords = JSON.parse(match[0]);
+            if (!Array.isArray(keywords)) throw new Error('Result is not an array');
+            
+            // Map to the { original, translation } format expected by StudioTab
+            const ideas = keywords.slice(0, 10).map(kw => ({
+                original: kw,
+                translation: ''
             }));
-
-            // Save generated ideas to history for future exclusion
-            for (const idea of ideas) {
-                if (idea.original) {
-                    historyManager.addTopic(historyKey, idea.original.substring(0, 100));
-                }
-            }
 
             return ideas;
         } catch (e) {
-            console.error('Failed to parse Studio ideas:', raw, e.message);
-            return [];
+            console.error('[Studio SEO] Error fetching keywords:', e);
+            throw e;
         }
     });
 

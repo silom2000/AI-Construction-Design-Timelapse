@@ -44,11 +44,17 @@ type Script = {
 };
 
 type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
+type TtsService = 'voiceapi' | 'elevenlabs';
 
 const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
   { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced generation' },
   { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
   { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash generation' },
+];
+
+const TTS_SERVICES: { value: TtsService; label: string; desc: string }[] = [
+  { value: 'voiceapi', label: 'VoiceAPI', desc: 'Default — voiceapi.csv666.ru' },
+  { value: 'elevenlabs', label: 'ElevenLabs', desc: 'Direct ElevenLabs API' },
 ];
 
 const LIFE_STAGE_ICONS: Record<number, string> = {
@@ -78,6 +84,7 @@ export function StoryTab() {
   const [topic, setTopic] = useState('');
   const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
+  const [ttsService, setTtsService] = useState<TtsService>('voiceapi');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -185,6 +192,7 @@ export function StoryTab() {
         sceneIndex: sceneId,
         text: text,
         language,
+        ttsService,
         projectFolder
       });
       setSceneStates(prev => ({ ...prev, [sceneId]: { ...prev[sceneId], audioLoading: false, audioUrl: url, statusText: undefined } }));
@@ -299,6 +307,37 @@ export function StoryTab() {
                   <div>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: videoModel === m.value ? '#fff' : '#ccc' }}>{m.label}</div>
                     <div style={{ fontSize: '10px', color: '#888' }}>{m.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label className="story-label" style={{ marginBottom: '6px' }}>
+              Voice Service:
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {TTS_SERVICES.map(s => (
+                <div
+                  key={s.value}
+                  onClick={() => setTtsService(s.value)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '8px 10px', borderRadius: '6px', cursor: 'pointer',
+                    backgroundColor: ttsService === s.value ? '#1a3a2a' : '#222',
+                    border: ttsService === s.value ? '1px solid #4ade80' : '1px solid #444',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <div style={{
+                    width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0,
+                    border: ttsService === s.value ? '4px solid #4ade80' : '2px solid #666',
+                    backgroundColor: ttsService === s.value ? '#fff' : 'transparent'
+                  }} />
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: ttsService === s.value ? '#fff' : '#ccc' }}>{s.label}</div>
+                    <div style={{ fontSize: '10px', color: '#888' }}>{s.desc}</div>
                   </div>
                 </div>
               ))}

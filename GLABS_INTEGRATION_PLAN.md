@@ -67,8 +67,8 @@
 ### Доступные модели изображений:
 | Модель | Webhook значение | Лимит референсов |
 |--------|-----------------|-----------------|
-| Nano Banana | `nano_banana` | 5 (категоризированных) |
-| **Imagen 4** | `imagen4` | 5 (категоризированных) |
+| 
+| 
 | Nano Banana 2 | `nano_banana_2` | 10 (некатегоризированных) |
 | Nano Banana Pro | `nano_banana_pro` | 10 (некатегоризированных) |
 
@@ -138,13 +138,14 @@ preload.cjs           ← Expose новых electronAPI методов
 │   [💾 Сохранить]        │
 │                         │
 │ ● Модель изображений:   │
-│   ○ Imagen 4            │
+│               │
 │   ○ Nano Banana         │
 │   ○ Nano Banana Pro     │
 │                         │
 │ ● Модель видео:         │
 │   ○ Veo 3.1 Fast (10cr) │
-│   ○ Veo 3.1 Quality     │
+│   ○ Veo 3.1 Quality
+     Omni Flash     │
 │                         │
 │ ● Аспект:               │
 │   ○ 9:16  ○ 16:9  ○ 1:1 │

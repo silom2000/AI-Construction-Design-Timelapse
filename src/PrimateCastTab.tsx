@@ -46,6 +46,8 @@ const PrimateCastTab: React.FC = () => {
   const [videoBase64, setVideoBase64] = useState<string>('');
   const [selectedVideoName, setSelectedVideoName] = useState<string>('');
   const [fullVersion, setFullVersion] = useState(false);
+  const [seoKeywords, setSeoKeywords] = useState<string[]>([]);
+  const [selectedKeyword, setSelectedKeyword] = useState<string>('');
 
   // Computed script stats
   const scriptWords = script.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -141,6 +143,27 @@ const PrimateCastTab: React.FC = () => {
     }
   };
 
+  const handleFetchSeoKeywords = async () => {
+    const market = MARKETS.find(m => m.id === selectedMarket)!;
+    setIsAutoTopic(true);
+    setStatus(`🔎 Ищу топовые поисковые запросы TikTok в ${market.country}...`);
+    try {
+      const keywords = await window.electronAPI.primatecastGetSeoKeywords({
+        country: market.country,
+        language: market.language
+      });
+      setSeoKeywords(keywords);
+      if (keywords.length > 0) {
+        setSelectedKeyword(keywords[0]);
+      }
+    } catch (e: any) {
+      alert('Ошибка при поиске SEO запросов: ' + e.message);
+    } finally {
+      setIsAutoTopic(false);
+      setStatus('');
+    }
+  };
+
   const handleAutoTopic = async () => {
     const host1Char = characters.find(c => c.id === host1);
     const host2Char = characters.find(c => c.id === host2);
@@ -153,7 +176,16 @@ const PrimateCastTab: React.FC = () => {
         alert('Пожалуйста, выберите файл видео для анализа!');
         return;
       }
-    } else if (topicMode !== 'trending' && !customInput.trim()) {
+    } else if (topicMode === 'trending') {
+      if (seoKeywords.length === 0) {
+        alert('Сначала найдите поисковые запросы!');
+        return;
+      }
+      if (!selectedKeyword) {
+        alert('Выберите поисковый запрос!');
+        return;
+      }
+    } else if (!customInput.trim()) {
       alert('Пожалуйста, введите тему или текст!');
       return;
     }
@@ -162,8 +194,8 @@ const PrimateCastTab: React.FC = () => {
     setAutoTopicResult(null);
     
     let initialStatus = '🌐 Ищу трендовые темы в ' + market.country + '...';
-    if (topicMode === 'custom_topic') {
-      initialStatus = '🔍 Ищу информацию в сети интернет по теме...';
+    if (topicMode === 'trending' || topicMode === 'custom_topic') {
+      initialStatus = '🔍 Подготавливаю сценарий по запросу...';
     } else if (topicMode === 'custom_text') {
       initialStatus = '⚙️ Обрабатываю и адаптирую ваш текст...';
     } else if (topicMode === 'video_analysis') {
@@ -182,13 +214,16 @@ const PrimateCastTab: React.FC = () => {
           shortVersion: !fullVersion
         });
       } else {
+        const effectiveMode = topicMode === 'trending' ? 'custom_topic' : topicMode;
+        const effectiveInput = topicMode === 'trending' ? selectedKeyword : customInput;
+
         result = await window.electronAPI.primatecastAutoTopic({
           language: market.language,
           country: market.country,
           host1Name: host1Char.name,
           host2Name: host2Char.name,
-          mode: topicMode,
-          customInput: customInput,
+          mode: effectiveMode,
+          customInput: effectiveInput,
           shortVersion: !fullVersion
         });
       }
@@ -198,8 +233,8 @@ const PrimateCastTab: React.FC = () => {
         topic: result.topic, 
         topicEn: result.topicEn, 
         topicRu: result.topicRu, 
-        hook: result.hook, 
-        hookRu: result.hookRu 
+        hook: result.hook,
+        hookRu: result.hookRu
       });
 
       if (result.scriptRu) {
@@ -724,29 +759,102 @@ const PrimateCastTab: React.FC = () => {
           </label>
         </div>
 
-        {/* Auto topic button */}
+        {/* SEO Keywords List (Only for Trending Mode) */}
+        {topicMode === 'trending' && seoKeywords.length > 0 && (
+          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid #334155' }}>
+            <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '8px', fontWeight: 'bold' }}>
+              Топ поисковых запросов TikTok (выберите один):
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {seoKeywords.map((kw, idx) => (
+                <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: selectedKeyword === kw ? '#fff' : '#cbd5e1' }}>
+                  <input
+                    type="radio"
+                    name="seoKeyword"
+                    value={kw}
+                    checked={selectedKeyword === kw}
+                    onChange={() => setSelectedKeyword(kw)}
+                    style={{ accentColor: '#3b82f6', width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span>{kw}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <button
-            onClick={handleAutoTopic}
-            disabled={isAutoTopic}
-            style={{
-              padding: '10px 22px',
-              background: isAutoTopic ? '#1e3a5f' : 'linear-gradient(90deg, #2563eb, #7c3aed)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isAutoTopic ? 'not-allowed' : 'pointer',
-              fontWeight: 'bold',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: isAutoTopic ? 'none' : '0 0 20px rgba(37,99,235,0.4)'
-            }}
-          >
-            <span>{isAutoTopic ? '⏳' : topicMode === 'trending' ? '🔎' : topicMode === 'custom_topic' ? '🔍' : topicMode === 'custom_text' ? '⚙️' : '📁'}</span>
-            {isAutoTopic ? 'Обработка...' : topicMode === 'trending' ? '✨ Auto Topic + Script' : topicMode === 'custom_topic' ? '✨ Generate from Topic' : topicMode === 'custom_text' ? '✨ Adapt & Split Text' : '✨ Analyze Video & Generate'}
-          </button>
+          {topicMode === 'trending' ? (
+            <>
+              {seoKeywords.length === 0 ? (
+                <button
+                  onClick={handleFetchSeoKeywords}
+                  disabled={isAutoTopic}
+                  style={{
+                    padding: '10px 22px',
+                    background: isAutoTopic ? '#1e3a5f' : '#2563eb',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isAutoTopic ? 'not-allowed' : 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <span>{isAutoTopic ? '⏳' : '🔎'}</span>
+                  {isAutoTopic ? 'Поиск...' : 'Найти топовые поисковые запросы TikTok'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleAutoTopic}
+                  disabled={isAutoTopic || !selectedKeyword}
+                  style={{
+                    padding: '10px 22px',
+                    background: isAutoTopic ? '#1e3a5f' : 'linear-gradient(90deg, #2563eb, #7c3aed)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: (isAutoTopic || !selectedKeyword) ? 'not-allowed' : 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: isAutoTopic ? 'none' : '0 0 20px rgba(37,99,235,0.4)'
+                  }}
+                >
+                  <span>{isAutoTopic ? '⏳' : '✨'}</span>
+                  {isAutoTopic ? 'Обработка...' : 'Сгенерировать сценарий по выбранному запросу'}
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={handleAutoTopic}
+              disabled={isAutoTopic}
+              style={{
+                padding: '10px 22px',
+                background: isAutoTopic ? '#1e3a5f' : 'linear-gradient(90deg, #2563eb, #7c3aed)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: isAutoTopic ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: isAutoTopic ? 'none' : '0 0 20px rgba(37,99,235,0.4)'
+              }}
+            >
+              <span>{isAutoTopic ? '⏳' : topicMode === 'custom_topic' ? '🔍' : topicMode === 'custom_text' ? '⚙️' : '📁'}</span>
+              {isAutoTopic ? 'Обработка...' : topicMode === 'custom_topic' ? '✨ Generate from Topic' : topicMode === 'custom_text' ? '✨ Adapt & Split Text' : '✨ Analyze Video & Generate'}
+            </button>
+          )}
           {isAutoTopic && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#60a5fa' }}>
               <div style={{

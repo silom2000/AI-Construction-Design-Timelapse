@@ -8,7 +8,7 @@ import type { DialogueResult, DialogueSegment } from './electron.d';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type PipelineState = 'IDLE' | 'PROCESSING' | 'STEP1_DONE' | 'STEP2_DONE' | 'STEP3_DONE' | 'RESULTS';
-type LanguageTab = 'german' | 'french';
+type LanguageTab = 'german' | 'french' | 'english';
 type ResultsMode = 'overview' | 'segments';
 
 // ── Color Palette ──────────────────────────────────────────────────────────
@@ -93,14 +93,17 @@ const LocalizeTab: React.FC = () => {
   const [activeLang, setActiveLang] = useState<LanguageTab>('german');
   const [translatedSegmentsDE, setTranslatedSegmentsDE] = useState<DialogueSegment[] | null>(null);
   const [translatedSegmentsFR, setTranslatedSegmentsFR] = useState<DialogueSegment[] | null>(null);
+  const [translatedSegmentsEN, setTranslatedSegmentsEN] = useState<DialogueSegment[] | null>(null);
   const [translatingDE, setTranslatingDE] = useState(false);
   const [translatingFR, setTranslatingFR] = useState(false);
+  const [translatingEN, setTranslatingEN] = useState(false);
 
   // Video generation state
   const [generatingLang, setGeneratingLang] = useState<LanguageTab | null>(null);
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [segmentVideosDE, setSegmentVideosDE] = useState<Record<number, string>>({});
   const [segmentVideosFR, setSegmentVideosFR] = useState<Record<number, string>>({});
+  const [segmentVideosEN, setSegmentVideosEN] = useState<Record<number, string>>({});
   const [customPrompts, setCustomPrompts] = useState<Record<number, string>>({});
   const [generatingPrompts, setGeneratingPrompts] = useState(false);
 
@@ -228,8 +231,10 @@ const LocalizeTab: React.FC = () => {
       setResult(finalResult as any);
       setTranslatedSegmentsDE(null);
       setTranslatedSegmentsFR(null);
+      setTranslatedSegmentsEN(null);
       setSegmentVideosDE({});
       setSegmentVideosFR({});
+      setSegmentVideosEN({});
       setPipelineState('RESULTS');
       setResultsMode('segments');
     } catch (err: any) {
@@ -240,13 +245,13 @@ const LocalizeTab: React.FC = () => {
 
   const handleTranslate = async (lang: LanguageTab) => {
     if (!result || !projectFolder) return;
-    const setTranslating = lang === 'german' ? setTranslatingDE : setTranslatingFR;
-    const setTranslated = lang === 'german' ? setTranslatedSegmentsDE : setTranslatedSegmentsFR;
+    const setTranslating = lang === 'german' ? setTranslatingDE : lang === 'french' ? setTranslatingFR : setTranslatingEN;
+    const setTranslated = lang === 'german' ? setTranslatedSegmentsDE : lang === 'french' ? setTranslatedSegmentsFR : setTranslatedSegmentsEN;
     setTranslating(true);
     try {
       const segments = await window.electronAPI.localizeTranslateSegments(
         projectFolder, result.segments,
-        lang === 'german' ? 'German' : 'French'
+        lang === 'german' ? 'German' : lang === 'french' ? 'French' : 'English'
       );
       setTranslated(segments);
     } catch (err: any) {
@@ -280,7 +285,8 @@ const LocalizeTab: React.FC = () => {
     if (!result || !projectFolder) return;
     setGeneratingLang(lang);
     setGeneratingIndex(segmentIndex);
-    const segments = (lang === 'german' ? translatedSegmentsDE : translatedSegmentsFR) || result.segments;
+    const resolvedSegments = lang === 'german' ? translatedSegmentsDE : lang === 'french' ? translatedSegmentsFR : translatedSegmentsEN;
+    const segments = resolvedSegments || result.segments;
     const charImages = (result?.characters || []).map((c, i) => ({
       speakerId: i + 1,
       imageBase64: c.generatedImageUrl || ''
@@ -288,7 +294,7 @@ const LocalizeTab: React.FC = () => {
     try {
       const { videoUrl } = await window.electronAPI.localizeGenerateSegmentVideo({
         projectFolder, segmentIndex, segments,
-        targetLanguage: lang === 'german' ? 'German' : 'French',
+        targetLanguage: lang === 'german' ? 'German' : lang === 'french' ? 'French' : 'English',
         characterImages: charImages,
         sceneFrames: result.sceneFrames || undefined,
         characters: result.characters || undefined,
@@ -297,7 +303,8 @@ const LocalizeTab: React.FC = () => {
         customPrompt: customPrompts[segmentIndex] || undefined
       });
       if (lang === 'german') setSegmentVideosDE(p => ({ ...p, [segmentIndex]: videoUrl }));
-      else setSegmentVideosFR(p => ({ ...p, [segmentIndex]: videoUrl }));
+      else if (lang === 'french') setSegmentVideosFR(p => ({ ...p, [segmentIndex]: videoUrl }));
+      else setSegmentVideosEN(p => ({ ...p, [segmentIndex]: videoUrl }));
     } catch (err: any) {
       console.error(`Video generation failed for segment ${segmentIndex}:`, err);
     } finally { setGeneratingLang(null); setGeneratingIndex(null); }
@@ -305,7 +312,7 @@ const LocalizeTab: React.FC = () => {
 
   const handleBatchGenerate = async (lang: LanguageTab) => {
     if (!result || !projectFolder) return;
-    const segments = (lang === 'german' ? translatedSegmentsDE : translatedSegmentsFR);
+    const segments = lang === 'german' ? translatedSegmentsDE : lang === 'french' ? translatedSegmentsFR : translatedSegmentsEN;
     if (!segments || segments.length === 0) {
       alert('Translate segments first before generating videos.');
       return;
@@ -319,7 +326,7 @@ const LocalizeTab: React.FC = () => {
     try {
       const batchResults = await window.electronAPI.localizeBatchGenerateSegments({
         projectFolder, segments,
-        targetLanguage: lang === 'german' ? 'German' : 'French',
+        targetLanguage: lang === 'german' ? 'German' : lang === 'french' ? 'French' : 'English',
         characterImages: charImages,
         sceneFrames: result.sceneFrames || undefined,
         characters: result.characters || undefined,
@@ -329,7 +336,8 @@ const LocalizeTab: React.FC = () => {
       const videoMap: Record<number, string> = {};
       for (const r of batchResults) { if (r.videoUrl) videoMap[r.segmentIndex] = r.videoUrl; }
       if (lang === 'german') setSegmentVideosDE(p => ({ ...p, ...videoMap }));
-      else setSegmentVideosFR(p => ({ ...p, ...videoMap }));
+      else if (lang === 'french') setSegmentVideosFR(p => ({ ...p, ...videoMap }));
+      else setSegmentVideosEN(p => ({ ...p, ...videoMap }));
     } catch (err: any) {
       console.error(`Batch generation failed:`, err);
     } finally { setGeneratingLang(null); }
@@ -349,17 +357,17 @@ const LocalizeTab: React.FC = () => {
     setPipelineState('IDLE');
     setVideoBase64(null); setVideoPreviewUrl(null);
     setResult(null); setProjectFolder(''); setError(null);
-    setTranslatedSegmentsDE(null); setTranslatedSegmentsFR(null);
-    setSegmentVideosDE({}); setSegmentVideosFR({});
+    setTranslatedSegmentsDE(null); setTranslatedSegmentsFR(null); setTranslatedSegmentsEN(null);
+    setSegmentVideosDE({}); setSegmentVideosFR({}); setSegmentVideosEN({});
     setCustomPrompts({}); setGeneratingPrompts(false);
     setResultsMode('overview');
   };
 
   // ── Derived ────────────────────────────────────────────────────────────
-  const segmentsForLang: DialogueSegment[] = activeLang === 'german' ? (translatedSegmentsDE || result?.segments || []) : (translatedSegmentsFR || result?.segments || []);
-  const segmentVids = activeLang === 'german' ? segmentVideosDE : segmentVideosFR;
-  const isTranslating = activeLang === 'german' ? translatingDE : translatingFR;
-  const hasTranslations = !!(activeLang === 'german' ? translatedSegmentsDE : translatedSegmentsFR);
+  const segmentsForLang: DialogueSegment[] = (activeLang === 'german' ? translatedSegmentsDE : activeLang === 'french' ? translatedSegmentsFR : translatedSegmentsEN) || result?.segments || [];
+  const segmentVids = activeLang === 'german' ? segmentVideosDE : activeLang === 'french' ? segmentVideosFR : segmentVideosEN;
+  const isTranslating = activeLang === 'german' ? translatingDE : activeLang === 'french' ? translatingFR : translatingEN;
+  const hasTranslations = !!(activeLang === 'german' ? translatedSegmentsDE : activeLang === 'french' ? translatedSegmentsFR : translatedSegmentsEN);
   const vidCount = Object.keys(segmentVids).length;
   const totalSegs = result?.segments?.length || 0;
   const isBatchGenerating = generatingLang === activeLang && generatingIndex === null;
@@ -403,7 +411,7 @@ const LocalizeTab: React.FC = () => {
 
           {/* Languages */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 24 }}>
-            {[{ flag: '🇩🇪', label: 'German' }, { flag: '🇫🇷', label: 'French' }].map(l => (
+            {[{ flag: '🇩🇪', label: 'German' }, { flag: '🇫🇷', label: 'French' }, { flag: '🇬🇧', label: 'English' }].map(l => (
               <div key={l.label} style={{ backgroundColor: C.surface, borderRadius: 8, padding: '10px 20px', border: `1px solid ${C.border}` }}>
                 <span style={{ fontSize: 20, marginRight: 8 }}>{l.flag}</span>
                 <span style={{ fontWeight: 600, fontSize: 13 }}>{l.label}</span>
@@ -517,13 +525,18 @@ const LocalizeTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Video player */}
-      <div style={{ ...card, padding: '8px' }}>
-        <video src={result!.videoUrl} controls style={{ width: '100%', maxHeight: 360, borderRadius: 8, backgroundColor: '#000' }} />
-      </div>
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+        {/* Left Side: Video player */}
+        <div style={{ flex: '0 0 35%', position: 'sticky', top: '20px' }}>
+          <div style={{ ...card, padding: '8px', marginBottom: 0 }}>
+            <video src={result!.videoUrl} controls style={{ width: '100%', borderRadius: 8, backgroundColor: '#000' }} />
+          </div>
+        </div>
 
-      {/* Metadata */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
+        {/* Right Side: Settings & Parameters */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Metadata */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
         {[
           { icon: <Users size={18} />, label: 'Speakers', val: result!.speakers?.length || 2 },
           { icon: <FileVideo size={18} />, label: 'Segments', val: totalSegs },
@@ -661,13 +674,14 @@ const LocalizeTab: React.FC = () => {
           <div style={{ display: 'flex', gap: 4, marginBottom: 0 }}>
             <button onClick={() => setActiveLang('german')} style={tabBtnStyle(activeLang === 'german')}>🇩🇪 German</button>
             <button onClick={() => setActiveLang('french')} style={tabBtnStyle(activeLang === 'french')}>🇫🇷 French</button>
+            <button onClick={() => setActiveLang('english')} style={tabBtnStyle(activeLang === 'english')}>🇬🇧 English</button>
           </div>
 
           {/* Action bar */}
           <div style={{ backgroundColor: C.surface, borderRadius: '0 12px 12px 12px', border: `1px solid ${C.border}`, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18 }}>{activeLang === 'german' ? '🇩🇪' : '🇫🇷'}</span>
-              <span style={{ fontWeight: 700, fontSize: 14 }}>{activeLang === 'german' ? 'German' : 'French'} Localization</span>
+              <span style={{ fontSize: 18 }}>{activeLang === 'german' ? '🇩🇪' : activeLang === 'french' ? '🇫🇷' : '🇬🇧'}</span>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>{activeLang === 'german' ? 'German' : activeLang === 'french' ? 'French' : 'English'} Localization</span>
               {hasTranslations && <span style={chip('rgba(16,185,129,0.2)', C.success)}>{segmentsForLang.length} translated</span>}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -751,7 +765,7 @@ const LocalizeTab: React.FC = () => {
                           <div style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 8 }}>{seg.text}</div>
                           {seg.translatedText && (
                             <>
-                              <div style={{ fontSize: 10, color: C.subtext, marginBottom: 4, textTransform: 'uppercase' }}>{activeLang === 'german' ? 'German' : 'French'} Translation</div>
+                              <div style={{ fontSize: 10, color: C.subtext, marginBottom: 4, textTransform: 'uppercase' }}>{activeLang === 'german' ? 'German' : activeLang === 'french' ? 'French' : 'English'} Translation</div>
                               <div style={{ fontSize: 12, lineHeight: 1.5, color: C.accent2, marginBottom: 8 }}>{seg.translatedText}</div>
                             </>
                           )}
@@ -786,6 +800,8 @@ const LocalizeTab: React.FC = () => {
           </div>
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 };

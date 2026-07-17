@@ -24,7 +24,7 @@ const crypto = require('crypto');
 // VoiseAPI (https://voiceapi.csv666.ru) — CORRECT ASYNC TASK FLOW
 // POST /tasks → {task_id} → poll GET /tasks/{id} → download binary MP3
 // ─────────────────────────────────────────────────────────────────────────────
-async function storyGenerateVoice(text, language, outputDir, sceneIndex = null) {
+async function storyGenerateVoice(text, language, outputDir, sceneIndex = null, ttsService = 'voiceapi') {
     // Voice ID: configure STORY_VOICE_ID in .env (or falls back to TEST_VOICE_ID)
     const voiceId = process.env.STORY_VOICE_ID || process.env.TEST_VOICE_ID;
     if (!voiceId) throw new Error('[Voice] Set STORY_VOICE_ID or TEST_VOICE_ID in .env');
@@ -67,7 +67,10 @@ async function storyGenerateVoice(text, language, outputDir, sceneIndex = null) 
         }
     }
 
-    if (process.env.ElevenLabs_API) {
+    // Route: ElevenLabs only when explicitly requested; VoiceAPI is the default
+    if (ttsService === 'elevenlabs') {
+        const el11Key = process.env.ElevenLabs_API;
+        if (!el11Key) throw new Error('[Voice] ElevenLabs_API key not set in .env');
         return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
     }
 
@@ -94,15 +97,22 @@ async function storyGenerateVoice(text, language, outputDir, sceneIndex = null) 
                 use_speaker_boost: true,
                 style: 0.0,
                 speed: 1.0
-            },
-            voice_result_type: 'default'
+            }
         },
-        text: text,
-        task_type: 'default'
+        text: text
     };
 
-    console.log(`[Voice] POST /tasks voice=${voiceId} lang=${language} text=${text.length}ch`);
-    const cr = await axios.post(`${VOISE_BASE}/tasks`, taskBody, { headers });
+    let cr;
+    try {
+        console.log(`[Voice] POST /tasks voice=${voiceId} lang=${language} text=${text.length}ch`);
+        cr = await axios.post(`${VOISE_BASE}/tasks`, taskBody, { headers });
+    } catch (err) {
+        if (err.response && err.response.status === 402) {
+            throw new Error('Недостаточно средств на балансе VoiceAPI (Ошибка 402). Пожалуйста, пополните баланс или выберите другой сервис.');
+        }
+        throw err;
+    }
+
     const taskId = cr.data && (cr.data.task_id || cr.data.id);
     if (!taskId) {
         throw new Error('[Voice] No task_id in response: ' + JSON.stringify(cr.data).slice(0, 200));
@@ -777,11 +787,12 @@ ${ideaContext}
     });
 
     // 4. Generate Audio (voiceover for a single scene)
-    ipcMain.handle('story-generate-audio', async (event, { sceneIndex, text, language, projectFolder }) => {
-        console.log(`[Stories] storyGenerateVoice: scene=${sceneIndex} lang=${language} folder=${projectFolder || 'default'} text="${text.substring(0, 60)}..."`);
+    ipcMain.handle('story-generate-audio', async (event, { sceneIndex, text, language, projectFolder, ttsService }) => {
+        const service = ttsService || 'voiceapi';
+        console.log(`[Stories] storyGenerateVoice: scene=${sceneIndex} lang=${language} service=${service} folder=${projectFolder || 'default'} text="${text.substring(0, 60)}..."`);
         try {
             const customDir = projectFolder ? path.join(STORY_DIRS.base, projectFolder, 'Audio') : STORY_DIRS.audio;
-            const filePath = await storyGenerateVoice(text, language, customDir, sceneIndex);
+            const filePath = await storyGenerateVoice(text, language, customDir, sceneIndex, service);
             
             // Return as base64 data URL to bypass protocol issues on Windows
             const audioBuffer = fs.readFileSync(filePath);

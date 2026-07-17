@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const axios = require('axios');
+const { execSync, spawn } = require('child_process');
 
 // Directories for Survive
 const SURVIVE_DIRS = {
@@ -35,7 +36,7 @@ const LANG_NAMES = {
 // ─────────────────────────────────────────────────────────────────────────────
 // VoiceAPI Integration (same as Cartoon)
 // ─────────────────────────────────────────────────────────────────────────────
-async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null) {
+async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null, ttsService = 'voiceapi') {
     // Voice ID: try SURVIVE_VOICE_ID, fallback to STORY_VOICE_ID, then TEST_VOICE_ID
     const voiceId = process.env.SURVIVE_VOICE_ID || process.env.STORY_VOICE_ID || process.env.TEST_VOICE_ID;
     if (!voiceId) throw new Error('[Survive Voice] Set SURVIVE_VOICE_ID, STORY_VOICE_ID, or TEST_VOICE_ID in .env');
@@ -72,7 +73,9 @@ async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null
         }
     }
 
-    if (process.env.ElevenLabs_API) {
+    if (ttsService === 'elevenlabs') {
+        const el11Key = process.env.ElevenLabs_API;
+        if (!el11Key) throw new Error('[Voice] ElevenLabs_API key not set in .env');
         return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
     }
 
@@ -95,15 +98,22 @@ async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null
                 use_speaker_boost: true,
                 style: 0.0,
                 speed: 1.0
-            },
-            voice_result_type: 'default'
+            }
         },
-        text: text,
-        task_type: 'default'
+        text: text
     };
 
-    console.log(`[Survive Voice] POST /tasks voice=${voiceId} lang=${language} text=${text.length}ch`);
-    const cr = await axios.post(`${VOISE_BASE}/tasks`, taskBody, { headers });
+    let cr;
+    try {
+        console.log(`[Survive Voice] POST /tasks voice=${voiceId} lang=${language} text=${text.length}ch`);
+        cr = await axios.post(`${VOISE_BASE}/tasks`, taskBody, { headers });
+    } catch (err) {
+        if (err.response && err.response.status === 402) {
+            throw new Error('Недостаточно средств на балансе VoiceAPI (Ошибка 402). Пожалуйста, пополните баланс или выберите другой сервис.');
+        }
+        throw err;
+    }
+
     const taskId = cr.data && (cr.data.task_id || cr.data.id);
     if (!taskId) {
         throw new Error('[Survive Voice] No task_id in response: ' + JSON.stringify(cr.data).slice(0, 200));
@@ -157,9 +167,9 @@ function registerSurviveHandlers(ipcMain) {
     console.log('[Survive] Registering handlers...');
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 1. Generate Survival Scenario Ideas (5 ideas)
+    // 1. Generate Survival Scenario Ideas (3 ideas)
     // ─────────────────────────────────────────────────────────────────────────
-    ipcMain.handle('survive-generate-ideas', async (event, { language }) => {
+    ipcMain.handle('survive-generate-ideas', async (event, { language, aiModel }) => {
         const langName = LANG_NAMES[language] || 'English';
         const historyKey = `survive_${language}`;
         const completedTopics = historyManager.getTopics(historyKey);
@@ -169,7 +179,7 @@ function registerSurviveHandlers(ipcMain) {
 
         const systemPrompt = `Ты — эксперт по экстремальному выживанию и создатель вирусного образовательного контента для TikTok и YouTube Shorts.
 
-ТВОЯ ЗАДАЧА: Сгенерировать 5 ЭКСТРЕМАЛЬНЫХ СЦЕНАРИЕВ ВЫЖИВАНИЯ для 60-секундных видео.
+ТВОЯ ЗАДАЧА: Сгенерировать 3 ЭКСТРЕМАЛЬНЫХ СЦЕНАРИЯ ВЫЖИВАНИЯ для 60-секундных видео.
 
 ════════════════════════════════════════════════
 КАТЕГОРИИ СЦЕНАРИЕВ (выбирай разнообразно):
@@ -266,15 +276,15 @@ function registerSurviveHandlers(ipcMain) {
 - ВСЕ текстовые поля (scenario, hook, description, category) ДОЛЖНЫ быть на ${langName}
 - translation_ru нужен ТОЛЬКО если ${langName} !== "Russian" (для дублирования на русский)
 - Если ${langName} === "Russian", то translation_ru = пустая строка ""
-- Все 5 идей должны быть из РАЗНЫХ категорий
+- Все 3 идеи должны быть из РАЗНЫХ категорий
 - Язык генерации: ${langName}
 - Каждая идея = 6 шагов выживания (оптимально для 60-сек видео)
 ${exclusionClause}`;
 
         const raw = await callPollinations([
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Сгенерируй 5 разнообразных сценариев выживания на ${langName}. Выведи ТОЛЬКО JSON.` }
-        ], true);
+            { role: 'user', content: `Сгенерируй 3 разнообразных сценария выживания на ${langName}. Выведи ТОЛЬКО JSON.` }
+        ], true, aiModel);
 
         try {
             const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
@@ -299,7 +309,7 @@ ${exclusionClause}`;
     // ─────────────────────────────────────────────────────────────────────────
     // 2. Generate Survival Script (6 steps + prompts)
     // ─────────────────────────────────────────────────────────────────────────
-    ipcMain.handle('survive-generate-script', async (event, { idea, language, projectFolder }) => {
+    ipcMain.handle('survive-generate-script', async (event, { idea, language, projectFolder, aiModel }) => {
         const langName = LANG_NAMES[language] || 'English';
 
         const systemPrompt = `Ты — эксперт по экстремальному выживанию и мастер создания вирусного образовательного контента.
@@ -321,20 +331,20 @@ ${exclusionClause}`;
   ✅ "Ты один в открытом океане — эти 6 шагов решат выживешь ты или нет"
 
 КАЖДЫЙ ШАГ:
-  - Начинается с номера: "Шаг 1:", "Шаг 2:", и т.д.
+  - Начинается со слова (БЕЗ ЦИФР!): "Шаг первый:", "Шаг второй:", "Шаг третий:" и т.д. Это критически важно для правильной озвучки (TTS).
   - КОНКРЕТНОЕ ДЕЙСТВИЕ (не абстракция)
   - ПОЧЕМУ это важно (краткое объяснение)
   - ИМПЕРАТИВ: "Делай X", "Не делай Y", "Запомни Z"
 
 ПРИМЕРЫ ПРАВИЛЬНЫХ ШАГОВ:
 
-✅ "Шаг 1: Не паникуй — контролируй дыхание, глубокий вдох на 4 счёта, выдох на 4, паника убивает быстрее опасности."
+✅ "Шаг первый: Не паникуй — контролируй дыхание, глубокий вдох на 4 счёта, выдох на 4, паника убивает быстрее опасности."
 
-✅ "Шаг 2: Оцени ситуацию за 5 секунд — где выходы, есть ли укрытие, откуда идёт опасность, время решает всё."
+✅ "Шаг второй: Оцени ситуацию за 5 секунд — где выходы, есть ли укрытие, откуда идёт опасность, время решает всё."
 
-✅ "Шаг 3: Защити голову и шею — присядь, закрой затылок руками, отойди от окон и тяжёлых предметов, это твой приоритет номер один."
+✅ "Шаг третий: Защити голову и шею — присядь, закрой затылок руками, отойди от окон и тяжёлых предметов, это твой приоритет номер один."
 
-❌ ПЛОХО: "Шаг 1: Сохраняй спокойствие" (слишком абстрактно, нет конкретики)
+❌ ПЛОХО: "Шаг 1: Сохраняй спокойствие" (НЕ ИСПОЛЬЗУЙ ЦИФРЫ В НОМЕРАХ ШАГОВ! Нет конкретики)
 
 ФИНАЛЬНЫЙ ШАГ (Шаг 6):
   - Подведение итога
@@ -347,25 +357,28 @@ ${exclusionClause}`;
 
 ГРЯЗНАЯ ПЛАСТИЛИНОВАЯ СТОП-МОУШЕН АНИМАЦИЯ (GRITTY CLAYMATION STOP-MOTION):
 
+ДЕЙСТВУЙ КАК ОПЫТНЫЙ СЦЕНАРИСТ И РЕЖИССЕР. Внимательно вчитывайся в текст озвучки (line) каждого шага и на его основании строй детальный сценарий происходящего. Визуальный ряд должен точно отражать драму, эмоции персонажа и конкретные действия выживания, о которых идет речь. 
+
 IMAGE PROMPTS (ТОЛЬКО English):
+Описывают стартовую точку сцены для конкретного шага.
 "Gritty stop-motion claymation style, tactile physical materials, miniature diorama aesthetic.
-SCENE: [конкретное описание сцены и действия].
-PERSON: [возраст, пол, одежда, эмоция на лице] sculpted from textured clay, slightly exaggerated proportions, performing [конкретное действие выживания].
-ENVIRONMENT: [детальное описание окружения — опасность видна], handmade miniature set, tangible textures (cardboard, wire, textured clay, painted plastic).
-CAMERA: Medium shot, eye-level, vertical 9:16 format, macro photography depth of field.
-MOOD: High tension, gritty urban or rugged outdoor feel.
-LIGHTING: Studio miniature lighting, harsh dramatic shadows, practical light effects.
-DETAILS: Fingerprints on clay, slightly rough textures, handmade imperfections, gritty details like dirt and grime.
-QUALITY: High-end stop-motion animation studio quality (like Laika), distinct from clean 3D Pixar styles, tactile, hyper-detailed."
+SCENE: [Детальное описание стартовой сцены на основе текста озвучки. Что мы видим перед началом действия?]
+PERSON: [Возраст, пол, одежда, яркая эмоция на лице (ужас, шок, концентрация, отчаяние)] sculpted from textured clay, performing [поза перед действием].
+ENVIRONMENT: [Детальное описание окружения и видимой опасности], handmade miniature set, tangible textures (cardboard, wire, textured clay).
+CAMERA & LIGHTING: Medium shot, vertical 9:16 format, macro photography depth of field. Studio miniature lighting, harsh dramatic shadows.
+QUALITY: High-end stop-motion animation studio quality (like Laika), tactile, hyper-detailed."
 
 VIDEO PROMPTS (ТОЛЬКО English):
-"CAMERA MOVEMENT: Stop-motion camera style, slight jitter, dynamic miniature framing.
-ACTION: [конкретное действие персонажа — шаг выживания].
-MOTION: Stop-motion animation feel, slightly lower frame rate effect, distinct poses.
-ENVIRONMENT: [окружение и опасность] made of tangible miniature materials.
-PACING: High tension, dramatic action.
-ENDING: Freeze on determined clay face.
-QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tactile."
+Описывают ДИНАМИКУ, развитие событий и анимацию этого шага. Это должен быть связный кинематографичный мини-сценарий, полный действия и эмоций.
+ВНИМАНИЕ (ДЛЯ ВИДЕОМОДЕЛЕЙ):
+1. ИЗБЕГАЙТЕ отрицаний (не пишите "does not stand up", "tries to get up but fails"). Видео-нейросети игнорируют "not" и заставляют персонажа делать то, что запрещено.
+2. ПИШИТЕ ТОЛЬКО ТО, ЧТО ПРОИСХОДИТ: Если человек должен лежать неподвижно, пишите "The person lies completely flat and motionless on their back, breathing heavily".
+3. ИЗБЕГАЙТЕ сложных последовательностей (сделал А, потом Б, потом В). Описывайте одно главное, непрерывное действие или состояние сцены.
+4. Вы должны написать ДВА ПРОМПТА для каждого шага: "videoPrompt" (первые 5 секунд действия) и "videoPrompt2" (следующие 5 секунд — логическое продолжение или развитие сцены).
+
+ПРИМЕР ПРОМПТОВ ДЛЯ ВИДЕО:
+videoPrompt: "CAMERA MOVEMENT: Stop-motion camera style. ACTION SCRIPT: The person walks on the frozen lake, suddenly the ice cracks and breaks under them. They plunge into the icy water, a grimace of pure horror and shock on their face. MOTION & PACING: High tension, dramatic. QUALITY: Masterpiece stop-motion animation, gritty, tactile."
+videoPrompt2: "CAMERA MOVEMENT: Stop-motion camera style, tracking shot. ACTION SCRIPT: The person frantically grabs the edge of the broken ice and desperately tries to pull themselves out, slipping and sliding on the wet surface. MOTION & PACING: Frantic action, struggling. QUALITY: Masterpiece stop-motion animation, gritty, tactile."
 
 ЗАПРЕЩЕНО в промптах:
 ❌ Гладкий 3D Pixar/Disney стиль
@@ -377,11 +390,11 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
 ════════════════════════════════════════════════
 
 Шаг 0 (INTRO/HOOK): Мощный хук + описание сценария (18-22 слова)
-Шаг 1: Первое критическое действие (18-22 слова)
-Шаг 2: Второе действие (18-22 слова)
-Шаг 3: Третье действие (18-22 слова)
-Шаг 4: Четвёртое действие (18-22 слова)
-Шаг 5: Пятое действие + финальный призыв (18-22 слова)
+Шаг первый: Первое критическое действие (18-22 слова)
+Шаг второй: Второе действие (18-22 слова)
+Шаг третий: Третье действие (18-22 слова)
+Шаг четвертый: Четвёртое действие (18-22 слова)
+Шаг пятый: Пятое действие + финальный призыв (18-22 слова)
 
 ВАЖНО:
 - Каждый шаг должен быть КОНКРЕТНЫМ и ВЫПОЛНИМЫМ
@@ -398,29 +411,37 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
   "title": "Название сценария на ${langName}",
   "category": "категория",
   "hook": "Мощный хук на ${langName}",
+  "characterPrompt": "Детальный промпт на English для создания главного героя во весь рост (full body character sheet) в нормальной одежде (соответствующей ситуации), на простом изолированном белом фоне (simple white background), в стиле gritty stop-motion claymation.",
   "steps": [
     {
       "id": 0,
       "stepNumber": "INTRO",
       "line": "Текст на ${langName} (18-22 слова)",
+      "line_ru": "Перевод текста на русский (если ${langName} не Russian, иначе пусто)",
       "imagePrompt": "Детальный промпт на English для изображения",
-      "videoPrompt": "Детальный промпт на English для видео"
+      "videoPrompt": "Промпт для первых 5 секунд (Part 1)",
+      "videoPrompt2": "Промпт для вторых 5 секунд (Part 2)"
     },
     {
       "id": 1,
       "stepNumber": "ШАГ 1",
-      "line": "Шаг 1: [действие] на ${langName} (18-22 слова)",
+      "line": "Шаг первый: [действие] на ${langName} (18-22 слова)",
+      "line_ru": "...",
       "imagePrompt": "...",
-      "videoPrompt": "..."
+      "videoPrompt": "...",
+      "videoPrompt2": "..."
     }
     // ... всего 6 объектов (id: 0-5)
   ]
 }
 
 КРИТИЧЕСКИ ВАЖНО:
+- В тексте поля "line" ВООБЩЕ НЕ ИСПОЛЬЗУЙ цифры для нумерации шагов. Пиши только словами: "Шаг первый", "Шаг второй", "Шаг третий", "Шаг четвертый", "Шаг пятый".
+- КОНСИСТЕНТНОСТЬ ОКРУЖЕНИЯ: Если действие происходит в одном и том же месте (например, в машине, лифте, комнате), ты ОБЯЗАН скопировать ТОЧНОЕ описание интерьера (цвета мебели, освещение, архитектуру) из Шага 0 во все последующие imagePrompt и videoPrompt, пока герой не сменит локацию. Иначе нейросеть будет рисовать разные комнаты каждый раз!
+- ФИЗИКА И СРЕДА (КРИТИЧНО): Модели генерации картинок не понимают физику автоматически! Ты должен явно описывать взаимодействие тела со средой. Например, если герой в глубокой воде (океан, река), ОБЯЗАТЕЛЬНО пропиши, что он погружен в воду по плечи или по шею ("submerged up to the neck in deep water", "treading water with only the head visible", "water surface at chest level"). Не допускай, чтобы в океане герой стоял по колено в воде!
 - Язык в поле "line": ${langName}
 - Язык в imagePrompt и videoPrompt: ТОЛЬКО English
-- Каждый imagePrompt и videoPrompt должен быть уникальным и детальным (100-150 слов)
+- Каждый imagePrompt и videoPrompt должен быть уникальным и детальным (100-150 слов), но с СОХРАНЕНИЕМ ОПИСАНИЯ ОКРУЖЕНИЯ и ФИЗИКИ.
 - Визуализация должна ТОЧНО соответствовать шагу выживания`;
 
         const ideaTitle = idea?.scenario || (typeof idea === 'string' ? idea : '');
@@ -441,7 +462,7 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
         const raw = await callPollinations([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
-        ], true);
+        ], true, aiModel);
 
         try {
             const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
@@ -465,16 +486,28 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
     // ─────────────────────────────────────────────────────────────────────────
     // 3. Generate Image
     // ─────────────────────────────────────────────────────────────────────────
-    ipcMain.handle('survive-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder, referenceImageUrl }) => {
+    ipcMain.handle('survive-generate-image', async (event, { sceneIndex, imagePrompt, imageModel, projectFolder, referenceImageUrl, oldFileUrl }) => {
         try {
+            if (oldFileUrl) {
+                try {
+                    const oldPath = oldFileUrl.replace('media:///', '').split('?')[0];
+                    if (fs.existsSync(oldPath)) {
+                        fs.unlinkSync(oldPath);
+                        console.log(`[Survive] Deleted old image: ${oldPath}`);
+                    }
+                } catch (e) {
+                    console.error(`[Survive] Failed to delete old image:`, e);
+                }
+            }
+
             const cleanModel = (imageModel || 'flux1.1').replace(/^glabs-/, '');
             const sectionDir = projectFolder ? path.join(SURVIVE_DIRS.base, projectFolder) : SURVIVE_DIRS.images;
 
             console.log(`[Survive] Generate image: scene=${sceneIndex} model=${cleanModel} folder=${projectFolder || 'default'} hasRef=${!!referenceImageUrl}`);
 
-            // Build reference images for character consistency (scenes 1-5 use scene 0 as reference)
+            // Build reference images for character consistency
             let referenceImages = [];
-            if (referenceImageUrl && sceneIndex > 0) {
+            if (referenceImageUrl) {
                 const refPath = referenceImageUrl.replace('media:///', '').split('?')[0];
                 if (fs.existsSync(refPath)) {
                     const ext = refPath.endsWith('.png') ? 'png' : 'jpeg';
@@ -504,8 +537,9 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
     // ─────────────────────────────────────────────────────────────────────────
     // 4. Generate Audio (VoiceAPI)
     // ─────────────────────────────────────────────────────────────────────────
-    ipcMain.handle('survive-generate-audio', async (event, { sceneIndex, narrationLine, language, projectFolder }) => {
-        console.log(`[Survive] Generate audio: scene=${sceneIndex} lang=${language} folder=${projectFolder || 'default'}`);
+    ipcMain.handle('survive-generate-audio', async (event, { sceneIndex, narrationLine, language, projectFolder, ttsService }) => {
+        const service = ttsService || 'voiceapi';
+        console.log(`[Survive] Generate audio: scene=${sceneIndex} lang=${language} service=${service} folder=${projectFolder || 'default'}`);
 
         const audioDir = projectFolder
             ? path.join(SURVIVE_DIRS.base, projectFolder, 'Audio')
@@ -513,17 +547,30 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
 
         if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
 
-        const audioPath = await surviveGenerateVoice(narrationLine, language, audioDir, sceneIndex);
+        const audioPath = await surviveGenerateVoice(narrationLine, language, audioDir, sceneIndex, service);
         return `media:///${audioPath.replace(/\\/g, '/')}?t=${Date.now()}`;
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. Generate Video (VEO3 with native audio)
+    // 5. Generate Video (VEO3 / Meta with chaining)
     // ─────────────────────────────────────────────────────────────────────────
     ipcMain.handle('survive-generate-video', async (event, {
-        sceneIndex, videoPrompt, sourceImageUrl, narrationLine, projectFolder, videoModel
+        sceneIndex, videoPrompt, videoPrompt2, sourceImageUrl, narrationLine, projectFolder, videoModel, oldFileUrl
     }) => {
-        console.log(`[Survive] Generate video: scene=${sceneIndex} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
+        if (oldFileUrl) {
+            try {
+                const oldPath = oldFileUrl.replace('media:///', '').split('?')[0];
+                if (fs.existsSync(oldPath)) {
+                    fs.unlinkSync(oldPath);
+                    console.log(`[Survive] Deleted old video: ${oldPath}`);
+                }
+            } catch (e) {
+                console.error(`[Survive] Failed to delete old video:`, e);
+            }
+        }
+
+        const model = videoModel || 'veo_31_lite';
+        console.log(`[Survive] Generate video: scene=${sceneIndex} model=${model} folder=${projectFolder || 'default'} hasSourceImage=${!!sourceImageUrl}`);
 
         // Prepare reference image
         let referenceImages = [];
@@ -542,10 +589,80 @@ QUALITY: Masterpiece stop-motion animation, gritty, textured, non-CGI feel, tact
 
         const sectionDir = projectFolder ? path.join(SURVIVE_DIRS.base, projectFolder) : SURVIVE_DIRS.videos;
 
+        // ═══════════════════════════════════════════════════════════════════
+        // META MODEL: Chain two 5s generations into ~10s video
+        // ═══════════════════════════════════════════════════════════════════
+        if (model === 'meta') {
+            console.log(`[Survive Meta] Starting two-part chained generation for scene ${sceneIndex}`);
+
+            const metaPrompt = videoPrompt;
+
+            // ── Part 1: Generate first 5s video ──
+            const optionsPart1 = {
+                prompt: metaPrompt,
+                model: 'meta',
+                aspectRatio: '9:16',
+                generateAudio: false,
+                sectionDir: SURVIVE_DIRS.base,
+                subFolder: projectFolder,
+                sceneIndex,
+                referenceImages
+            };
+
+            console.log(`[Survive Meta] Part 1/2: Generating first 5s clip...`);
+            const part1Path = await generateVideoViaGLabs(optionsPart1);
+            console.log(`[Survive Meta] Part 1/2: Done → ${part1Path}`);
+
+            // ── Extract last frame from part1 ──
+            const baseDir = projectFolder ? path.join(SURVIVE_DIRS.base, projectFolder) : SURVIVE_DIRS.videos;
+            if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+
+            const lastFramePath = path.join(baseDir, `scene_${sceneIndex + 1}_lastframe_${Date.now()}.jpg`);
+            console.log(`[Survive Meta] Extracting last frame from part1...`);
+            extractLastFrame(part1Path, lastFramePath);
+            console.log(`[Survive Meta] Last frame saved → ${lastFramePath}`);
+
+            // ── Part 2: Generate second 5s video from last frame ──
+            const lastFrameB64 = fs.readFileSync(lastFramePath, { encoding: 'base64' });
+            const part2RefImages = [{ data: `data:image/jpeg;base64,${lastFrameB64}` }];
+            const metaPrompt2 = videoPrompt2 || metaPrompt; // Fallback to prompt 1 if 2 is missing
+
+            const optionsPart2 = {
+                prompt: metaPrompt2,
+                model: 'meta',
+                aspectRatio: '9:16',
+                generateAudio: false,
+                sectionDir: SURVIVE_DIRS.base,
+                subFolder: projectFolder,
+                sceneIndex: sceneIndex * 100 + 1, // unique index so filename doesn't collide
+                referenceImages: part2RefImages
+            };
+
+            console.log(`[Survive Meta] Part 2/2: Generating second 5s clip from last frame...`);
+            const part2Path = await generateVideoViaGLabs(optionsPart2);
+            console.log(`[Survive Meta] Part 2/2: Done → ${part2Path}`);
+
+            // ── Concatenate part1 + part2 ──
+            const finalPath = path.join(baseDir, `scene_${sceneIndex + 1}_meta_${Date.now()}.mp4`);
+            console.log(`[Survive Meta] Concatenating part1 + part2 → ${finalPath}`);
+            await concatVideos(part1Path, part2Path, finalPath);
+            console.log(`[Survive Meta] Final 10s video ready: ${finalPath}`);
+
+            // Cleanup temp files
+            try {
+                fs.unlinkSync(lastFramePath);
+            } catch (_) { /* ignore */ }
+
+            return `media:///${finalPath.replace(/\\/g, '/')}?t=${Date.now()}`;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // VEO / OMNI FLASH: Standard single generation
+        // ═══════════════════════════════════════════════════════════════════
         // Build full prompt with audio instructions for VEO3
         const audioSection = `
 AUDIO GENERATION:
-NARRATOR VOICEOVER — professional survival instructor voice, calm but urgent tone.
+NARRATOR VOICEOVER — professional male survival instructor voice, deep, calm but urgent tone.
 NARRATOR SAYS (verbatim, sync to 10 seconds): "${narrationLine}"
 AMBIENT SOUND: realistic environmental sounds matching the survival scenario (wind, water, fire, etc.).`;
 
@@ -556,7 +673,7 @@ AMBIENT SOUND: realistic environmental sounds matching the survival scenario (wi
 
         const options = {
             prompt: fullPrompt,
-            model: videoModel || 'veo_31_lite',
+            model,
             aspectRatio: '9:16',
             generateAudio: true,
             sectionDir: SURVIVE_DIRS.base,
@@ -581,6 +698,61 @@ AMBIENT SOUND: realistic environmental sounds matching the survival scenario (wi
     });
 
     console.log('[Survive] Handlers registered ✅');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: Extract the last frame from a video using ffmpeg
+// ─────────────────────────────────────────────────────────────────────────────
+function extractLastFrame(videoPath, outputPath) {
+    // Get video duration first
+    const durationStr = execSync(
+        `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`
+    ).toString().trim();
+    const duration = parseFloat(durationStr);
+    // Seek to 0.2s before end to grab a clean last frame
+    const seekTime = Math.max(0, duration - 0.2);
+    execSync(
+        `ffmpeg -ss ${seekTime} -i "${videoPath}" -frames:v 1 -q:v 2 -y "${outputPath}"`
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: Concatenate two videos using ffmpeg concat demuxer
+// ─────────────────────────────────────────────────────────────────────────────
+function concatVideos(video1, video2, outputPath) {
+    return new Promise((resolve, reject) => {
+        const dir = path.dirname(outputPath);
+        const listFile = path.join(dir, `concat_list_${Date.now()}.txt`);
+        fs.writeFileSync(listFile, `file '${video1.replace(/\\/g, '/')}'\nfile '${video2.replace(/\\/g, '/')}'\n`);
+
+        const ffmpeg = spawn('ffmpeg', [
+            '-f', 'concat', '-safe', '0',
+            '-i', listFile,
+            '-c:v', 'libx264', '-preset', 'fast', '-pix_fmt', 'yuv420p',
+            '-y', outputPath
+        ]);
+
+        ffmpeg.stderr.on('data', (d) => {
+            const line = d.toString().trim();
+            if (line) console.log(`[Survive ffmpeg] ${line}`);
+        });
+
+        ffmpeg.on('close', (code) => {
+            // Cleanup list file
+            try { fs.unlinkSync(listFile); } catch (_) { /* ignore */ }
+
+            if (code === 0) {
+                resolve(outputPath);
+            } else {
+                reject(new Error(`ffmpeg concat failed with code ${code}`));
+            }
+        });
+
+        ffmpeg.on('error', (err) => {
+            try { fs.unlinkSync(listFile); } catch (_) { /* ignore */ }
+            reject(err);
+        });
+    });
 }
 
 module.exports = { registerSurviveHandlers };

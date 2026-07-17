@@ -256,11 +256,15 @@ const generateVideoViaGLabs = async (options = {}) => {
         if (finalRefImages && finalRefImages.length > 0 && finalMode === 'text_to_video') {
             if (model === 'omni_flash' && finalRefImages.length >= 2) {
                 finalMode = 'components';
+            } else if (model === 'meta') {
+                finalMode = 'i2v';
             } else {
                 finalMode = finalRefImages.length >= 2 ? 'start_end_image' : 'start_image';
             }
         } else if (model === 'omni_flash' && finalMode === 'start_end_image') {
             finalMode = 'components';
+        } else if (model === 'meta' && finalMode === 'text_to_video') {
+            finalMode = 't2v';
         }
 
 
@@ -269,15 +273,25 @@ const generateVideoViaGLabs = async (options = {}) => {
         const baseDir = subFolder ? path.join(sectionDir, subFolder) : sectionDir;
         if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
 
+        let requestEndpoint = '/api/video/generate';
         const bodyData = { prompt, model, aspect_ratio: aspectRatio, resolution, mode: finalMode };
-        if (options.generateAudio) {
-            bodyData.generate_audio = true;
-        }
-        if (finalRefImages && finalRefImages.length > 0) {
-            bodyData.reference_images = finalRefImages;
+        
+        if (model === 'meta') {
+            requestEndpoint = '/api/meta/generate';
+            if (finalRefImages && finalRefImages.length > 0) {
+                bodyData.start_image = finalRefImages[0].data;
+            }
+            // Meta model ignores generate_audio flag for now, but we don't send it to be safe
+        } else {
+            if (options.generateAudio) {
+                bodyData.generate_audio = true;
+            }
+            if (finalRefImages && finalRefImages.length > 0) {
+                bodyData.reference_images = finalRefImages;
+            }
         }
 
-        const { statusCode, text } = await gLabsRequest('/api/video/generate', {
+        const { statusCode, text } = await gLabsRequest(requestEndpoint, {
             method: 'POST',
             body: JSON.stringify(bodyData),
         });

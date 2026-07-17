@@ -110,6 +110,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   primatecastGenerateEpisode: (data) => ipcRenderer.invoke('primatecast-generate-episode', data),
   primatecastGenerateSegment: (data) => ipcRenderer.invoke('primatecast-generate-segment', data),
   primatecastAutoTopic: (data) => ipcRenderer.invoke('primatecast-auto-topic', data),
+  primatecastGetSeoKeywords: (data) => ipcRenderer.invoke('primatecast-get-seo-keywords', data),
   primatecastAnalyzeVideo: (data) => ipcRenderer.invoke('primatecast-analyze-video', data),
   primatecastSaveAllPrompts: (data) => ipcRenderer.invoke('primatecast-save-all-prompts', data),
   onPrimatecastProgress: (callback) => ipcRenderer.on('primatecast-progress', (event, data) => callback(data)),
