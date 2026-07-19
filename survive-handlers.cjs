@@ -17,8 +17,7 @@ Object.values(SURVIVE_DIRS).forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const { callPollinations, synthesizeDirectElevenLabs } = require('./skeleton-handlers.cjs');
-const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
+const ai = require('./ai-client.cjs');
 const historyManager = require('./history-manager.cjs');
 
 const LANG_NAMES = {
@@ -76,88 +75,87 @@ async function surviveGenerateVoice(text, language, outputDir, sceneIndex = null
     if (ttsService === 'elevenlabs') {
         const el11Key = process.env.ElevenLabs_API;
         if (!el11Key) throw new Error('[Voice] ElevenLabs_API key not set in .env');
-        return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
+        return await ai.synthesizeDirectElevenLabs(text, voiceId, outputPath);
     }
 
     const apiKey = process.env.VOICEAPI_KEY;
     if (!apiKey) throw new Error('[Survive Voice] VOICEAPI_KEY not set in .env');
 
-    const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
+    const templateId = process.env.UUID;
+    if (!templateId) throw new Error('[Survive Voice] UUID not set for Lumean Template');
+
+    const LUMEAN_BASE = 'https://api.lumean.app/api/public';
+
     const headers = {
-        'X-API-Key': apiKey,
+        'X-API-KEY': apiKey,
         'Content-Type': 'application/json'
     };
 
     const taskBody = {
-        template: {
-            model_id: 'eleven_multilingual_v2',
-            voice_id: voiceId,
-            voice_settings: {
-                stability: 0.85,
-                similarity_boost: 0.75,
-                use_speaker_boost: true,
-                style: 0.0,
-                speed: 1.0
-            }
-        },
-        text: text
+        template_id: templateId,
+        input_text: text
     };
 
     let cr;
     try {
-        console.log(`[Survive Voice] POST /tasks voice=${voiceId} lang=${language} text=${text.length}ch`);
-        cr = await axios.post(`${VOISE_BASE}/tasks`, taskBody, { headers });
+        console.log(`[Survive Voice] POST /orders template=${templateId} text=${text.length}ch`);
+        cr = await axios.post(`${LUMEAN_BASE}/orders`, taskBody, { headers });
     } catch (err) {
         if (err.response && err.response.status === 402) {
-            throw new Error('Недостаточно средств на балансе VoiceAPI (Ошибка 402). Пожалуйста, пополните баланс или выберите другой сервис.');
+            throw new Error('Недостаточно средств на балансе (Ошибка 402). Пожалуйста, пополните баланс.');
+        }
+        if (err.response && err.response.status === 403) {
+             throw new Error('Ошибка 403: У API-ключа нет нужных прав (нужно orders.write).');
         }
         throw err;
     }
 
-    const taskId = cr.data && (cr.data.task_id || cr.data.id);
-    if (!taskId) {
-        throw new Error('[Survive Voice] No task_id in response: ' + JSON.stringify(cr.data).slice(0, 200));
+    const orderId = cr.data && cr.data.data && cr.data.data.id;
+    if (!orderId) {
+        throw new Error('[Survive Voice] No order id in response: ' + JSON.stringify(cr.data).slice(0, 200));
     }
-    console.log(`[Survive Voice] Task created: id=${taskId}`);
+    console.log(`[Survive Voice] Order created: id=${orderId}`);
 
     // Poll for completion
+    let finalOrder = null;
     for (let i = 0; i < 60; i++) {
-        await new Promise(r => setTimeout(r, 3000));
-        const sr = await axios.get(`${VOISE_BASE}/tasks/${taskId}/status`, { headers });
-        const t = sr.data;
+        await new Promise(r => setTimeout(r, 2000));
+        const sr = await axios.get(`${LUMEAN_BASE}/orders/${orderId}`, { headers });
+        const t = sr.data.data;
         const st = ((t.status || '')).toLowerCase();
-        console.log(`[Survive Voice] Task ${taskId}: status="${st}" (${i + 1}/60)`);
+        console.log(`[Survive Voice] Order ${orderId}: status="${st}" (${i + 1}/60)`);
 
-        if (st === 'error' || st === 'error_handled') {
+        if (st === 'failed' || st === 'cancelled') {
             throw new Error('[Survive Voice] Task failed: ' + JSON.stringify(t).slice(0, 200));
         }
 
-        if (st === 'ending' || st === 'ending_processed') {
-            console.log(`[Survive Voice] Status "${st}" — downloading result`);
-            const ar = await axios.get(
-                `${VOISE_BASE}/tasks/${taskId}/result`,
-                { responseType: 'arraybuffer', headers }
-            );
-            const buf = Buffer.from(ar.data);
-
-            const isID3  = buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33;
-            const isSync = buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0;
-            if (buf.length < 100) {
-                throw new Error(`[Survive Voice] Result too small: ${buf.length}B`);
-            }
-            if (!isID3 && !isSync) {
-                const preview = buf.slice(0, 200).toString('utf8');
-                throw new Error(`[Survive Voice] Result is not MP3 (${buf.length}B): ${preview}`);
-            }
-
-            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(outputPath, buf);
-            console.log(`[Survive Voice] ✅ Saved: ${outputPath} (${buf.length}B)`);
-            return outputPath;
+        if (st === 'completed' || st === 'partially_completed') {
+            finalOrder = t;
+            console.log(`[Survive Voice] Status "${st}" — getting result URL`);
+            break;
         }
     }
 
-    throw new Error('[Survive Voice] Task timeout after 3 minutes');
+    if (!finalOrder) {
+        throw new Error('[Survive Voice] Task timeout after 2 minutes');
+    }
+
+    const resultItem = finalOrder.result.files[0];
+    const resultPath = typeof resultItem === 'string' ? resultItem : resultItem.path;
+    const urlRes = await axios.post(`${LUMEAN_BASE}/storage/url`, { path: resultPath }, { headers });
+    const downloadUrl = urlRes.data.data.url;
+
+    const ar = await axios.get(downloadUrl, { responseType: 'arraybuffer' });
+    const buf = Buffer.from(ar.data);
+
+    if (buf.length < 100) {
+        throw new Error(`[Survive Voice] Result too small: ${buf.length}B`);
+    }
+
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(outputPath, buf);
+    console.log(`[Survive Voice] ✅ Saved: ${outputPath} (${buf.length}B)`);
+    return outputPath;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -281,7 +279,7 @@ function registerSurviveHandlers(ipcMain) {
 - Каждая идея = 6 шагов выживания (оптимально для 60-сек видео)
 ${exclusionClause}`;
 
-        const raw = await callPollinations([
+        const raw = await ai.chat([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Сгенерируй 3 разнообразных сценария выживания на ${langName}. Выведи ТОЛЬКО JSON.` }
         ], true, aiModel);
@@ -411,7 +409,7 @@ videoPrompt2: "CAMERA MOVEMENT: Stop-motion camera style, tracking shot. ACTION 
   "title": "Название сценария на ${langName}",
   "category": "категория",
   "hook": "Мощный хук на ${langName}",
-  "characterPrompt": "Детальный промпт на English для создания главного героя во весь рост (full body character sheet) в нормальной одежде (соответствующей ситуации), на простом изолированном белом фоне (simple white background), в стиле gritty stop-motion claymation.",
+  "characterPrompt": "Детальный промпт на English для создания главного героя во весь рост (full body character sheet) в нормальной повседневной одежде (строго соответствующей ситуации и месту действия, без стереотипного снаряжения выживальщика вроде топоров, веревок или огромных рюкзаков, если действие происходит в городе, здании или на концерте), на простом изолированном белом фоне (simple white background), в стиле gritty stop-motion claymation.",
   "steps": [
     {
       "id": 0,
@@ -438,6 +436,7 @@ videoPrompt2: "CAMERA MOVEMENT: Stop-motion camera style, tracking shot. ACTION 
 КРИТИЧЕСКИ ВАЖНО:
 - В тексте поля "line" ВООБЩЕ НЕ ИСПОЛЬЗУЙ цифры для нумерации шагов. Пиши только словами: "Шаг первый", "Шаг второй", "Шаг третий", "Шаг четвертый", "Шаг пятый".
 - КОНСИСТЕНТНОСТЬ ОКРУЖЕНИЯ: Если действие происходит в одном и том же месте (например, в машине, лифте, комнате), ты ОБЯЗАН скопировать ТОЧНОЕ описание интерьера (цвета мебели, освещение, архитектуру) из Шага 0 во все последующие imagePrompt и videoPrompt, пока герой не сменит локацию. Иначе нейросеть будет рисовать разные комнаты каждый раз!
+- АДЕКВАТНОСТЬ ПЕРСОНАЖА: Одежда и снаряжение главного героя должны строго соответствовать ситуации. Если сценарий происходит в городе, на концерте, в офисе или дома — персонаж должен быть одет как ОБЫЧНЫЙ человек. КАТЕГОРИЧЕСКИ ЗАПРЕЩАЕТСЯ добавлять стереотипные атрибуты выживальщика (топоры, огромные рюкзаки, веревки, компасы и т.д.), если сценарий не происходит в дикой природе.
 - ФИЗИКА И СРЕДА (КРИТИЧНО): Модели генерации картинок не понимают физику автоматически! Ты должен явно описывать взаимодействие тела со средой. Например, если герой в глубокой воде (океан, река), ОБЯЗАТЕЛЬНО пропиши, что он погружен в воду по плечи или по шею ("submerged up to the neck in deep water", "treading water with only the head visible", "water surface at chest level"). Не допускай, чтобы в океане герой стоял по колено в воде!
 - Язык в поле "line": ${langName}
 - Язык в imagePrompt и videoPrompt: ТОЛЬКО English
@@ -459,7 +458,7 @@ videoPrompt2: "CAMERA MOVEMENT: Stop-motion camera style, tracking shot. ACTION 
 Каждый шаг должен быть конкретным, практичным и визуально интересным.
 Выведи ТОЛЬКО JSON.`;
 
-        const raw = await callPollinations([
+        const raw = await ai.chat([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ], true, aiModel);
@@ -517,7 +516,7 @@ videoPrompt2: "CAMERA MOVEMENT: Stop-motion camera style, tracking shot. ACTION 
                 }
             }
 
-            const savedPaths = await generateImageViaGLabs({
+            const savedPaths = await ai.generateImage({
                 prompt: imagePrompt,
                 model: cleanModel,
                 count: 1,
@@ -610,7 +609,7 @@ videoPrompt2: "CAMERA MOVEMENT: Stop-motion camera style, tracking shot. ACTION 
             };
 
             console.log(`[Survive Meta] Part 1/2: Generating first 5s clip...`);
-            const part1Path = await generateVideoViaGLabs(optionsPart1);
+            const part1Path = await ai.generateVideo(optionsPart1);
             console.log(`[Survive Meta] Part 1/2: Done → ${part1Path}`);
 
             // ── Extract last frame from part1 ──
@@ -639,7 +638,7 @@ videoPrompt2: "CAMERA MOVEMENT: Stop-motion camera style, tracking shot. ACTION 
             };
 
             console.log(`[Survive Meta] Part 2/2: Generating second 5s clip from last frame...`);
-            const part2Path = await generateVideoViaGLabs(optionsPart2);
+            const part2Path = await ai.generateVideo(optionsPart2);
             console.log(`[Survive Meta] Part 2/2: Done → ${part2Path}`);
 
             // ── Concatenate part1 + part2 ──
@@ -683,14 +682,14 @@ AMBIENT SOUND: realistic environmental sounds matching the survival scenario (wi
         };
 
         try {
-            const savedPath = await generateVideoViaGLabs(options);
+            const savedPath = await ai.generateVideo(options);
             return `media:///${savedPath.replace(/\\/g, '/')}?t=${Date.now()}`;
         } catch (err) {
             // Fallback to the fast model if the selected model is unavailable.
             if (options.model !== 'veo_31_fast' && err.message && err.message.includes('model')) {
                 console.warn(`[Survive] ${options.model} failed, trying veo_31_fast: ${err.message}`);
                 options.model = 'veo_31_fast';
-                const savedPath = await generateVideoViaGLabs(options);
+                const savedPath = await ai.generateVideo(options);
                 return `media:///${savedPath.replace(/\\/g, '/')}?t=${Date.now()}`;
             }
             throw err;

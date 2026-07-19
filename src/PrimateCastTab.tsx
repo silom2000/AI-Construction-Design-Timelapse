@@ -15,6 +15,8 @@ const MARKETS = [
 const PrimateCastTab: React.FC = () => {
   const [subTab, setSubTab] = useState<'characters' | 'episode'>('characters');
   const [llmProvider, setLlmProvider] = useState<string>('pollinations');
+  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro' | 'grok'>('nano_banana_2');
+  const [videoModel, setVideoModel] = useState<'omni_flash' | 'veo_31_lite' | 'grok'>('omni_flash');
   
   // Characters State
   const [characters, setCharacters] = useState<any[]>([]);
@@ -109,7 +111,7 @@ const PrimateCastTab: React.FC = () => {
     try {
       const img = await window.electronAPI.primatecastGenerateBaseImage({ 
         visualPrompt: generatedIdea.visualPrompt, 
-        model: 'nano_banana_2' 
+        model: imageModel 
       });
       setGeneratedImage(img);
     } catch (e: any) {
@@ -377,7 +379,8 @@ const PrimateCastTab: React.FC = () => {
         host2Id: host2,
         clothes1, clothes2, location, episodeTitle,
         aspectRatio,
-        language: market.language
+        language: market.language,
+        videoModel
       });
       updateSegment(seg.index, {
         status: 'done',
@@ -422,6 +425,32 @@ const PrimateCastTab: React.FC = () => {
                         style={{
                             padding: '6px 12px',
                             backgroundColor: llmProvider === p.value ? '#007acc' : '#333',
+                            color: '#fff',
+                            border: '1px solid #444',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {p.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+            <div style={{ fontSize: '13px', color: '#888', marginBottom: '5px' }}>Image Model</div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+                {([
+                  { value: 'nano_banana_2', label: 'Nano Banana 2' },
+                  { value: 'nano_banana_pro', label: 'Nano Banana Pro' },
+                  { value: 'grok', label: 'Grok Generation' }
+                ] as const).map(p => (
+                    <button
+                        key={p.value}
+                        onClick={() => setImageModel(p.value as any)}
+                        style={{
+                            padding: '6px 12px',
+                            backgroundColor: imageModel === p.value ? '#007acc' : '#333',
                             color: '#fff',
                             border: '1px solid #444',
                             borderRadius: '4px',
@@ -978,6 +1007,18 @@ const PrimateCastTab: React.FC = () => {
           >
             <option value="16:9">Horizontal (16:9)</option>
             <option value="9:16">Vertical (9:16)</option>
+          </select>
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>Video Model</label>
+          <select 
+            value={videoModel}
+            onChange={e => setVideoModel(e.target.value as any)}
+            style={{ width: '100%', padding: '8px', backgroundColor: '#333', color: '#fff', border: '1px solid #555', cursor: 'pointer' }}
+          >
+            <option value="omni_flash">Omni Flash</option>
+            <option value="veo_31_lite">Veo 3.1 Lite</option>
+            <option value="grok">Grok Generation</option>
           </select>
         </div>
       </div>

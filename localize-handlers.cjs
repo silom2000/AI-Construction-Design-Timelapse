@@ -1,10 +1,13 @@
-const path = require('path');
+const crypto = require('crypto');
 const fs = require('fs');
-const os = require('os');
-const { execSync, spawn } = require('child_process');
-const { callPollinations, synthesizeUnifiedSpeech } = require('./skeleton-handlers.cjs');
-const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
+const path = require('path');
+const { pipeline } = require('stream');
+const { promisify } = require('util');
+const streamPipeline = promisify(pipeline);
 const { request } = require('undici');
+const { spawn } = require('child_process');
+
+const ai = require('./ai-client.cjs');
 
 const LOCALIZE_DIR = path.join(__dirname, 'TikTokLocalizer');
 if (!fs.existsSync(LOCALIZE_DIR)) fs.mkdirSync(LOCALIZE_DIR, { recursive: true });
@@ -216,148 +219,9 @@ function muxAudioIntoVideo(videoPath, audioPath, outputPath) {
     });
 }
 
-// ── STT: Transcribe audio with custom proxy (Primary) ──────────────────────────
-async function transcribeAudioGemini(audioPath, model) {
-    const audioBuffer = fs.readFileSync(audioPath);
-    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
-    const body = Buffer.concat([
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="audio.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n`),
-        audioBuffer,
-        Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\n${model}\r\n`),
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="response_format"\r\n\r\nverbose_json\r\n`),
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="timestamp_granularities[]"\r\n\r\nword\r\n`),
-        Buffer.from(`--${boundary}--\r\n`)
-    ]);
+// ── STT logic moved to ai-client.cjs ──────────────────────────────────────────
 
-    const apiKey = process.env.CUSTOM_AI_API_KEY || process.env.GEMINI_API_KEY || 'dummy-key';
-    console.log(`[Localize] Sending audio to Custom STT (model: ${model})...`);
-    const { statusCode, body: resBody } = await request('http://127.0.0.1:8045/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': `multipart/form-data; boundary=${boundary}`,
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body,
-        headersTimeout: 180000,
-        bodyTimeout: 180000
-    });
 
-    const rawText = await resBody.text();
-    if (statusCode !== 200) {
-        throw new Error(`Custom Transcription failed (${statusCode}): ${rawText.substring(0, 200)}`);
-    }
-
-    let data;
-    try {
-        data = JSON.parse(rawText);
-    } catch (parseErr) {
-        throw new Error(`Custom Transcription response is not valid JSON: ${rawText.substring(0, 200)}`);
-    }
-
-    if (!data.words || data.words.length === 0) {
-        throw new Error("Custom Transcription missing 'words' timestamps. Diarization requires word-level timestamps.");
-    }
-
-    console.log(`[Localize] Custom Transcription complete: ${data.words.length} words`);
-    return {
-        text: data.text || '',
-        words: data.words.map(w => ({
-            start: w.start || 0,
-            end: w.end || 0,
-            word: w.word || ''
-        }))
-    };
-}
-
-async function transcribeAudioCustomProxy(audioPath) {
-    return await transcribeAudioGemini(audioPath, 'gemini-2.5-flash');
-}
-
-// ── STT: Transcribe audio with retry logic ──────────────────────────────────────
-async function transcribeAudioWithRetry(audioPath, retries = 3) {
-    let customLastError = null;
-
-    // Try custom service 3 times
-    for (let attempt = 1; attempt <= retries; attempt++) {
-        try {
-            if (attempt > 1) {
-                console.log(`[Localize] Custom STT: Waiting 2 seconds before retry attempt ${attempt}...`);
-                await new Promise(r => setTimeout(r, 2000));
-            }
-            return await transcribeAudioCustomProxy(audioPath);
-        } catch (e) {
-            console.error(`[Localize] Custom STT attempt ${attempt} failed: ${e.message}`);
-            customLastError = e;
-        }
-    }
-
-    console.warn('[Localize] Custom STT failed 3 times. Falling back to Pollinations...');
-
-    let pollLastError = null;
-    for (let attempt = 1; attempt <= retries; attempt++) {
-        try {
-            if (attempt > 1) {
-                console.log(`[Localize] Pollinations STT: Waiting 6 seconds before retry attempt ${attempt}...`);
-                await new Promise(r => setTimeout(r, 6000));
-            }
-            console.log(`[Localize] Pollinations STT: Sending audio for transcription (attempt ${attempt}/${retries})...`);
-            return await transcribeAudio(audioPath);
-        } catch (e) {
-            console.error(`[Localize] Pollinations STT attempt ${attempt} failed: ${e.message}`);
-            pollLastError = e;
-        }
-    }
-
-    throw new Error(`Both custom STT and Pollinations failed. Last Pollinations error: ${pollLastError?.message}`);
-}
-
-// ── STT: Transcribe audio using Pollinations scribe endpoint ───────────────────
-async function transcribeAudio(audioPath) {
-    const apiKey = process.env.POLLINATIONS_API_KEY?.trim();
-    const audioBuffer = fs.readFileSync(audioPath);
-    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
-    const body = Buffer.concat([
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="audio.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n`),
-        audioBuffer,
-        Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\nscribe\r\n`),
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="response_format"\r\n\r\nverbose_json\r\n`),
-        Buffer.from(`--${boundary}--\r\n`)
-    ]);
-
-    console.log('[Localize] Sending audio for transcription...');
-    const { statusCode, body: resBody } = await request('https://gen.pollinations.ai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': `multipart/form-data; boundary=${boundary}`,
-            ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-        },
-        body,
-        headersTimeout: 180000, // Increased to 180 seconds to prevent timeout on slow transcription queues
-        bodyTimeout: 180000
-    });
-
-    const rawText = await resBody.text();
-    if (statusCode !== 200) {
-        throw new Error(`Transcription failed (${statusCode}): ${rawText.substring(0, 200)}`);
-    }
-
-    let data;
-    try {
-        data = JSON.parse(rawText);
-    } catch (parseErr) {
-        throw new Error(`Transcription response is not valid JSON: ${rawText.substring(0, 200)}`);
-    }
-
-    console.log(`[Localize] Transcription complete: ${data.words?.length || 0} words`);
-    return {
-        text: data.text || '',
-        words: (data.words || []).map(w => ({
-            start: w.start || 0,
-            end: w.end || 0,
-            word: w.word || ''
-        }))
-    };
-}
 
 // ── Pause-based utterance segmentation ─────────────────────────────────────────
 function splitTranscriptIntoUtterances(words) {
@@ -493,7 +357,7 @@ async function generateTTS(text, outputPath, languageLabel, voiceId = null) {
     // Note: the function uses the 'language' parameter as the output file path
     // So we pass the full outputPath as the language parameter
     const activeVoice = voiceId || MULTILINGUAL_VOICE_ID;
-    await synthesizeUnifiedSpeech(text, outputPath, activeVoice);
+    await ai.synthesizeVoice(text, outputPath, activeVoice);
     console.log(`[Localize] TTS generated: ${outputPath} (voice: ${activeVoice})`);
     return outputPath;
 }
@@ -557,7 +421,7 @@ async function analyzeVoiceCharacteristics(audioPath, segments, speakers, projec
                 { role: 'user', content: `Analyze the voice characteristics of this speaker.\n\nSpeaker Visual Description: ${speaker.description || speaker.name}\nSpeaker Name: ${speaker.name}\nSample text spoken: "${bestSeg.text}"\nSample duration: ${bestSeg.duration.toFixed(1)}s\n\nBased on the visual description (${speaker.description}), determine the most likely voice characteristics. Consider their apparent age, gender, and speaking style from the dialogue context.` }
             ];
 
-            const voiceRaw = await callPollinations(voiceMsg, true);
+            const voiceRaw = await ai.chat(voiceMsg, true);
             const voiceData = safeParseJson(voiceRaw, `voice analysis speaker ${speaker.id}`);
 
             voiceProfiles[speaker.id] = {
@@ -630,7 +494,7 @@ async function generateVideoPromptForSegment(segment, sceneFrameBase64, characte
             { role: 'user', content: promptContent }
         ];
 
-        const promptRaw = await callPollinations(promptMessages, true);
+        const promptRaw = await ai.chat(promptMessages, true);
         const promptData = safeParseJson(promptRaw, 'video prompt generation');
 
         console.log(`[Localize] Generated video prompt: "${(promptData.videoPrompt || '').substring(0, 80)}..."`);
@@ -683,7 +547,7 @@ function registerLocalizeHandlers(ipcMain) {
             execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 -y "${audioPath}"`, { stdio: 'pipe' });
 
             console.log('[Localize] Step 1: Transcribing audio...');
-            const sttResult = await transcribeAudioWithRetry(audioPath);
+            const sttResult = await ai.transcribe(audioPath);
             const transcript = sttResult.text;
             const transcriptWords = sttResult.words;
             if (!transcript || transcriptWords.length === 0) {
@@ -746,7 +610,7 @@ function registerLocalizeHandlers(ipcMain) {
                 { role: 'user', content: diarizationContent }
             ];
 
-            const diarizationRaw = await callPollinations(diarizationMessages, true);
+            const diarizationRaw = await ai.chat(diarizationMessages, true);
             const diarization = safeParseJson(diarizationRaw, 'speaker diarization');
             const speakers = diarization.speakers || [];
             const timeline = diarization.timeline || [];
@@ -799,7 +663,7 @@ function registerLocalizeHandlers(ipcMain) {
                 { role: 'user', content: analysisContent }
             ];
 
-            const analysisRaw = await callPollinations(analysisMessages, true);
+            const analysisRaw = await ai.chat(analysisMessages, true);
             const analysis = safeParseJson(analysisRaw, 'character analysis');
 
             const characters = (analysis.characters || []).map((char, i) => ({
@@ -828,7 +692,7 @@ function registerLocalizeHandlers(ipcMain) {
             console.log(`[Localize] Step 3: Generating reference images for ${characters.length} characters...`);
             for (let i = 0; i < characters.length; i++) {
                 try {
-                    const savedPaths = await generateImageViaGLabs({
+                    const savedPaths = await ai.generateImage({
                         prompt: characters[i].imagePrompt + ' Single full-frame vertical 9:16 TikTok image, one person only, photorealistic portrait, 8k detail, professional lighting, clean background.',
                         model: 'nano_banana_2',
                         aspectRatio: '9:16',
@@ -918,7 +782,7 @@ function registerLocalizeHandlers(ipcMain) {
                             { role: 'system', content: systemPrompt },
                             { role: 'user', content: `Translate this dialogue line to ${langLabel}:\n\n${seg.text}` }
                         ];
-                        const raw = await callPollinations(msg, false);
+                        const raw = await ai.chat(msg, false);
                         const translatedText = raw.trim().replace(/^["']|["']$/g, '');
                         return {
                             ...seg,
@@ -999,7 +863,7 @@ function registerLocalizeHandlers(ipcMain) {
                 ? [{ data: startImageBase64.replace(/^data:image\/\w+;base64,/, '') }]
                 : [];
 
-            videoPath = await generateVideoViaGLabs({
+            videoPath = await ai.generateVideo({
                 prompt: videoPrompt,
                 model: 'omni_flash',
                 mode: refImages.length > 0 ? 'start_image' : 'text_to_video',
@@ -1075,7 +939,7 @@ function registerLocalizeHandlers(ipcMain) {
         if (!char) throw new Error(`Character at index ${characterIndex} not found`);
 
         const prompt = (customPrompt || char.imagePrompt) + ' Single full-frame vertical 9:16 TikTok image, photorealistic portrait, 8k detail, professional lighting.';
-        const savedPaths = await generateImageViaGLabs({
+        const savedPaths = await ai.generateImage({
             prompt,
             model: 'nano_banana_2',
             aspectRatio: '9:16',
@@ -1105,7 +969,7 @@ function registerLocalizeHandlers(ipcMain) {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Translate this dialogue line to ${langLabel}:\n\n${transcript}` }
         ];
-        const raw = await callPollinations(msg, false);
+        const raw = await ai.chat(msg, false);
         return { translatedText: raw.trim().replace(/^["']|["']$/g, '') };
     });
 
@@ -1191,4 +1055,4 @@ function registerLocalizeHandlers(ipcMain) {
 
 }
 
-module.exports = { registerLocalizeHandlers, transcribeAudio };
+module.exports = { registerLocalizeHandlers };

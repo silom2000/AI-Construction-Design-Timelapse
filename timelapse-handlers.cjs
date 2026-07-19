@@ -4,8 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { spawn, execSync } = require('child_process');
-const { callPollinations } = require('./skeleton-handlers.cjs'); // Reuse the LLM caller
-const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
+const ai = require('./ai-client.cjs');
 const historyManager = require('./history-manager.cjs');
 
 const TIMELAPSE_DIR = path.join(__dirname, 'CinematicTimelapse');
@@ -363,7 +362,7 @@ function registerTimelapseHandlers(ipcMain) {
         ];
 
         console.log(`[Timelapse] Requesting State 2 Environments. Mode: ${currentMode}`);
-        const response = await callPollinations(conversationHistory, true);
+        const response = await ai.chat(conversationHistory, true);
         conversationHistory.push({ role: 'assistant', content: response });
 
         // Parse JSON array from response
@@ -398,7 +397,7 @@ function registerTimelapseHandlers(ipcMain) {
             content: `STATE 3: I select option ${selectionIndex}. Selected idea: ${JSON.stringify(selectedEnv)}. Return only JSON in the STATE 3 format.`
         });
 
-        const rawJsonString = await callPollinations(conversationHistory, true);
+        const rawJsonString = await ai.chat(conversationHistory, true);
         conversationHistory.push({ role: 'assistant', content: rawJsonString });
 
         try {
@@ -529,7 +528,7 @@ Output the 6-stage pipeline in JSON format as per the system instructions.`;
             { role: 'user', content: content }
         ];
 
-        const rawJsonString = await callPollinations(customConversation, true);
+        const rawJsonString = await ai.chat(customConversation, true);
         
         try {
             const cleanJson = rawJsonString.match(/\{[\s\S]*\}/)?.[0] || rawJsonString;
@@ -624,7 +623,7 @@ Output the 6-stage pipeline in JSON format as per the system instructions.`;
             : referenceImage ? (imgIndex === 0 ? 0.2 : 0.35)
             : (imgIndex > 0 ? 0.35 : 0.6);
 
-        const savedPaths = await generateImageViaGLabs({
+        const savedPaths = await ai.generateImage({
             prompt: finalPrompt,
             model: model || 'nano_banana_2',
             aspectRatio: '9:16',
@@ -690,7 +689,7 @@ SCENE STRUCTURE:
 QUALITY: Photorealistic skin, realistic mechanical motion, Hollywood sci-fi quality, industrial hard-surface design. Smooth camera, no shaking, no cuts, no scene changes. Ultra realistic, high detail, dramatic lighting, premium VFX, viral TikTok style.
 Negative: ugly hands, deformed fingers, blurry hand, extra digits, text, watermark. `;
 
-            const generatedVideoPath = await generateVideoViaGLabs({
+            const generatedVideoPath = await ai.generateVideo({
                 prompt: `${transformVideoPrefix}${activeAudioRule} ${prompt}`,
                 model: videoModel || 'veo_31_lite',
                 sectionDir: TIMELAPSE_DIR,
@@ -714,7 +713,7 @@ Negative: ugly hands, deformed fingers, blurry hand, extra digits, text, waterma
             }
             console.log(`[Timelapse] Generating Video ${STAGE_COUNT} — Cinematic Tour (start: Image ${STAGE_COUNT})...`);
             const startB64 = fs.readFileSync(startImgPath, { encoding: 'base64' });
-            const generatedVideoPath = await generateVideoViaGLabs({
+            const generatedVideoPath = await ai.generateVideo({
                 prompt: `CINEMATIC ORBITAL REVEAL. SMOOTH DRONE ARC MOVEMENT. ${activeAudioRule} ${prompt}`,
                 model: videoModel || 'veo_31_lite',
                 sectionDir: TIMELAPSE_DIR,
@@ -747,7 +746,7 @@ Negative: ugly hands, deformed fingers, blurry hand, extra digits, text, waterma
         const endB64 = fs.readFileSync(endImgPath, { encoding: 'base64' });
 
         // Mode `start_end_image` enables smooth transition between two frames; omni_flash does not support it, so use components
-        const generatedVideoPath = await generateVideoViaGLabs({
+        const generatedVideoPath = await ai.generateVideo({
             prompt: `STATIC CAMERA. TIMELAPSE TRANSITION. ${activeAudioRule} ${prompt}`,
             model: videoModel || 'veo_31_lite', 
             sectionDir: TIMELAPSE_DIR,

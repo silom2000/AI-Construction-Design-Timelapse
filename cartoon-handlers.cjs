@@ -14,12 +14,11 @@ Object.values(CARTOON_DIRS).forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const { callPollinations, synthesizeDirectElevenLabs } = require('./skeleton-handlers.cjs');
-const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
+const historyManager = require('./history-manager.cjs');
+const ai = require('./ai-client.cjs');
 const { spawn } = require('child_process');
 const axios = require('axios');
 const crypto = require('crypto');
-const historyManager = require('./history-manager.cjs');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VoiseAPI TTS — same pattern as story-handlers.cjs
@@ -52,81 +51,86 @@ async function cartoonGenerateVoice(text, language, outputDir) {
     }
 
     if (process.env.ElevenLabs_API) {
-        return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
+        return await ai.synthesizeDirectElevenLabs(text, voiceId, outputPath);
     }
 
     const apiKey = process.env.VOICEAPI_KEY;
     if (!apiKey) throw new Error('[CartoonVoice] VOICEAPI_KEY not set in .env');
 
-    const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
+    const templateId = process.env.UUID;
+    if (!templateId) throw new Error('[CartoonVoice] UUID not set for Lumean Template');
+
+    const LUMEAN_BASE = 'https://api.lumean.app/api/public';
 
     const headers = {
-        'X-API-Key': apiKey,
+        'X-API-KEY': apiKey,
         'Content-Type': 'application/json'
     };
 
     const taskBody = {
-        template: {
-            model_id: 'eleven_multilingual_v2',
-            voice_id: voiceId,
-            voice_settings: {
-                stability: 0.85,
-                similarity_boost: 0.75,
-                use_speaker_boost: true,
-                style: 0.0,
-                speed: 1.0
-            },
-            voice_result_type: 'default'
-        },
-        text: text,
-        task_type: 'default'
+        template_id: templateId,
+        input_text: text
     };
 
-    console.log(`[CartoonVoice] POST /tasks voice=${voiceId} lang=${language} text=${text.length}ch`);
-    const cr = await axios.post(`${VOISE_BASE}/tasks`, taskBody, { headers });
-    const taskId = cr.data && (cr.data.task_id || cr.data.id);
-    if (!taskId) {
-        throw new Error('[CartoonVoice] No task_id in response: ' + JSON.stringify(cr.data).slice(0, 200));
+    let cr;
+    try {
+        console.log(`[CartoonVoice] POST /orders template=${templateId} text=${text.length}ch`);
+        cr = await axios.post(`${LUMEAN_BASE}/orders`, taskBody, { headers });
+    } catch (err) {
+        if (err.response && err.response.status === 402) {
+            throw new Error('Недостаточно средств на балансе (Ошибка 402). Пожалуйста, пополните баланс.');
+        }
+        if (err.response && err.response.status === 403) {
+             throw new Error('Ошибка 403: У API-ключа нет нужных прав (нужно orders.write).');
+        }
+        throw err;
     }
-    console.log(`[CartoonVoice] Task created: id=${taskId}`);
 
+    const orderId = cr.data && cr.data.data && cr.data.data.id;
+    if (!orderId) {
+        throw new Error('[CartoonVoice] No order id in response: ' + JSON.stringify(cr.data).slice(0, 200));
+    }
+    console.log(`[CartoonVoice] Order created: id=${orderId}`);
+
+    let finalOrder = null;
     for (let i = 0; i < 60; i++) {
-        await new Promise(r => setTimeout(r, 3000));
-        const sr = await axios.get(`${VOISE_BASE}/tasks/${taskId}/status`, { headers });
-        const t = sr.data;
+        await new Promise(r => setTimeout(r, 2000));
+        const sr = await axios.get(`${LUMEAN_BASE}/orders/${orderId}`, { headers });
+        const t = sr.data.data;
         const st = ((t.status || '')).toLowerCase();
-        console.log(`[CartoonVoice] Task ${taskId}: status="${st}" (${i + 1}/60)`);
+        console.log(`[CartoonVoice] Order ${orderId}: status="${st}" (${i + 1}/60)`);
 
-        if (st === 'error' || st === 'error_handled') {
+        if (st === 'failed' || st === 'cancelled') {
             throw new Error('[CartoonVoice] Task failed: ' + JSON.stringify(t).slice(0, 200));
         }
 
-        if (st === 'ending' || st === 'ending_processed') {
-            console.log(`[CartoonVoice] Status "${st}" — downloading result from /tasks/${taskId}/result`);
-
-            const ar = await axios.get(
-                `${VOISE_BASE}/tasks/${taskId}/result`,
-                { responseType: 'arraybuffer', headers }
-            );
-            const buf = Buffer.from(ar.data);
-
-            const isID3  = buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33;
-            const isSync = buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0;
-            if (buf.length < 100) {
-                throw new Error(`[CartoonVoice] Result too small: ${buf.length}B`);
-            }
-            if (!isID3 && !isSync) {
-                const preview = buf.slice(0, 200).toString('utf8');
-                throw new Error(`[CartoonVoice] Result is not MP3 (${buf.length}B): ${preview}`);
-            }
-
-            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(outputPath, buf);
-            console.log(`[CartoonVoice] ✅ Saved: ${outputPath} (${buf.length}B, isID3=${isID3}, isSync=${isSync})`);
-            return outputPath;
+        if (st === 'completed' || st === 'partially_completed') {
+            finalOrder = t;
+            console.log(`[CartoonVoice] Status "${st}" — getting result URL`);
+            break;
         }
     }
-    throw new Error(`[CartoonVoice] Timeout: task ${taskId} did not complete in 3 minutes`);
+
+    if (!finalOrder) {
+        throw new Error(`[CartoonVoice] Timeout: order ${orderId} did not complete in 2 minutes`);
+    }
+
+    const resultItem = finalOrder.result.files[0];
+    const resultPath = typeof resultItem === 'string' ? resultItem : resultItem.path;
+    const urlRes = await axios.post(`${LUMEAN_BASE}/storage/url`, { path: resultPath }, { headers });
+    const downloadUrl = urlRes.data.data.url;
+
+    const ar = await axios.get(downloadUrl, { responseType: 'arraybuffer' });
+    const buf = Buffer.from(ar.data);
+
+    if (buf.length < 100) {
+        throw new Error(`[CartoonVoice] Result too small: ${buf.length}B`);
+    }
+
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(outputPath, buf);
+    console.log(`[CartoonVoice] ✅ Saved: ${outputPath} (${buf.length}B)`);
+    return outputPath;
 }
 
 // ── Preview re-encoding helper ──────────────────────────────────────────────
@@ -235,7 +239,7 @@ ${completedText}
 
 ВАЖНО: ровно 2 элемента в массиве ideas.`;
 
-        const raw = await callPollinations([
+        const raw = await ai.chat([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ], true);
@@ -437,7 +441,7 @@ ${ideaContext}
 - КРИТИЧЕСКИ ВАЖНО: Все персонажи должны быть ВЫМЫШЛЕННЫМИ, без упоминаний реальных людей, брендов, знаменитостей
 - В imagePrompt и videoPrompt НЕ использовать имена известных личностей или названия брендов`;
 
-        const raw = await callPollinations([
+        const raw = await ai.chat([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ], true);
@@ -497,7 +501,7 @@ ${ideaContext}
 
             console.log(`[Cartoon] Generate image: scene=${sceneIndex} model=${model} folder=${projectFolder || 'default'}`);
 
-            const savedPaths = await generateImageViaGLabs({
+            const savedPaths = await ai.generateImage({
                 prompt: finalPrompt,
                 model,
                 aspectRatio: '9:16',
@@ -659,7 +663,7 @@ AMBIENT SOUND: subtle background work sounds layered under dialogue.`;
         };
 
         try {
-            const savedPath = await generateVideoViaGLabs(options);
+            const savedPath = await ai.generateVideo(options);
             const previewPath = await reencodeForPreview(savedPath, sceneIndex, projectFolder);
             return `media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`;
         } catch (err) {
@@ -667,7 +671,7 @@ AMBIENT SOUND: subtle background work sounds layered under dialogue.`;
             if (options.model !== 'veo_31_fast' && err.message && err.message.includes('model')) {
                 console.warn(`[Cartoon] ${options.model} failed, trying veo_31_fast: ${err.message}`);
                 options.model = 'veo_31_fast';
-                const savedPath = await generateVideoViaGLabs(options);
+                const savedPath = await ai.generateVideo(options);
                 const previewPath = await reencodeForPreview(savedPath, sceneIndex, projectFolder);
                 return `media:///${previewPath.replace(/\\/g, '/')}?t=${Date.now()}`;
             }

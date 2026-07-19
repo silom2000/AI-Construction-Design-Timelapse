@@ -43,17 +43,18 @@ type Script = {
   scenes: Scene[];
 };
 
-type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'grok';
 type TtsService = 'voiceapi' | 'elevenlabs';
 
 const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
   { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced generation' },
   { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
   { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash generation' },
+  { value: 'grok', label: 'Grok Generation', desc: '10s 720p Video' },
 ];
 
 const TTS_SERVICES: { value: TtsService; label: string; desc: string }[] = [
-  { value: 'voiceapi', label: 'VoiceAPI', desc: 'Default — voiceapi.csv666.ru' },
+  { value: 'voiceapi', label: 'Lumean API', desc: 'Default — Lumean' },
   { value: 'elevenlabs', label: 'ElevenLabs', desc: 'Direct ElevenLabs API' },
 ];
 
@@ -82,7 +83,7 @@ const LIFE_STAGE_LABELS: Record<number, string> = {
 export function StoryTab() {
   const [language, setLanguage] = useState('English');
   const [topic, setTopic] = useState('');
-  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro'>('nano_banana_2');
+  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro' | 'grok'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
   const [ttsService, setTtsService] = useState<TtsService>('voiceapi');
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -255,7 +256,8 @@ export function StoryTab() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               {([
                 { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Improved generation' },
-                { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: '4K, Thinking model' },
+                { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'High-quality 4k' },
+                { value: 'grok', label: 'Grok Generation', desc: 'Grok Image Model' }
               ] as const).map(m => (
                 <div
                   key={m.value}

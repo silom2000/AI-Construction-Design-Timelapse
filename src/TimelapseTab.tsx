@@ -22,7 +22,7 @@ export interface CinematicPromptData {
     engineerNotes?: string;
 }
 
-type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'grok';
 
 const TimelapseTab: React.FC = () => {
     // Pipeline States
@@ -59,12 +59,14 @@ const TimelapseTab: React.FC = () => {
     const IMAGE_MODELS = [
         { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Versatile' },
         { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Pro Output' },
+        { value: 'grok', label: 'Grok Generation', desc: 'Grok Image Model' },
     ];
 
     const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
         { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced video generation' },
         { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast video generation' },
         { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash video generation' },
+        { value: 'grok', label: 'Grok Generation', desc: '10s 720p Video' },
     ];
 
     const handleStart = async () => {

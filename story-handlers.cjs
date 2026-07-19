@@ -14,8 +14,8 @@ Object.values(STORY_DIRS).forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const { callPollinations, synthesizeUnifiedSpeech, synthesizeDirectElevenLabs } = require('./skeleton-handlers.cjs');
-const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
+const historyManager = require('./history-manager.cjs');
+const ai = require('./ai-client.cjs');
 const { spawn } = require('child_process');
 const axios = require('axios');
 const crypto = require('crypto');
@@ -71,99 +71,86 @@ async function storyGenerateVoice(text, language, outputDir, sceneIndex = null, 
     if (ttsService === 'elevenlabs') {
         const el11Key = process.env.ElevenLabs_API;
         if (!el11Key) throw new Error('[Voice] ElevenLabs_API key not set in .env');
-        return await synthesizeDirectElevenLabs(text, voiceId, outputPath);
+        return await ai.synthesizeDirectElevenLabs(text, voiceId, outputPath);
     }
 
     const apiKey = process.env.VOICEAPI_KEY;
     if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set in .env');
 
-    const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
+    const templateId = process.env.UUID;
+    if (!templateId) throw new Error('[Voice] UUID not set for Lumean Template');
 
-    // ✅ CORRECT AUTH per API docs: X-API-Key header (not Bearer!)
-    // Source: securitySchemes.APIKeyHeader → in: header, name: X-API-Key
+    const LUMEAN_BASE = 'https://api.lumean.app/api/public';
+
     const headers = {
-        'X-API-Key': apiKey,
+        'X-API-KEY': apiKey,
         'Content-Type': 'application/json'
     };
 
-    // Step 1: POST /tasks — create TTS task
     const taskBody = {
-        template: {
-            model_id: 'eleven_multilingual_v2',
-            voice_id: voiceId,
-            voice_settings: {
-                stability: 0.85,
-                similarity_boost: 0.75,
-                use_speaker_boost: true,
-                style: 0.0,
-                speed: 1.0
-            }
-        },
-        text: text
+        template_id: templateId,
+        input_text: text
     };
 
     let cr;
     try {
-        console.log(`[Voice] POST /tasks voice=${voiceId} lang=${language} text=${text.length}ch`);
-        cr = await axios.post(`${VOISE_BASE}/tasks`, taskBody, { headers });
+        console.log(`[Voice] POST /orders template=${templateId} text=${text.length}ch`);
+        cr = await axios.post(`${LUMEAN_BASE}/orders`, taskBody, { headers });
     } catch (err) {
         if (err.response && err.response.status === 402) {
-            throw new Error('Недостаточно средств на балансе VoiceAPI (Ошибка 402). Пожалуйста, пополните баланс или выберите другой сервис.');
+            throw new Error('Недостаточно средств на балансе (Ошибка 402). Пожалуйста, пополните баланс.');
+        }
+        if (err.response && err.response.status === 403) {
+             throw new Error('Ошибка 403: У API-ключа нет нужных прав (нужно orders.write).');
         }
         throw err;
     }
 
-    const taskId = cr.data && (cr.data.task_id || cr.data.id);
-    if (!taskId) {
-        throw new Error('[Voice] No task_id in response: ' + JSON.stringify(cr.data).slice(0, 200));
+    const orderId = cr.data && cr.data.data && cr.data.data.id;
+    if (!orderId) {
+        throw new Error('[Voice] No order id in response: ' + JSON.stringify(cr.data).slice(0, 200));
     }
-    console.log(`[Voice] Task created: id=${taskId}`);
+    console.log(`[Voice] Order created: id=${orderId}`);
 
-    // Step 2: Poll GET /tasks/{id}/status  (NOT /tasks/{id}!)
-    // Statuses: waiting → processing → ending (ready!) → ending_processed
-    // Source: /tasks/{task_id}/status endpoint in OpenAPI spec
+    let finalOrder = null;
     for (let i = 0; i < 60; i++) {
-        await new Promise(r => setTimeout(r, 3000));
-        const sr = await axios.get(`${VOISE_BASE}/tasks/${taskId}/status`, { headers });
-        const t = sr.data;
+        await new Promise(r => setTimeout(r, 2000));
+        const sr = await axios.get(`${LUMEAN_BASE}/orders/${orderId}`, { headers });
+        const t = sr.data.data;
         const st = ((t.status || '')).toLowerCase();
-        console.log(`[Voice] Task ${taskId}: status="${st}" (${i + 1}/60)`);
+        console.log(`[Voice] Order ${orderId}: status="${st}" (${i + 1}/60)`);
 
-        if (st === 'error' || st === 'error_handled') {
+        if (st === 'failed' || st === 'cancelled') {
             throw new Error('[Voice] Task failed: ' + JSON.stringify(t).slice(0, 200));
         }
 
-        // "ending" = result ready for download
-        if (st === 'ending' || st === 'ending_processed') {
-            console.log(`[Voice] Status "${st}" — downloading result from /tasks/${taskId}/result`);
-
-            // Step 3: GET /tasks/{id}/result — binary MP3 download
-            const ar = await axios.get(
-                `${VOISE_BASE}/tasks/${taskId}/result`,
-                { responseType: 'arraybuffer', headers }
-            );
-            const buf = Buffer.from(ar.data);
-
-            // Verify it's actually audio (ID3 or MPEG sync)
-            const isID3  = buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33;
-            const isSync = buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0;
-            if (buf.length < 100) {
-                throw new Error(`[Voice] Result too small: ${buf.length}B`);
-            }
-            if (!isID3 && !isSync) {
-                // Might be an error JSON — log it
-                const preview = buf.slice(0, 200).toString('utf8');
-                throw new Error(`[Voice] Result is not MP3 (${buf.length}B): ${preview}`);
-            }
-
-            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(outputPath, buf);
-            console.log(`[Voice] ✅ Saved: ${outputPath} (${buf.length}B, isID3=${isID3}, isSync=${isSync})`);
-            return outputPath;
+        if (st === 'completed' || st === 'partially_completed') {
+            finalOrder = t;
+            console.log(`[Voice] Status "${st}" — getting result URL`);
+            break;
         }
-        // waiting / processing — keep polling
     }
-    throw new Error(`[Voice] Timeout: task ${taskId} did not complete in 3 minutes`);
+
+    if (!finalOrder) {
+        throw new Error(`[Voice] Timeout: order ${orderId} did not complete in 2 minutes`);
+    }
+
+    const resultItem = finalOrder.result.files[0];
+    const resultPath = typeof resultItem === 'string' ? resultItem : resultItem.path;
+    const urlRes = await axios.post(`${LUMEAN_BASE}/storage/url`, { path: resultPath }, { headers });
+    const downloadUrl = urlRes.data.data.url;
+
+    const ar = await axios.get(downloadUrl, { responseType: 'arraybuffer' });
+    const buf = Buffer.from(ar.data);
+
+    if (buf.length < 100) {
+        throw new Error(`[Voice] Result too small: ${buf.length}B`);
+    }
+
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(outputPath, buf);
+    console.log(`[Voice] ✅ Saved: ${outputPath} (${buf.length}B)`);
+    return outputPath;
 }
 
 // ── Preview re-encoding helper (same as skeleton-handlers) ──────────────────
@@ -373,7 +360,7 @@ ${cultureCtx.epochs}
    ]
 }`;
 
-        const raw = await callPollinations([
+        const raw = await ai.chat([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ], true);
@@ -720,7 +707,7 @@ ${ideaContext}
 
 ВАЖНО: в JSON выведи ВСЕ 8 сцен с реальным нарративом в поле "line". Не описание — а сам текст.`;
 
-        const raw = await callPollinations([
+        const raw = await ai.chat([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ], true);
@@ -758,7 +745,7 @@ ${ideaContext}
 
             console.log(`[Stories] Generate image via G-Labs: scene=${sceneIndex} model=${cleanModel} folder=${projectFolder || 'default'} prompt="${prompt.substring(0, 80)}..."`);
 
-            const savedPaths = await generateImageViaGLabs({
+            const savedPaths = await ai.generateImage({
                 prompt,
                 model: cleanModel,
                 aspectRatio: '9:16',
@@ -843,7 +830,7 @@ ${ideaContext}
             }
         };
 
-        const savedPath = await generateVideoViaGLabs(options);
+        const savedPath = await ai.generateVideo(options);
 
         // Re-encode for browser preview (H.264/AAC + faststart)
         console.log(`[Stories] Re-encoding video for preview: ${savedPath}`);

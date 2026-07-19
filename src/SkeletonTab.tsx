@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SkeletonScene } from './electron.d';
 
 type Language = 'en' | 'fr' | 'de' | 'es' | 'it';
-type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'freepik-wan' | 'pollinations-ltx2' | 'pixverse-v5' | 'grok-video';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'freepik-wan' | 'pollinations-ltx2' | 'pixverse-v5' | 'grok';
 
 const LANGUAGES: { value: Language; label: string; flag: string }[] = [
   { value: 'en', label: 'English', flag: '🇬🇧' },
@@ -16,6 +16,7 @@ const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
   { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Сбалансированная генерация' },
   { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Быстрая генерация' },
   { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash генерация' },
+  { value: 'grok', label: 'Grok Generation', desc: '10s 720p Video' },
 ];
 
 interface SceneState {
@@ -29,7 +30,7 @@ interface SceneState {
 
 export default function SkeletonTab() {
   const [language, setLanguage] = useState<Language>('en');
-  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro'>('nano_banana_2');
+  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro' | 'grok'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
 
   // Phase 1
@@ -283,6 +284,7 @@ export default function SkeletonTab() {
               {([
                 { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Улучшенная версия' },
                 { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Профессиональный результат' },
+                { value: 'grok', label: 'Grok Generation', desc: 'Grok Image Model' }
               ] as const).map(m => (
                 <div
                   key={m.value}

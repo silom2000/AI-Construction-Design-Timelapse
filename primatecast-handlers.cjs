@@ -2,9 +2,8 @@ const { ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
-const { callPollinations } = require('./skeleton-handlers.cjs');
 const historyManager = require('./history-manager.cjs');
+const ai = require('./ai-client.cjs');
 
 const PRIMATECAST_DIR = path.join(__dirname, 'PrimateCast');
 const CHARACTERS_FILE = path.join(PRIMATECAST_DIR, 'characters.json');
@@ -177,7 +176,7 @@ Return ONLY valid JSON in this format:
 }`;
         
         try {
-            const rawOutput = await callPollinations([
+            const rawOutput = await ai.chat([
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: promptText }
             ], true, provider);
@@ -201,7 +200,7 @@ Return ONLY valid JSON in this format:
     ipcMain.handle('primatecast-generate-base-image', async (event, { visualPrompt, model }) => {
         // model can be 'nano_banana_2'
         const imageModel = model || 'nano_banana_2'; 
-        const imagePaths = await generateImageViaGLabs({
+        const imagePaths = await ai.generateImage({
             prompt: visualPrompt,
             model: imageModel,
             aspectRatio: '16:9',
@@ -246,7 +245,7 @@ Return ONLY valid JSON in this format:
     });
 
     // 6. Generate Episode
-    ipcMain.handle('primatecast-generate-episode', async (event, { script, host1Id, host2Id, clothes1, clothes2, location, episodeTitle, aspectRatio = '16:9', language = null }) => {
+    ipcMain.handle('primatecast-generate-episode', async (event, { script, host1Id, host2Id, clothes1, clothes2, location, episodeTitle, aspectRatio = '16:9', language = null, videoModel = 'omni_flash' }) => {
         const characters = getCharacters();
         const host1 = characters.find(c => c.id === host1Id);
         const host2 = characters.find(c => c.id === host2Id);
@@ -305,7 +304,7 @@ Return ONLY valid JSON in this format:
                     refBase64 = fs.readFileSync(host.imagePath, 'base64');
                 }
 
-                const imgPaths = await generateImageViaGLabs({
+                const imgPaths = await ai.generateImage({
                     prompt: episodeVisualPrompt,
                     model: 'nano_banana_2', // Good for styles/references
                     aspectRatio,
@@ -354,9 +353,9 @@ Return ONLY valid JSON in this format:
 
             const videoPrompt = `Photorealistic podcast video. Subject: ${seg.speaker.name}, ${seg.speaker.personality || 'an expressive character'}, showing a ${emotion}, seated at a podcast desk. The character's voice is: ${voiceDesc}. The character's ${headTurn}, and says: "${seg.text}". Natural mouth movements matching the spoken words, slight head nods, hand gestures. Warm studio lighting, background of ${location} softly blurred. Medium chest-up shot. Cinematic, 8K quality, ${aspectRatio}. No text overlay.`;
 
-            const videoPath = await generateVideoViaGLabs({
+            const videoPath = await ai.generateVideo({
                 prompt: videoPrompt,
-                model: 'omni_flash',
+                model: videoModel,
                 mode: 'start_image',
                 aspectRatio,
                 resolution: '720p',
@@ -386,7 +385,7 @@ Return ONLY valid JSON in this format:
         segmentIndex, speakerId, dialogueText,
         host1Id, host2Id, clothes1, clothes2,
         location, episodeTitle, aspectRatio = '16:9',
-        language = null
+        language = null, videoModel = 'omni_flash'
     }) => {
         const characters = getCharacters();
         const speaker = characters.find(c => c.id === speakerId);
@@ -426,7 +425,7 @@ Return ONLY valid JSON in this format:
                 refBase64 = fs.readFileSync(speaker.imagePath, 'base64');
             }
 
-            const imgPaths = await generateImageViaGLabs({
+            const imgPaths = await ai.generateImage({
                 prompt: episodeVisualPrompt,
                 model: 'nano_banana_2',
                 aspectRatio,
@@ -468,9 +467,9 @@ Return ONLY valid JSON in this format:
 
         const videoPrompt = `Photorealistic podcast video. Subject: ${speaker.name}, ${speaker.personality || 'an expressive character'}, showing a ${emotion}, seated at a podcast desk. The character's voice is: ${voiceDesc}. The character's ${headTurn}, and says: "${dialogueText}". Natural mouth movements matching the spoken words, slight head nods, hand gestures. Warm studio lighting, background of ${location} softly blurred. Medium chest-up shot. Cinematic, 8K quality, ${aspectRatio}. No text overlay.`;
 
-        const videoPath = await generateVideoViaGLabs({
+        const videoPath = await ai.generateVideo({
             prompt: videoPrompt,
-            model: 'omni_flash',
+            model: videoModel,
             mode: 'start_image',
             aspectRatio,
             resolution: '720p',
@@ -630,7 +629,7 @@ Focus on conversational and psychological topics (e.g. money, relationships, lif
 Output ONLY a raw JSON array of strings (no markdown, no other text).
 Example: ["query 1", "query 2", "query 3"]`;
 
-            const rawJson = await callPollinations([
+            const rawJson = await ai.chat([
                 { role: 'user', content: prompt }
             ], true);
 
@@ -698,7 +697,7 @@ Output ONLY valid JSON (no other text):
   "angle": "Funny ironic animal perspective angle in ${language}"
 }`;
 
-            const topicRaw = await callPollinations([
+            const topicRaw = await ai.chat([
                 { role: 'user', content: selectPrompt }
             ], true);
 
@@ -730,7 +729,7 @@ Output ONLY valid JSON (no other text):
   "angle": "Funny ironic animal perspective angle in ${language}"
 }`;
 
-            const topicRaw = await callPollinations([
+            const topicRaw = await ai.chat([
                 { role: 'user', content: selectPrompt }
             ], true);
 
@@ -754,7 +753,7 @@ Output ONLY valid JSON (no other text):
   "angle": "Funny ironic primate perspective angle in ${language}"
 }`;
 
-            const topicRaw = await callPollinations([
+            const topicRaw = await ai.chat([
                 { role: 'user', content: parsePrompt }
             ], true);
 
@@ -856,7 +855,7 @@ RULES:
 Output ONLY the script lines, nothing else.`;
         }
 
-        const scriptRaw = await callPollinations([
+        const scriptRaw = await ai.chat([
             { role: 'user', content: scriptPrompt }
         ], false);
 
@@ -872,7 +871,7 @@ Each line must be translated accurately and match the tone.
 Script:
 ${scriptRaw}`;
 
-            scriptRu = await callPollinations([
+            scriptRu = await ai.chat([
                 { role: 'user', content: translationPrompt }
             ], false);
             console.log('[PrimateCast AutoTopic] Script translated successfully.');
@@ -947,8 +946,7 @@ ${scriptRaw}`;
             }
             // Step 2: Transcribe using existing transcribeAudio (whisper via pollinations)
             event.sender.send('primatecast-progress', { status: '🗣️ Транскрибация аудио (STT)...', progress: 40 });
-            const { transcribeAudio } = require('./localize-handlers.cjs'); 
-            const sttResult = await transcribeAudio(audioPath);
+            const sttResult = await ai.transcribe(audioPath);
             const transcript = sttResult.text;
             console.log(`[PrimateCast Video Analysis] Transcript: ${transcript.substring(0, 100)}...`);
 
@@ -986,7 +984,7 @@ Output ONLY valid JSON (no other text):
   "script": "Host1: line1\\nHost2: line2\\n..."
 }`;
 
-            const resultRaw = await callPollinations([
+            const resultRaw = await ai.chat([
                 { role: 'user', content: analyzePrompt }
             ], true); // Force jsonMode
 
@@ -1004,7 +1002,7 @@ Each line must be translated accurately and match the tone.
 Script:
 ${topicData.script}`;
 
-            const scriptRu = await callPollinations([
+            const scriptRu = await ai.chat([
                 { role: 'user', content: translationPrompt }
             ], false);
 

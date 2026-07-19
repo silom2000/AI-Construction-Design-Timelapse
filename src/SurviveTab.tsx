@@ -40,7 +40,7 @@ type Script = {
   steps: Step[];
 };
 
-type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'meta';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'meta' | 'grok';
 type TtsService = 'voiceapi' | 'elevenlabs';
 type AiTextModel = 'custom' | 'pollinations';
 
@@ -49,10 +49,11 @@ const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
   { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast generation' },
   { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash generation' },
   { value: 'meta', label: 'Meta AI (i2v)', desc: 'Meta image-to-video' },
+  { value: 'grok', label: 'Grok Generation', desc: '10s 720p Video' },
 ];
 
 const TTS_SERVICES: { value: TtsService; label: string; desc: string }[] = [
-  { value: 'voiceapi', label: 'VoiceAPI', desc: 'Default — voiceapi.csv666.ru' },
+  { value: 'voiceapi', label: 'Lumean API', desc: 'Default — Lumean' },
   { value: 'elevenlabs', label: 'ElevenLabs', desc: 'Direct ElevenLabs API' },
 ];
 
@@ -81,7 +82,7 @@ const STEP_LABELS: Record<number, string> = {
 
 export function SurviveTab() {
   const [language, setLanguage] = useState('Russian');
-  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro'>('nano_banana_2');
+  const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro' | 'grok'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<VideoModel>('veo_31_lite');
   const [ttsService, setTtsService] = useState<TtsService>('voiceapi');
   const [aiModel, setAiModel] = useState<AiTextModel>('custom');
@@ -341,33 +342,25 @@ export function SurviveTab() {
         <div className="survive-form-group">
           <label className="survive-label">Image Model</label>
           <div className="survive-model-group">
-            <label className={`survive-model-option ${imageModel === 'nano_banana_2' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="imageModel"
-                value="nano_banana_2"
-                checked={imageModel === 'nano_banana_2'}
-                onChange={(e) => setImageModel(e.target.value as any)}
-              />
-              <div className="survive-model-label">
-                <span className="survive-model-name">Nano Banana 2</span>
-                <span className="survive-model-desc">Fast generation</span>
-              </div>
-            </label>
-
-            <label className={`survive-model-option ${imageModel === 'nano_banana_pro' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="imageModel"
-                value="nano_banana_pro"
-                checked={imageModel === 'nano_banana_pro'}
-                onChange={(e) => setImageModel(e.target.value as any)}
-              />
-              <div className="survive-model-label">
-                <span className="survive-model-name">Nano Banana Pro</span>
-                <span className="survive-model-desc">4K, Thinking model</span>
-              </div>
-            </label>
+            {([
+              { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Fast Gen' },
+              { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'HQ 4K' },
+              { value: 'grok', label: 'Grok Generation', desc: 'Grok Image Model' }
+            ] as const).map(m => (
+              <label key={m.value} className={`survive-model-option ${imageModel === m.value ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="imageModel"
+                  value={m.value}
+                  checked={imageModel === m.value}
+                  onChange={(e) => setImageModel(e.target.value as any)}
+                />
+                <div className="survive-model-label">
+                  <span className="survive-model-name">{m.label}</span>
+                  <span className="survive-model-desc">{m.desc}</span>
+                </div>
+              </label>
+            ))}
           </div>
         </div>
 

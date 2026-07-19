@@ -199,6 +199,13 @@ const generateImageViaGLabs = async (options = {}) => {
         if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
 
         const bodyData = { prompt, model, aspect_ratio: aspectRatio, count };
+        let requestEndpoint = '/api/image/generate';
+
+        if (model === 'grok') {
+            requestEndpoint = '/api/grok/generate';
+            bodyData.mode = referenceImages && referenceImages.length > 0 ? 'i2i' : 't2i';
+        }
+
         if (referenceImages && referenceImages.length > 0) {
             bodyData.reference_images = referenceImages;
         }
@@ -206,7 +213,7 @@ const generateImageViaGLabs = async (options = {}) => {
             bodyData.strength = strength;
         }
 
-        const { statusCode, text } = await gLabsRequest('/api/image/generate', {
+        const { statusCode, text } = await gLabsRequest(requestEndpoint, {
             method: 'POST',
             body: JSON.stringify(bodyData),
         });
@@ -282,6 +289,14 @@ const generateVideoViaGLabs = async (options = {}) => {
                 bodyData.start_image = finalRefImages[0].data;
             }
             // Meta model ignores generate_audio flag for now, but we don't send it to be safe
+        } else if (model === 'grok') {
+            requestEndpoint = '/api/grok/generate';
+            bodyData.mode = finalRefImages && finalRefImages.length > 0 ? 'i2v' : 't2v';
+            bodyData.video_length = 10;
+            bodyData.resolution = "720p";
+            if (finalRefImages && finalRefImages.length > 0) {
+                bodyData.reference_images = finalRefImages.map(img => img.data || img);
+            }
         } else {
             if (options.generateAudio) {
                 bodyData.generate_audio = true;

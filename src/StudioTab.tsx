@@ -34,12 +34,13 @@ const LLM_PROVIDERS = [
     { value: 'custom', label: 'Custom Proxy', desc: 'Local or remote endpoint' },
 ];
 
-type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash';
+type VideoModel = 'veo_31_lite' | 'veo_31_fast' | 'omni_flash' | 'grok';
 
 const VIDEO_MODELS: { value: VideoModel; label: string; desc: string }[] = [
     { value: 'veo_31_lite', label: 'Veo 3.1 Lite', desc: 'Balanced video generation' },
     { value: 'veo_31_fast', label: 'Veo 3.1 Fast', desc: 'Fast video generation' },
     { value: 'omni_flash', label: 'Omni Flash', desc: 'Omni Flash video generation' },
+    { value: 'grok', label: 'Grok Generation', desc: '10s 720p Video' },
 ];
 
 const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
@@ -67,6 +68,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const IMAGE_MODELS = [
         { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Improved Versatility' },
         { value: 'nano_banana_pro', label: 'Nano Banana Pro', desc: 'Professional High Output' },
+        { value: 'grok', label: 'Grok Generation', desc: 'Grok Image Model' },
     ];
 
 

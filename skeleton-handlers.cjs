@@ -5,12 +5,12 @@ const fs = require('fs');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
 const { spawn, execSync } = require('child_process');
-const { request } = require('undici');
 const crypto = require('crypto');
 const streamPipeline = promisify(pipeline);
 const historyManager = require('./history-manager.cjs');
-const { generateImageViaGLabs, generateVideoViaGLabs } = require('./glabs-handlers.cjs');
 const { pipeline: _pipeline } = require('stream');
+
+const ai = require('./ai-client.cjs');
 
 const LANG_NAMES = {
     // short codes
@@ -113,16 +113,7 @@ function getRandomCategories(n = 3) {
 
 // ------------- Phase 1: Voice API (csv666) -------------
 
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-// VoiseAPI (https://voiceapi.csv666.ru) вЂ” ASYNC TASK FLOW
-// POST /tasks в†’ {task_id: N} в†’ poll GET /tasks/{id} в†’ download audio
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-
-// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
-// VoiseAPI async task flow вЂ” CORRECT IMPLEMENTATION
-// POST /tasks в†’ {task_id: N} в†’ poll в†’ download binary MP3
-// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
-const _voiseApiAxios = require('axios');
+// POLLINATIONS, STT, and VOICE LOGIC MOVED TO ai-client.cjs
 
 async function synthesizeDirectElevenLabs(text, voiceId, outputPath, options = {}) {
     const apiKey = process.env.ElevenLabs_API;
@@ -130,7 +121,7 @@ async function synthesizeDirectElevenLabs(text, voiceId, outputPath, options = {
 
     console.log(`[Voice] Direct ElevenLabs TTS: voice=${voiceId} text=${text.length}chars`);
     
-    const response = await _voiseApiAxios.post(
+    const response = await axios.post(
         `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
         {
             text: text,
@@ -161,9 +152,9 @@ async function synthesizeDirectElevenLabs(text, voiceId, outputPath, options = {
         throw new Error(`[Voice] Direct ElevenLabs returned invalid audio buffer`);
     }
 
-    const dir = require('path').dirname(outputPath);
-    if (!require('fs').existsSync(dir)) require('fs').mkdirSync(dir, { recursive: true });
-    require('fs').writeFileSync(outputPath, buf);
+    const dir = path.dirname(outputPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(outputPath, buf);
     console.log(`[Voice] Direct ElevenLabs Saved: ${outputPath} (${buf.length}B)`);
     return outputPath;
 }
@@ -175,67 +166,60 @@ async function synthesizeCsv666Speech(text, voiceId, outputPath, options = {}) {
     const apiKey = process.env.VOICEAPI_KEY || process.env.VOICE_AI_KEY;
     if (!apiKey) throw new Error('[Voice] VOICEAPI_KEY not set');
 
-    const VOISE_BASE = process.env.VOISE_API_BASE || 'https://voiceapi.csv666.ru';
-    // вњ… CORRECT AUTH: X-API-Key header (per API docs securitySchemes)
+    const templateId = process.env.UUID;
+    if (!templateId) throw new Error('[Voice] UUID not set for Lumean Template');
+
+    const LUMEAN_BASE = 'https://api.lumean.app/api/public';
+
     const hdrs = {
-        'X-API-Key': apiKey,
+        'X-API-KEY': apiKey,
         'Content-Type': 'application/json'
     };
 
-    // Step 1: Create task
     const body = {
-        template: {
-            model_id: options.model_id || 'eleven_multilingual_v2',
-            voice_id: voiceId,
-            voice_settings: {
-                stability: options.stability ?? 0.85,
-                similarity_boost: options.similarity_boost ?? 0.75,
-                use_speaker_boost: options.use_speaker_boost !== false,
-                style: options.style ?? 0.0,
-                speed: options.speed ?? 1.0
-            },
-            voice_result_type: 'default'
-        },
-        text: text,
-        task_type: 'default'
+        template_id: templateId,
+        input_text: text
     };
-    if (options.public_owner_id) body.template.public_owner_id = options.public_owner_id;
 
-    console.log(`[Voice] POST /tasks voice=${voiceId} text=${text.length}chars`);
-    const cr = await _voiseApiAxios.post(`${VOISE_BASE}/tasks`, body, { headers: hdrs });
-    const taskId = cr.data && (cr.data.task_id || cr.data.id);
-    if (!taskId) throw new Error('[Voice] No task_id: ' + JSON.stringify(cr.data).slice(0, 200));
-    console.log(`[Voice] task_id=${taskId}`);
+    console.log(`[Voice] POST /orders template=${templateId} text=${text.length}chars`);
+    const cr = await axios.post(`${LUMEAN_BASE}/orders`, body, { headers: hdrs });
+    const orderId = cr.data && cr.data.data && cr.data.data.id;
+    if (!orderId) throw new Error('[Voice] No order_id: ' + JSON.stringify(cr.data).slice(0, 200));
+    console.log(`[Voice] order_id=${orderId}`);
 
-    // Step 2: Poll GET /tasks/{id}/status (NOT /tasks/{id}!)
-    // Statuses: waiting в†’ processing в†’ ending (ready!) в†’ ending_processed
+    let finalOrder = null;
     for (let n = 0; n < 60; n++) {
-        await new Promise(r => setTimeout(r, 3000));
-        const sr = await _voiseApiAxios.get(`${VOISE_BASE}/tasks/${taskId}/status`, { headers: hdrs });
-        const t = sr.data;
-        const st = ((t.status || '')).toLowerCase();
-        console.log(`[Voice] task=${taskId} status=${st} (${n+1}/60)`);
-        if (st === 'error' || st === 'error_handled') throw new Error('[Voice] Task failed: ' + JSON.stringify(t).slice(0, 200));
+        await new Promise(r => setTimeout(r, 2000));
+        const sr = await axios.get(`${LUMEAN_BASE}/orders/${orderId}`, { headers: hdrs });
+        const st = ((sr.data.data.status || '')).toLowerCase();
+        console.log(`[Voice] order=${orderId} status=${st} (${n+1}/60)`);
+        
+        if (st === 'failed' || st === 'cancelled') throw new Error('[Voice] Task failed: ' + JSON.stringify(sr.data).slice(0, 200));
 
-        // "ending" = result ready
-        if (st === 'ending' || st === 'ending_processed') {
-            console.log(`[Voice] Status "${st}" вЂ” downloading /tasks/${taskId}/result`);
-            const ar = await _voiseApiAxios.get(`${VOISE_BASE}/tasks/${taskId}/result`, { responseType: 'arraybuffer', headers: hdrs });
-            const buf = Buffer.from(ar.data);
-            if (buf.length < 100) throw new Error(`[Voice] Too small: ${buf.length}B`);
-            const dir = require('path').dirname(outputPath);
-            if (!require('fs').existsSync(dir)) require('fs').mkdirSync(dir, { recursive: true });
-            require('fs').writeFileSync(outputPath, buf);
-            console.log(`[Voice] Saved: ${outputPath} (${buf.length}B)`);
-            return outputPath;
+        if (st === 'completed' || st === 'partially_completed') {
+            finalOrder = sr.data.data;
+            console.log(`[Voice] Status "${st}" — downloading result`);
+            break;
         }
-        // waiting / processing вЂ” keep polling
     }
-    throw new Error(`[Voice] Timeout: task ${taskId}`);
+
+    if (!finalOrder) throw new Error(`[Voice] Timeout: order ${orderId}`);
+
+    const resultItem = finalOrder.result.files[0];
+    const resultPath = typeof resultItem === 'string' ? resultItem : resultItem.path;
+    const urlRes = await axios.post(`${LUMEAN_BASE}/storage/url`, { path: resultPath }, { headers: hdrs });
+    const downloadUrl = urlRes.data.data.url;
+
+    const ar = await axios.get(downloadUrl, { responseType: 'arraybuffer' });
+    const buf = Buffer.from(ar.data);
+    if (buf.length < 100) throw new Error(`[Voice] Too small: ${buf.length}B`);
+    
+    const dir = path.dirname(outputPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(outputPath, buf);
+    console.log(`[Voice] Saved: ${outputPath} (${buf.length}B)`);
+    return outputPath;
 }
-
-
-
 
 // ------------- Phase 2: Unified TTS (VoiceAPI) -------------
 const synthesizeUnifiedSpeech = async (input, language = 'en', voice = 'aeb88254-a426-47da-a7d4-f182195f9fab', model = 'csv666', customDir = null) => {
@@ -254,170 +238,20 @@ const synthesizeUnifiedSpeech = async (input, language = 'en', voice = 'aeb88254
 
 const CHARACTER_ANCHOR = `A full-body Pixar-style animated humanoid figure rendered in a crystal-clear glass material, fully transparent outer shell revealing an ivory-white internal structural framework inside. The character's face area: two large round glowing yellow eyes with dark pupils, a friendly neutral expression, smooth rounded cranium with no surface detail. The body framework inside the glass silhouette is composed of smooth, polished ivory-colored rigid structural elements — arms, legs, torso core, joints — all anatomically proportioned but stylized for animation. Medical-illustration aesthetic: clean, modern, clinical, bright studio lighting. Style: Pixar 3D CGI, physically-based rendering, 8K, cinematic quality. NOT horror, NOT scary, NOT damaged, NOT dark. ABSOLUTE RULES: NO MUSIC. STERNLY FOLLOW text for lip-sync. NO independent translations.`;
 
-// в”Ђв”Ђ Pollinations helper в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-const WORKING_TEXT_MODELS = ['gemini-3.1-pro-high', 'gemini-3.1-pro', 'gpt-4o', 'gpt-4-turbo'];
-
-const callPollinations = async (messages, jsonMode = false, forcedProvider = null) => {
-    const providers = [];
-
-    // 1. Qwen
-    if (process.env.QWEN_API_KEY) {
-        providers.push({
-            id: 'qwen',
-            url: process.env.QWEN_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions',
-            key: process.env.QWEN_API_KEY,
-            model: 'qwen/qwen3.5-397b-a17b'
-        });
-    }
-
-    // 2. Kimi
-    if (process.env.KIMI_API_KEY) {
-        providers.push({
-            id: 'kimi',
-            url: process.env.KIMI_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions',
-            key: process.env.KIMI_API_KEY,
-            model: 'moonshotai/kimi-k2.5'
-        });
-    }
-
-    // 3. Mimo
-    if (process.env.MIMO_API_KEY) {
-        providers.push({
-            id: 'mimo',
-            url: process.env.MIMO_API_URL || 'https://api.xiaomimimo.com/v1/chat/completions',
-            key: process.env.MIMO_API_KEY,
-            model: 'mimo-v2.5-pro',
-            isMimo: true
-        });
-    }
-
-    // 4. Custom Local Proxy
-    if (process.env.CUSTOM_AI_URL) {
-        const WORKING_MODELS = ['gemini-3.1-pro-high'];
-        for (const m of WORKING_MODELS) {
-            providers.push({
-                id: 'custom',
-                url: process.env.CUSTOM_AI_URL,
-                key: process.env.CUSTOM_AI_API_KEY,
-                model: m
-            });
-        }
-    }
-
-    // 5. Pollinations Fallback
-    providers.push({
-        id: 'pollinations',
-        url: process.env.POLLINATIONS_API_URL || 'https://gen.pollinations.ai/v1/chat/completions',
-        key: process.env.POLLINATIONS_API_KEY,
-        model: 'openai-large'
-    });
-
-    // Reorder: forcedProvider > DEFAULT_AI_PROVIDER > default
-    const defaultProvider = forcedProvider || process.env.DEFAULT_AI_PROVIDER || 'pollinations';
-    providers.sort((a, b) => {
-        if (a.id === defaultProvider && b.id !== defaultProvider) return -1;
-        if (b.id === defaultProvider && a.id !== defaultProvider) return 1;
-        return 0;
-    });
-
-    let lastError = null;
-    let proxyDisabled = false;
-
-    for (const p of providers) {
-        if (p.id === 'custom' && proxyDisabled) {
-            continue; // Skip remaining custom models if proxy is disabled
-        }
-
-        for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-                console.log(`[AI Call] Trying provider=${p.id} model=${p.model} at ${p.url} (attempt ${attempt})`);
-                const reqBody = { model: p.model, messages };
-                if (jsonMode) reqBody.response_format = { type: 'json_object' };
-
-                const headers = { 'Content-Type': 'application/json' };
-                if (p.key) {
-                    if (p.isMimo) {
-                        headers['api-key'] = p.key;
-                    } else {
-                        headers['Authorization'] = `Bearer ${p.key}`;
-                    }
-                }
-
-                const res = await fetch(p.url, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(reqBody)
-                });
-
-                const text = await res.text();
-                if (res.ok) {
-                    const data = JSON.parse(text);
-                    return data.choices?.[0]?.message?.content || '';
-                }
-                
-                const statusCode = res.status;
-                
-                console.warn(`[AI Call] provider=${p.id} model=${p.model} failed with ${statusCode}: ${text.substring(0, 100)}`);
-                
-                if (statusCode === 503 && text.includes('Proxy service is currently disabled')) {
-                     console.warn(`[AI Call] Local Proxy is disabled, skipping remaining local models!`);
-                     proxyDisabled = true;
-                     break; // Break the attempt loop
-                }
-                if (statusCode === 402) {
-                     console.warn(`[AI Call] Insufficient balance for ${p.id}, skipping remaining attempts.`);
-                     break; // Insufficient funds, don't retry
-                }
-            } catch (e) {
-                console.error(`[AI Call] Error with provider=${p.id} model=${p.model}: ${e.message}`);
-                lastError = e;
-            }
-            if (!proxyDisabled && attempt < 2) await new Promise(r => setTimeout(r, 1000));
-        }
-    }
-    throw lastError || new Error('All models exhausted or failed');
-};
-
 // ── Real-time trend search via Perplexity (web search) ──────────────────────
 const searchTrends = async (langName, mode, season, month, year) => {
-    const pollinationsUrl = process.env.POLLINATIONS_API_URL || 'https://gen.pollinations.ai/v1/chat/completions';
-    const pollinationsKey = process.env.POLLINATIONS_API_KEY;
-
     const trendQuery = mode === 'health'
         ? `What are the top 5 trending health and wellness topics on TikTok and Instagram Reels RIGHT NOW in ${month} ${year} for ${langName}-speaking audiences? Focus on: viral health hacks, body/nutrition tips, seasonal health issues. Return ONLY a short bullet list of trending topics, no explanations.`
         : `What are the top 5 trending lifehack and DIY topics on TikTok and Instagram Reels RIGHT NOW in ${month} ${year} for ${langName}-speaking audiences? Focus on: home hacks, productivity tricks, money-saving tips, seasonal problems (${season}). Return ONLY a short bullet list of trending topics, no explanations.`;
 
     try {
-        console.log(`[Trend Search] Searching trends via perplexity-fast for ${langName} (${month} ${year})...`);
-        const { request } = require('undici');
-        const headers = { 'Content-Type': 'application/json' };
-        if (pollinationsKey) headers['Authorization'] = `Bearer ${pollinationsKey}`;
-
-        const { statusCode, body: resBody } = await request(pollinationsUrl, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                model: 'perplexity-fast',
-                messages: [{ role: 'user', content: trendQuery }]
-            })
-        });
-
-        const text = await resBody.text();
-        if (statusCode === 200) {
-            const data = JSON.parse(text);
-            const trends = data.choices?.[0]?.message?.content || '';
-            console.log(`[Trend Search] Found trends: ${trends.substring(0, 200)}...`);
-            return trends;
-        }
-        console.warn(`[Trend Search] perplexity-fast returned ${statusCode}, falling back to seasonal context`);
-        return null;
+        console.log(`[Trend Search] Searching trends for ${langName} (${month} ${year})...`);
+        return await ai.chat([{ role: 'user', content: trendQuery }]);
     } catch (e) {
         console.warn(`[Trend Search] Failed: ${e.message}, falling back to seasonal context`);
         return null;
     }
 };
-
-// `uploadToImgBB`, `createVideoViaFreepikPixVerse`, `createVideoViaPollinationsLTX2TextOnly` and other legacy generation functions were removed in favor of `glabs-handlers.cjs`
 
 // в”Ђв”Ђ РћС‡РёСЃС‚РєР° РїР°РїРєРё Audio РїРµСЂРµРґ РЅРѕРІРѕР№ РіРµРЅРµСЂР°С†РёРµР№ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function cleanupAudioDir() {
@@ -493,7 +327,7 @@ Generate exactly 5 short-form video ideas (Phase 1) using:
 EXCLUSION LIST (DO NOT USE): ${completedTopics.join(', ')}.
 Rules: Human body or brain only, Escalation over time, Visually explainable, Slightly dangerous.
 Output format: Number. Title (in ${langName}) | Russian Translation | One-sentence failure path in simple language (in ${langName}). No preamble.`;
-        return await callPollinations([{ role: 'user', content: prompt }]);
+        return await ai.chat([{ role: 'user', content: prompt }]);
     });
 
     ipcMain.handle('skeleton-generate-script', async (event, { ideaTitle, language, videoModel }) => {
@@ -522,7 +356,7 @@ CONTENT PER CHECKPOINT:
 Output ONLY a JSON object with a "segments" array containing exactly 6 objects:
 { "segments": [ { "original": "exact script segment in ${langName}", "translation": "exact Russian translation of this segment" } ] }`;
 
-        const scriptRaw = await callPollinations([{ role: 'user', content: scriptPrompt }], true);
+        const scriptRaw = await ai.chat([{ role: 'user', content: scriptPrompt }], true);
         const scriptJson = JSON.parse(extractJSON(scriptRaw));
         
         let segmentsArray = [];
@@ -553,7 +387,7 @@ For EACH scene (exactly 6), generate following JSON:
   ]
 }`;
 
-        const promptsRaw = await callPollinations([{ role: 'user', content: promptsPrompt }], true);
+        const promptsRaw = await ai.chat([{ role: 'user', content: promptsPrompt }], true);
 
         const cleanJSON = extractJSON(promptsRaw);
         let scenes = JSON.parse(cleanJSON).scenes.map(s => ({
@@ -587,7 +421,7 @@ For EACH scene (exactly 6), generate following JSON:
         
         event.sender.send('skeleton-image-progress', { sceneIndex, status: 'generating' });
         
-        const savedPaths = await generateImageViaGLabs({
+        const savedPaths = await ai.generateImage({
             prompt: imagePrompt,
             model: cleanModel,
             count: 1,
@@ -654,7 +488,7 @@ For EACH scene (exactly 6), generate following JSON:
             
             event.sender.send('skeleton-video-progress', { sceneIndex, attempt: 1, maxAttempts: 1, state: 'generating' });
             
-            videoFile = await generateVideoViaGLabs({
+            videoFile = await ai.generateVideo({
                 prompt: promptToUse,
                 model: realModel,
                 mode: referenceImages.length > 0 ? 'start_image' : 'text_to_video',
@@ -779,7 +613,7 @@ For EACH scene (exactly 6), generate following JSON:
                 ? 'health, wellness, food benefits, anatomy, daily habits, life hacks' 
                 : 'household items, daily problems, lifehacks, room organization, productivity';
 
-            const prompt = `You are an expert TikTok SEO analyst for ${langName}-speaking audience.
+            const topicsPrompt = `You are an expert TikTok SEO analyst for ${langName}-speaking audience.
 Based on recent search trends and web data for ${currentMonth} ${currentYear} (${currentSeason}):
 ${liveTrends || 'No live data, use your best knowledge of current viral trends.'}
 
@@ -790,8 +624,8 @@ They MUST be in ${langName} language.
 Output ONLY a raw JSON array of strings (no markdown, no other text).
 Example: ["query 1", "query 2", "query 3"]`;
 
-            const rawJson = await callPollinations([
-                { role: 'user', content: prompt }
+            const rawJson = await ai.chat([
+                { role: 'user', content: topicsPrompt }
             ], true, provider);
 
             const match = rawJson.match(/\[[\s\S]*\]/);
@@ -943,7 +777,7 @@ Example: ["query 1", "query 2", "query 3"]`;
             }`;
         }
 
-        const raw = await callPollinations([
+        const raw = await ai.chat([
             { role: 'system', content: systemInstruction },
             { role: 'user', content: userPrompt }
         ], true, provider);
@@ -1282,5 +1116,5 @@ function cleanTempDir(tempDir) {
     } catch (_) { /* best-effort */ }
 }
 
-module.exports = { synthesizeUnifiedSpeech, registerSkeletonHandlers, callPollinations, synthesizeDirectElevenLabs };
+module.exports = { registerSkeletonHandlers };
 
