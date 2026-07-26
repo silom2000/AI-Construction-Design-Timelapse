@@ -101,6 +101,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onGLabsTaskProgress: (callback) => ipcRenderer.on('glabs-task-progress', (event, data) => callback(data)),
   removeGLabsProgressListener: () => ipcRenderer.removeAllListeners('glabs-task-progress'),
 
+  // FrenchTalk
+  frenchtalkGenerateStranger: (data) => ipcRenderer.invoke('frenchtalk-generate-stranger', data),
+  frenchtalkResetStrangerRef: (data) => ipcRenderer.invoke('frenchtalk-reset-stranger-ref', data),
+  frenchtalkGenerateBloggerIdea: (data) => ipcRenderer.invoke('frenchtalk-generate-blogger-idea', data),
+  frenchtalkGenerateBaseImage: (data) => ipcRenderer.invoke('frenchtalk-generate-base-image', data),
+  frenchtalkSaveBlogger: (data) => ipcRenderer.invoke('frenchtalk-save-blogger', data),
+  frenchtalkGetBlogger: () => ipcRenderer.invoke('frenchtalk-get-blogger'),
+  frenchtalkDeleteBlogger: () => ipcRenderer.invoke('frenchtalk-delete-blogger'),
+  frenchtalkGetSeoKeywords: (data) => ipcRenderer.invoke('frenchtalk-get-seo-keywords', data),
+  frenchtalkAutoTopic: (data) => ipcRenderer.invoke('frenchtalk-auto-topic', data),
+  frenchtalkAnalyzeVideo: (data) => ipcRenderer.invoke('frenchtalk-analyze-video', data),
+  frenchtalkGenerateSegment: (data) => ipcRenderer.invoke('frenchtalk-generate-segment', data),
+  frenchtalkSaveAllPrompts: (data) => ipcRenderer.invoke('frenchtalk-save-all-prompts', data),
+  onFrenchTalkProgress: (callback) => ipcRenderer.on('frenchtalk-progress', (event, data) => callback(data)),
+  removeFrenchTalkProgressListener: () => ipcRenderer.removeAllListeners('frenchtalk-progress'),
+
   // PrimateCast
   primatecastGenerateCharacterIdea: (data) => ipcRenderer.invoke('primatecast-generate-character-idea', data),
   primatecastGenerateBaseImage: (data) => ipcRenderer.invoke('primatecast-generate-base-image', data),

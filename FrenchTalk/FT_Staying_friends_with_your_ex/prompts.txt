@@ -1,0 +1,64 @@
+========================================================================
+FRENCHTALK GENERATION PROMPTS
+Episode: FT_Staying_friends_with_your_ex
+Generated: 26.07.2026, 16:15:35
+========================================================================
+
+🎬 Scene #1 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Pote avec ton ex ? Red flag absolu !"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality.
+OUTFIT (must stay exactly the same in every shot): Stylish casual French chic outfit, light blue low-cut tank top, cream pants, draped with a light jacket or trench coat.
+MIC: Holding a matte-grey Rode Wireless GO II microphone on a short black Interview GO handle grip.
+SHOT: Medium close-up MCU on Camille.
+STAGING: Direct address to camera. Energetic, conspiratorial lean-in. She holds her Rode Wireless GO II mic up clearly. Busy Paris street behind her.
+reverse tracking shot. Direct address to camera. Energetic, conspiratorial lean-in. She holds her Rode Wireless GO II mic up clearly. Busy Paris street behind her. Movement: move backward in front of the walking subject. Speed: match the subject's forward pace. Framing: keep front-facing face and body framing stable as the background moves behind them. End: hold a clear front-facing moving composition.
+LIGHTING: Natural Paris daylight. Warm authentic tones.
+She says: "Pote avec ton ex ? Red flag absolu !"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Cheeky, provocative, excited.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #2 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Dis moi, relation pure avec ton ex, ou ça guette toujours en invisible ?"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality.
+OUTFIT (must stay exactly the same in every shot): Stylish casual French chic outfit, light blue low-cut tank top, cream pants, draped with a light jacket or trench coat.
+MIC: Holding a matte-grey Rode Wireless GO II microphone on a short black Interview GO handle grip.
+SHOT: Medium close-up MCU on Camille. Clean single shot.
+STAGING: Camille is looking slightly off-camera (screen-right) addressing the stranger. She holds her Rode Wireless GO II mic in her hand. Do NOT show the stranger in this shot.
+arc right. Camille is looking slightly off-camera (screen-right) addressing the stranger. She holds her Rode Wireless GO II mic in her hand. Do NOT show the stranger in this shot. Movement: move on a shallow curved path around the main subject toward the right side. Speed: smooth measured curve. Framing: keep distance, height and subject readability consistent while the angle changes. End: finish from a new right-side angle.
+LIGHTING: Natural Paris street lighting.
+She says: "Dis moi, relation pure avec ton ex, ou ça guette toujours en invisible ?"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Curious, slightly provocative smile.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #3 — 🗣️ STRANGER reply
+------------------------------------------------------------------------
+🗣 Says: "Mais total ! Avec mon ex c'est pure vibe mature, vraiment aucun délire ambigu !"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+STRANGER: Photorealistic street portrait of a striking 68-year-old Afro-Caribbean female in Paris. She has rich espresso skin, high cheekbones, and sharp, intimidating features. Her hair is a massive, perfectly sculpted spherical afro dyed vibrant acid-green. She wears a voluminous deep amethyst structural silk opera coat over a silver chainmail turtleneck. Her hands are adorned with heavy brutalist silver rings. She wears oversized, geometric black sunglasses and leans elegantly on a sleek chrome walking cane. Her body language is fiercely regal, shoulders thrown back, projecting absolute dominance and unbothered glamour on the cobblestone street..
+SHOT: Medium close-up MCU on the stranger's face. Clean single shot.
+STAGING: The stranger is looking slightly off-camera (screen-left) answering the question. A woman's arm (wearing the sleeve described in her outfit) holding a matte-grey Rode Wireless GO II on a short black handle grip enters the frame from the left edge, pointed at the stranger's mouth. Do NOT show the blogger's face in this shot. IMPORTANT: The arm holding the microphone MUST perfectly match the blogger's outfit details (sleeveless vs sleeves).
+handheld shot. The stranger is looking slightly off-camera (screen-left) answering the question. A woman's arm (wearing the sleeve described in her outfit) holding a matte-grey Rode Wireless GO II on a short black handle grip enters the frame from the left edge. Movement: hold the camera at human operator height with natural body movement. Speed: responsive and organic. Framing: keep the subject readable while the frame has subtle sway and micro-adjustments. End: finish with a natural handheld composition.
+LIGHTING: Natural daylight, authentic street atmosphere.
+They say: "Mais total ! Avec mon ex c'est pure vibe mature, vraiment aucun délire ambigu !"
+Voice: Deep, smoky contralto with a melodic French-Caribbean accent. Deliberately slow, purring, and dripping with theatrical, amused condescension.
+MOOD: enthusiastic, expressive hand gesture, passionate delivery — authentic, slightly caught off-guard.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+

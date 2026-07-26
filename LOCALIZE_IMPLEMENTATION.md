@@ -2,7 +2,7 @@
 
 > **Сессия:** 2025-06-25 (v1 — базовая), 2025-06-25 (v2 — диалоговая диаризация + сегменты)
 > **Архитектура:** Electron + React/TypeScript + Node.js (CJS handlers)
-> **Модели:** gemini-3.1-pro-high (анализ), omni_flash (видео-сегменты), scribe (STT), imagen4 (референсы)
+> **Модели:** gemini-3.1-pro-high (анализ), omni_flash (видео-сегменты), scribe (STT), Nano banano 2 (референсы)
 
 ---
 

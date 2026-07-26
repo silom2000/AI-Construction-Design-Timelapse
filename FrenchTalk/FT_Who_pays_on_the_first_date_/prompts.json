@@ -1,0 +1,58 @@
+{
+  "0": {
+    "segmentIndex": 0,
+    "role": "blogger",
+    "speakerName": "Camille",
+    "dialogueText": "Qui paie vraiment au premier date ?",
+    "videoPrompt": "[Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: \"Qui paie vraiment au premier date ?\"",
+    "timestamp": "2026-07-25T16:19:12.046Z"
+  },
+  "1": {
+    "segmentIndex": 1,
+    "role": "blogger",
+    "speakerName": "Camille",
+    "dialogueText": "Dis moi, on fait moitié moitié ou le garçon gère toute la facture ?",
+    "videoPrompt": "[Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: \"Dis moi, on fait moitié moitié ou le garçon gère toute la facture ?\"",
+    "timestamp": "2026-07-25T16:19:12.046Z"
+  },
+  "2": {
+    "segmentIndex": 2,
+    "role": "stranger",
+    "speakerName": "a random adult person on the street",
+    "dialogueText": "Moitié moitié ! On veut la vraie parité aujourd'hui, donc on divise par deux.",
+    "videoPrompt": "[Stranger reply] Location: Paris street near the Eiffel Tower. Emotion: enthusiastic and energetic expression, expressive hand gesture, passionate delivery. Says: \"Moitié moitié ! On veut la vraie parité aujourd'hui, donc on divise par deux.\"",
+    "timestamp": "2026-07-25T16:19:12.046Z"
+  },
+  "3": {
+    "segmentIndex": 3,
+    "role": "aside",
+    "speakerName": "Camille (aside)",
+    "dialogueText": "Et voici exactement pourquoi ce grand prince est encore tristement célibataire ce soir.",
+    "videoPrompt": "[Aside (to camera)] Location: Paris street near the Eiffel Tower. Emotion: turning to camera with a cheeky smirk, raising one eyebrow, slightly suppressing laughter, sassy millennial expression. Says: \"Et voici exactement pourquoi ce grand prince est encore tristement célibataire ce soir.\"",
+    "timestamp": "2026-07-25T16:19:12.046Z"
+  },
+  "4": {
+    "segmentIndex": 4,
+    "role": "blogger",
+    "speakerName": "Camille",
+    "dialogueText": "Même si elle mange une petite salade et toi un énorme steak frites ?",
+    "videoPrompt": "[Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: \"Même si elle mange une petite salade et toi un énorme steak frites ?\"",
+    "timestamp": "2026-07-25T16:19:12.046Z"
+  },
+  "5": {
+    "segmentIndex": 5,
+    "role": "stranger",
+    "speakerName": "a random adult person on the street",
+    "dialogueText": "Dans ce cas précis chacun paie son plat ! Il faut rester très juste.",
+    "videoPrompt": "[Stranger reply] Location: Paris street near the Eiffel Tower. Emotion: enthusiastic and energetic expression, expressive hand gesture, passionate delivery. Says: \"Dans ce cas précis chacun paie son plat ! Il faut rester très juste.\"",
+    "timestamp": "2026-07-25T16:19:12.046Z"
+  },
+  "6": {
+    "segmentIndex": 6,
+    "role": "aside",
+    "speakerName": "Camille (aside)",
+    "dialogueText": "Le romantisme est totalement mort et enterré avec sa petite calculatrice. Au suivant !",
+    "videoPrompt": "[Aside (to camera)] Location: Paris street near the Eiffel Tower. Emotion: turning to camera with a cheeky smirk, raising one eyebrow, slightly suppressing laughter, sassy millennial expression. Says: \"Le romantisme est totalement mort et enterré avec sa petite calculatrice. Au suivant !\"",
+    "timestamp": "2026-07-25T16:19:12.046Z"
+  }
+}

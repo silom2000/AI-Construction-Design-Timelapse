@@ -19,16 +19,16 @@ SCRIPT RULES:
 
 🎬 DRAMATIC ARC & DIALOGUE LENGTH (each video clip = 8 seconds):
 
-📍 Scene 1 — THE HOOK (6-10 words):
+📍 Scene 1 — THE HOOK (11-15 words):
    Scroll-stopper. Short, punchy, confrontational.
    Address the viewer informally ("ты" in Russian, informal "you" otherwise).
    The silence after the hook builds suspense. The object stares at the viewer.
 
-📍 Scene 2 — THE INTRIGUE (16-20 words):
+📍 Scene 2 — THE INTRIGUE (16-25 words):
    The object explains what's really going on. Builds curiosity.
    Must fill 6-7 seconds of the 8-second clip. Dense but conversational. At least 2 full sentences.
 
-📍 Scene 3 — THE REVELATION (16-20 words):
+📍 Scene 3 — THE REVELATION (16-25 words):
    The emotional twist. The "aha!" moment. Something surprising is revealed.
    Dense speech, 6-7 seconds of dialogue. At least 2 full sentences.
 

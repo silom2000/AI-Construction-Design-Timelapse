@@ -1,0 +1,43 @@
+========================================================================
+FRENCHTALK GENERATION PROMPTS
+Episode: FT_If_your_ex_was_a_French_dish
+Generated: 25.07.2026, 20:52:45
+========================================================================
+
+🎬 Scene #1 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Ton ex a laissé quel goût en bouche ?!"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality. She wears a small black lavalier clip-on microphone on her jacket lapel — visible in every shot.
+SHOT: Medium close-up MCU on Camille. She walks along Paris street near the Eiffel Tower toward camera or stands slightly off-center.
+STAGING: Direct address — she speaks straight into lens as if talking to the viewer. Energetic, conspiratorial lean-in. Small black lavalier mic clipped to her lapel. The street is busy and alive behind her.
+CAMERA: Handheld, slightly shaky, authentic "street vlog" feel. Slight push-in as she delivers the hook. Camera at chest/face level.
+LIGHTING: Natural Paris daylight. Warm tones, authentic atmosphere.
+She says: "Ton ex a laissé quel goût en bouche ?!"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Cheeky, provocative, excited — like she's about to do something a little naughty.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #2 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Si ton ex était un plat français, ça serait quoi et pourquoi ?"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER 1 (foreground, sharp): @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality. She wears a small black lavalier clip-on microphone on her jacket lapel — visible in every shot.
+CHARACTER 2 (background, soft focus): Photorealistic portrait of a 68-year-old Afro-French woman with deep obsidian skin, standing regally on a Parisian cobblestone street. She has a towering architectural braided updo threaded with catching copper wire and striking silver geometric eyeliner. She wears an oversized, sweeping emerald-green silk trench coat billowing over neon-orange pleated wide-leg trousers, grounded by chunky clear lucite platform boots. She holds a retro-futuristic silver mechanical hand fan and wears oversized vintage white Courrèges sunglasses. Her body language is unbothered and utterly majestic, exuding dramatic avant-garde Parisian haute couture energy..
+SHOT: Medium shot MS. Photorealistic portrait of a 68-year-old Afro-French woman with deep obsidian skin, standing regally on a Parisian cobblestone street. She has a towering architectural braided updo threaded with catching copper wire and striking silver geometric eyeliner. She wears an oversized, sweeping emerald-green silk trench coat billowing over neon-orange pleated wide-leg trousers, grounded by chunky clear lucite platform boots. She holds a retro-futuristic silver mechanical hand fan and wears oversized vintage white Courrèges sunglasses. Her body language is unbothered and utterly majestic, exuding dramatic avant-garde Parisian haute couture energy. is visible over her shoulder in soft background focus.
+STAGING: They face each other at roughly 45° angle — classic street interview two-shot. Camille holds her lavalier mic cable or extends her hand with the mic toward the stranger. She is sharp in foreground, stranger softly visible behind.
+CAMERA: Handheld at natural eye level. Slight Dutch tilt for energy. Camera positioned slightly to the side of the blogger — the two subjects form a diagonal in frame.
+LIGHTING: Natural Paris street lighting. Authentic, slightly raw look.
+She says: "Si ton ex était un plat français, ça serait quoi et pourquoi ?"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Curious, slightly provocative smile — she knows this question will get a reaction.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+

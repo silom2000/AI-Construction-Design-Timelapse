@@ -9,9 +9,10 @@ import { SurviveTab } from './SurviveTab';
 import CartoonTab from './CartoonTab';
 import LocalizeTab from './LocalizeTab';
 import PrimateCastTab from './PrimateCastTab';
+import FrenchTalkTab from './FrenchTalkTab';
 import './TimelapseTab.css';
 
-type AppTab = 'timelapse' | 'skeleton' | 'health' | 'objects' | 'glabs' | 'story' | 'cartoon' | 'survive' | 'localize' | 'primatecast';
+type AppTab = 'timelapse' | 'skeleton' | 'health' | 'objects' | 'glabs' | 'story' | 'cartoon' | 'survive' | 'localize' | 'primatecast' | 'frenchtalk';
 
 function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('timelapse');
@@ -75,6 +76,9 @@ function App() {
         <button style={tabStyle('primatecast')} onClick={() => setActiveTab('primatecast')}>
           🎙️ PrimateCast
         </button>
+        <button style={tabStyle('frenchtalk')} onClick={() => setActiveTab('frenchtalk')}>
+          🇫🇷 FrenchTalk
+        </button>
       </div>
 
       {/* ── TIMELAPSE TAB (CINEMATIC) ──────────────────────────────── */}
@@ -123,6 +127,11 @@ function App() {
       {/* ── PRIMATECAST TAB ──────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'primatecast' ? 'flex' : 'none', flexDirection: 'column', backgroundColor: '#1e1e1e' }}>
         <PrimateCastTab />
+      </div>
+
+      {/* ── FRENCHTALK TAB ───────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'frenchtalk' ? 'flex' : 'none', flexDirection: 'column', backgroundColor: '#0d0d1a' }}>
+        <FrenchTalkTab />
       </div>
 
     </div>

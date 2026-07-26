@@ -107,7 +107,7 @@ export function SurviveTab() {
     setProjectFolder('');
     setCharacterRefUrl(null);
     try {
-      const result = await window.electronAPI.surviveGenerateIdeas({ language, aiModel });
+      const result = await window.electronAPI.surviveGenerateIdeas({ language });
       setIdeas(result || []);
     } catch (err: any) {
       alert('Failed to generate ideas: ' + err.message);
@@ -140,8 +140,7 @@ export function SurviveTab() {
       const scriptData = await window.electronAPI.surviveGenerateScript({
         idea,
         language,
-        projectFolder: folderName,
-        aiModel
+        projectFolder: folderName
       });
       setScript(scriptData);
       

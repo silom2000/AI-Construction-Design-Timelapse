@@ -1,0 +1,48 @@
+========================================================================
+FRENCHTALK GENERATION PROMPTS
+Episode: FT_The_minimum_salary_to_get_into
+Generated: 25.07.2026, 19:39:45
+========================================================================
+
+🎬 Scene #1 — Camille
+------------------------------------------------------------------------
+🗣 Says: "Quel est le prix pour pécho à Paris ?"
+📝 Prompt: [Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: "Quel est le prix pour pécho à Paris ?"
+------------------------------------------------------------------------
+
+🎬 Scene #2 — Camille
+------------------------------------------------------------------------
+🗣 Says: "Quel est le salaire minimum que ton partenaire doit gagner pour sortir avec toi ?"
+📝 Prompt: [Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: "Quel est le salaire minimum que ton partenaire doit gagner pour sortir avec toi ?"
+------------------------------------------------------------------------
+
+🎬 Scene #3 — a random adult person on the street
+------------------------------------------------------------------------
+🗣 Says: "Euh wow... Il me faut au moins dix mille euros par mois pour mon confort !"
+📝 Prompt: [Stranger reply] Location: Paris street near the Eiffel Tower. Emotion: enthusiastic and energetic expression, expressive hand gesture, passionate delivery. Says: "Euh wow... Il me faut au moins dix mille euros par mois pour mon confort !"
+------------------------------------------------------------------------
+
+🎬 Scene #4 — Camille (aside)
+------------------------------------------------------------------------
+🗣 Says: "Dix mille euros ? Elle se prend pour une reine en plein coeur de Paris !"
+📝 Prompt: [Aside (to camera)] Location: Paris street near the Eiffel Tower. Emotion: turning to camera with a cheeky smirk, raising one eyebrow, slightly suppressing laughter, sassy millennial expression. Says: "Dix mille euros ? Elle se prend pour une reine en plein coeur de Paris !"
+------------------------------------------------------------------------
+
+🎬 Scene #5 — Camille
+------------------------------------------------------------------------
+🗣 Says: "Mais tu offres quoi en retour exactement pour exiger un salaire mensuel aussi énorme ?"
+📝 Prompt: [Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: "Mais tu offres quoi en retour exactement pour exiger un salaire mensuel aussi énorme ?"
+------------------------------------------------------------------------
+
+🎬 Scene #6 — a random adult person on the street
+------------------------------------------------------------------------
+🗣 Says: "Ma simple présence incroyable ! Je mérite sincèrement la grande vie et le luxe absolu !"
+📝 Prompt: [Stranger reply] Location: Paris street near the Eiffel Tower. Emotion: enthusiastic and energetic expression, expressive hand gesture, passionate delivery. Says: "Ma simple présence incroyable ! Je mérite sincèrement la grande vie et le luxe absolu !"
+------------------------------------------------------------------------
+
+🎬 Scene #7 — Camille (aside)
+------------------------------------------------------------------------
+🗣 Says: "Elle exige un millionnaire mais elle attend patiemment le bus public sous la pluie."
+📝 Prompt: [Aside (to camera)] Location: Paris street near the Eiffel Tower. Emotion: turning to camera with a cheeky smirk, raising one eyebrow, slightly suppressing laughter, sassy millennial expression. Says: "Elle exige un millionnaire mais elle attend patiemment le bus public sous la pluie."
+------------------------------------------------------------------------
+

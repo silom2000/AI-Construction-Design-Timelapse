@@ -1,0 +1,142 @@
+========================================================================
+FRENCHTALK GENERATION PROMPTS
+Episode: FT_The_biggest_lie_on_a_resume
+Generated: 26.07.2026, 12:39:28
+========================================================================
+
+🎬 Scene #1 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Ton CV est une pure arnaque, avoue !"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality.
+OUTFIT (must stay exactly the same in every shot): Stylish casual French chic outfit, light blue low-cut tank top, cream pants, draped with a light jacket or trench coat.
+MIC: Holding a small wireless handheld microphone (like a DJI Mic on a handle).
+SHOT: Medium close-up MCU on Camille.
+STAGING: Direct address to camera. Energetic, conspiratorial lean-in. She holds the microphone up clearly. Busy Paris street behind her.
+reverse tracking shot. Direct address to camera. Energetic, conspiratorial lean-in. She holds the microphone up clearly. Busy Paris street behind her. Movement: move backward in front of the walking subject. Speed: match the subject's forward pace. Framing: keep front-facing face and body framing stable as the background moves behind them. End: hold a clear front-facing moving composition.
+LIGHTING: Natural Paris daylight. Warm authentic tones.
+She says: "Ton CV est une pure arnaque, avoue !"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Cheeky, provocative, excited.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #2 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Quel est le pire mensonge inventé sur ton CV pour décrocher un boulot ?"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality.
+OUTFIT (must stay exactly the same in every shot): Stylish casual French chic outfit, light blue low-cut tank top, cream pants, draped with a light jacket or trench coat.
+MIC: Holding a small wireless handheld microphone (like a DJI Mic on a handle).
+SHOT: Medium close-up MCU on Camille. Clean single shot.
+STAGING: Camille is looking slightly off-camera (screen-right) addressing the stranger. She holds the microphone in her hand. Do NOT show the stranger in this shot.
+arc right. Camille is looking slightly off-camera (screen-right) addressing the stranger. She holds the microphone in her hand. Do NOT show the stranger in this shot. Movement: move on a shallow curved path around the main subject toward the right side. Speed: smooth measured curve. Framing: keep distance, height and subject readability consistent while the angle changes. End: finish from a new right-side angle.
+LIGHTING: Natural Paris street lighting.
+She says: "Quel est le pire mensonge inventé sur ton CV pour décrocher un boulot ?"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Curious, slightly provocative smile.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #3 — 🗣️ STRANGER reply
+------------------------------------------------------------------------
+🗣 Says: "Oh mon dieu... J'ai juré être parfaitement bilingue et experte absolue sur Excel."
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+STRANGER: 62-year-old French-Moroccan woman with deep olive skin and striking, angular cheekbones. Her hair is a dramatic, architectural afro of shimmering silver. She wears an oversized, floor-length metallic copper trench coat with exaggerated puffed sleeves over pleated emerald-green silk trousers. Massive, geometric brushed-gold earrings dangle to her collarbones, framing a bold ruby-red lip. She wears chunky black platform combat boots and carries a wrinkled grey Sphynx cat tucked into a quilted leather chest-sling. Her posture is regally upright, exuding intimidating, effortless cool while nonchalantly puffing a slim electronic cigarette..
+SHOT: Medium close-up MCU on the stranger's face. Clean single shot.
+STAGING: The stranger is looking slightly off-camera (screen-left) answering the question. A woman's hand holding a small wireless microphone enters the frame from the left edge, pointed at the stranger's mouth. Do NOT show the blogger's body or face in this shot, only her hand with the mic.
+handheld shot. The stranger is looking slightly off-camera (screen-left) answering the question. A woman's hand holding a small wireless microphone enters the frame from the left edge, pointed at the stranger's mouth. Do NOT show the blogger's body or face in this shot, only her hand with the mic. Movement: hold the camera at human operator height with natural body movement. Speed: responsive and organic. Framing: keep the subject readable while the frame has subtle sway and micro-adjustments. End: finish with a natural handheld composition.
+LIGHTING: Natural daylight, authentic street atmosphere.
+They say: "Oh mon dieu... J'ai juré être parfaitement bilingue et experte absolue sur Excel."
+Voice: A low, raspy, theatrical alto playing at a slow, deliberate pace, featuring a thick Parisian-Arabic accent laced with dry, smoky, magnetic amusement.
+MOOD: thoughtful pause, choosing words carefully, slight squint — authentic, slightly caught off-guard.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #4 — 💬 ASIDE (blogger to camera)
+------------------------------------------------------------------------
+🗣 Says: "Elle prononce The avec un z et pleure sûrement devant un tableau croisé dynamique."
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality.
+OUTFIT (must stay exactly the same in every shot): Stylish casual French chic outfit, light blue low-cut tank top, cream pants, draped with a light jacket or trench coat.
+MIC: Holding a small wireless handheld microphone (like a DJI Mic on a handle).
+SHOT: Extreme close-up ECU on Camille's face only.
+STAGING: Direct eye contact with the camera lens. Mischievous cheeky smirk, one eyebrow raised. Subtle suppressed laugh. She holds her microphone near her chest.
+handheld shot. Extreme close-up ECU on Camille's face only. Direct eye contact with the camera lens. Mischievous cheeky smirk, one eyebrow raised. Subtle suppressed laugh. She holds her microphone near her chest. Movement: hold the camera at human operator height with natural body movement. Speed: responsive and organic. Framing: keep the subject readable while the frame has subtle sway and micro-adjustments. End: finish with a natural handheld composition.
+LIGHTING: Natural daylight, soft and flattering.
+She says: "Elle prononce The avec un z et pleure sûrement devant un tableau croisé dynamique."
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Sarcastic, witty, playful — sharing a private joke with the viewer.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #5 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Et ils t'ont vraiment embauchée avec cette énorme supercherie sans te démasquer ?"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality.
+OUTFIT (must stay exactly the same in every shot): Stylish casual French chic outfit, light blue low-cut tank top, cream pants, draped with a light jacket or trench coat.
+MIC: Holding a small wireless handheld microphone (like a DJI Mic on a handle).
+SHOT: Medium close-up MCU on Camille. Clean single shot.
+STAGING: Camille is looking slightly off-camera (screen-right) addressing the stranger. She holds the microphone in her hand. Do NOT show the stranger in this shot.
+arc right. Camille is looking slightly off-camera (screen-right) addressing the stranger. She holds the microphone in her hand. Do NOT show the stranger in this shot. Movement: move on a shallow curved path around the main subject toward the right side. Speed: smooth measured curve. Framing: keep distance, height and subject readability consistent while the angle changes. End: finish from a new right-side angle.
+LIGHTING: Natural Paris street lighting.
+She says: "Et ils t'ont vraiment embauchée avec cette énorme supercherie sans te démasquer ?"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Curious, slightly provocative smile.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #6 — 🗣️ STRANGER reply
+------------------------------------------------------------------------
+🗣 Says: "Évidemment ! Maintenant je conseille de riches clients internationaux dans une très grande banque."
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+STRANGER: 62-year-old French-Moroccan woman with deep olive skin and striking, angular cheekbones. Her hair is a dramatic, architectural afro of shimmering silver. She wears an oversized, floor-length metallic copper trench coat with exaggerated puffed sleeves over pleated emerald-green silk trousers. Massive, geometric brushed-gold earrings dangle to her collarbones, framing a bold ruby-red lip. She wears chunky black platform combat boots and carries a wrinkled grey Sphynx cat tucked into a quilted leather chest-sling. Her posture is regally upright, exuding intimidating, effortless cool while nonchalantly puffing a slim electronic cigarette..
+SHOT: Medium close-up MCU on the stranger's face. Clean single shot.
+STAGING: The stranger is looking slightly off-camera (screen-left) answering the question. A woman's hand holding a small wireless microphone enters the frame from the left edge, pointed at the stranger's mouth. Do NOT show the blogger's body or face in this shot, only her hand with the mic.
+handheld shot. The stranger is looking slightly off-camera (screen-left) answering the question. A woman's hand holding a small wireless microphone enters the frame from the left edge, pointed at the stranger's mouth. Do NOT show the blogger's body or face in this shot, only her hand with the mic. Movement: hold the camera at human operator height with natural body movement. Speed: responsive and organic. Framing: keep the subject readable while the frame has subtle sway and micro-adjustments. End: finish with a natural handheld composition.
+LIGHTING: Natural daylight, authentic street atmosphere.
+They say: "Évidemment ! Maintenant je conseille de riches clients internationaux dans une très grande banque."
+Voice: A low, raspy, theatrical alto playing at a slow, deliberate pace, featuring a thick Parisian-Arabic accent laced with dry, smoky, magnetic amusement.
+MOOD: enthusiastic, expressive hand gesture, passionate delivery — authentic, slightly caught off-guard.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #7 — 💬 ASIDE (blogger to camera)
+------------------------------------------------------------------------
+🗣 Says: "Et dire que cette femme gère probablement vos comptes épargne en ce moment..."
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality.
+OUTFIT (must stay exactly the same in every shot): Stylish casual French chic outfit, light blue low-cut tank top, cream pants, draped with a light jacket or trench coat.
+MIC: Holding a small wireless handheld microphone (like a DJI Mic on a handle).
+SHOT: Extreme close-up ECU on Camille's face only.
+STAGING: Direct eye contact with the camera lens. Mischievous cheeky smirk, one eyebrow raised. Subtle suppressed laugh. She holds her microphone near her chest.
+handheld shot. Extreme close-up ECU on Camille's face only. Direct eye contact with the camera lens. Mischievous cheeky smirk, one eyebrow raised. Subtle suppressed laugh. She holds her microphone near her chest. Movement: hold the camera at human operator height with natural body movement. Speed: responsive and organic. Framing: keep the subject readable while the frame has subtle sway and micro-adjustments. End: finish with a natural handheld composition.
+LIGHTING: Natural daylight, soft and flattering.
+She says: "Et dire que cette femme gère probablement vos comptes épargne en ce moment..."
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Sarcastic, witty, playful — sharing a private joke with the viewer.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+

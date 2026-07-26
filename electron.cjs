@@ -23,6 +23,7 @@ const { registerSurviveHandlers } = require('./survive-handlers.cjs');
 const { registerLocalizeHandlers } = require('./localize-handlers.cjs');
 const { registerExportHandlers } = require('./export-handlers.cjs');
 const { registerPrimateCastHandlers } = require('./primatecast-handlers.cjs');
+const { registerFrenchTalkHandlers } = require('./frenchtalk-handlers.cjs');
 
 // ── Новые модули (П.1, П.3, П.4, П.5) ──────────────────────────────────────
 const { queueManager, STATUS, TASK_TYPE } = require('./queue-manager.cjs');
@@ -42,6 +43,7 @@ const MEDIA_ROOTS = [
     'Survive',
     'TikTokLocalizer',
     'PrimateCast',
+    'FrenchTalk',
     'Audio',
     'Images',
     'Image',
@@ -266,6 +268,7 @@ app.whenReady().then(async () => {
     registerSurviveHandlers(ipcMain);
     registerLocalizeHandlers(ipcMain);
     registerPrimateCastHandlers(ipcMain);
+    registerFrenchTalkHandlers(ipcMain);
 
     createWindow();
 });

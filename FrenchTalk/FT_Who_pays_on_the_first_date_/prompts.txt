@@ -1,0 +1,48 @@
+========================================================================
+FRENCHTALK GENERATION PROMPTS
+Episode: FT_Who_pays_on_the_first_date_
+Generated: 25.07.2026, 19:19:12
+========================================================================
+
+🎬 Scene #1 — Camille
+------------------------------------------------------------------------
+🗣 Says: "Qui paie vraiment au premier date ?"
+📝 Prompt: [Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: "Qui paie vraiment au premier date ?"
+------------------------------------------------------------------------
+
+🎬 Scene #2 — Camille
+------------------------------------------------------------------------
+🗣 Says: "Dis moi, on fait moitié moitié ou le garçon gère toute la facture ?"
+📝 Prompt: [Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: "Dis moi, on fait moitié moitié ou le garçon gère toute la facture ?"
+------------------------------------------------------------------------
+
+🎬 Scene #3 — a random adult person on the street
+------------------------------------------------------------------------
+🗣 Says: "Moitié moitié ! On veut la vraie parité aujourd'hui, donc on divise par deux."
+📝 Prompt: [Stranger reply] Location: Paris street near the Eiffel Tower. Emotion: enthusiastic and energetic expression, expressive hand gesture, passionate delivery. Says: "Moitié moitié ! On veut la vraie parité aujourd'hui, donc on divise par deux."
+------------------------------------------------------------------------
+
+🎬 Scene #4 — Camille (aside)
+------------------------------------------------------------------------
+🗣 Says: "Et voici exactement pourquoi ce grand prince est encore tristement célibataire ce soir."
+📝 Prompt: [Aside (to camera)] Location: Paris street near the Eiffel Tower. Emotion: turning to camera with a cheeky smirk, raising one eyebrow, slightly suppressing laughter, sassy millennial expression. Says: "Et voici exactement pourquoi ce grand prince est encore tristement célibataire ce soir."
+------------------------------------------------------------------------
+
+🎬 Scene #5 — Camille
+------------------------------------------------------------------------
+🗣 Says: "Même si elle mange une petite salade et toi un énorme steak frites ?"
+📝 Prompt: [Blogger question] Location: Paris street near the Eiffel Tower. Emotion: curious and inquisitive expression, head slightly tilted, raising eyebrow with interest. Says: "Même si elle mange une petite salade et toi un énorme steak frites ?"
+------------------------------------------------------------------------
+
+🎬 Scene #6 — a random adult person on the street
+------------------------------------------------------------------------
+🗣 Says: "Dans ce cas précis chacun paie son plat ! Il faut rester très juste."
+📝 Prompt: [Stranger reply] Location: Paris street near the Eiffel Tower. Emotion: enthusiastic and energetic expression, expressive hand gesture, passionate delivery. Says: "Dans ce cas précis chacun paie son plat ! Il faut rester très juste."
+------------------------------------------------------------------------
+
+🎬 Scene #7 — Camille (aside)
+------------------------------------------------------------------------
+🗣 Says: "Le romantisme est totalement mort et enterré avec sa petite calculatrice. Au suivant !"
+📝 Prompt: [Aside (to camera)] Location: Paris street near the Eiffel Tower. Emotion: turning to camera with a cheeky smirk, raising one eyebrow, slightly suppressing laughter, sassy millennial expression. Says: "Le romantisme est totalement mort et enterré avec sa petite calculatrice. Au suivant !"
+------------------------------------------------------------------------
+

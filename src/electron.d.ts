@@ -229,6 +229,28 @@ export interface IElectronAPI {
   onGLabsTaskProgress: (callback: (data: GLabsProgressData) => void) => void,
   removeGLabsProgressListener: () => void,
 
+  // FrenchTalk
+  frenchtalkGenerateStranger: (data?: { language?: string, exclude?: string[] }) => Promise<{ description: string, voice: string, personality: string, nameHint: string, gender: string }>,
+  frenchtalkResetStrangerRef: (data: { episodeTitle: string }) => Promise<{ success: boolean }>,
+  frenchtalkGenerateBloggerIdea: (data: { promptText: string, provider: string }) => Promise<any>,
+  frenchtalkGenerateBaseImage: (data: { visualPrompt: string, model: string }) => Promise<{ imagePath: string, base64: string }>,
+  frenchtalkSaveBlogger: (data: any) => Promise<any>,
+  frenchtalkGetBlogger: () => Promise<any | null>,
+  frenchtalkDeleteBlogger: () => Promise<null>,
+  frenchtalkGetSeoKeywords: (data: { country: string, language: string }) => Promise<{ original: string, ru: string }[]>,
+  frenchtalkAutoTopic: (data: { language: string, country: string, bloggerName: string, strangerType?: string, mode?: 'trending' | 'custom_topic' | 'custom_text', customInput?: string, shortVersion?: boolean }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, question?: string, script: string, scriptRu?: string, overlongLines?: any[] }>,
+  frenchtalkAnalyzeVideo: (data: { videoBase64: string, language: string, bloggerName: string, strangerType?: string, shortVersion?: boolean }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, question?: string, script: string, scriptRu?: string }>,
+  frenchtalkGenerateSegment: (data: {
+    segmentIndex: number, role: string, dialogueText: string, speakerLabel: string,
+    bloggerOutfit?: string, location: string, episodeTitle: string,
+    aspectRatio?: string, language?: string, videoModel?: string,
+    strangerDescription?: string, strangerVoiceDescription?: string,
+    strangerRefBase64?: string
+  }) => Promise<{ videoPath: string, videoBase64: string, segmentIndex: number }>,
+  frenchtalkSaveAllPrompts: (data: any) => Promise<{ success: boolean }>,
+  onFrenchTalkProgress: (callback: (data: { status: string, progress?: number }) => void) => void,
+  removeFrenchTalkProgressListener: () => void,
+
   // PrimateCast
   primatecastGenerateCharacterIdea: (data: { promptText: string, provider: string }) => Promise<any>,
   primatecastGenerateBaseImage: (data: { visualPrompt: string, model: string }) => Promise<{ imagePath: string, base64: string }>,

@@ -1,0 +1,136 @@
+========================================================================
+FRENCHTALK GENERATION PROMPTS
+Episode: FT_Liking_Instagram_stories_while
+Generated: 25.07.2026, 21:37:47
+========================================================================
+
+🎬 Scene #1 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Ton mec trompe avec un like Instagram ?!"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality. She wears a small black lavalier clip-on microphone on her jacket lapel — visible in every shot.
+SHOT: Medium close-up MCU on Camille. She walks along Paris street, busy urban area toward camera or stands slightly off-center.
+STAGING: Direct address — she speaks straight into lens as if talking to the viewer. Energetic, conspiratorial lean-in. Small black lavalier mic clipped to her lapel. The street is busy and alive behind her.
+CAMERA: Handheld, slightly shaky, authentic "street vlog" feel. Slight push-in as she delivers the hook. Camera at chest/face level.
+LIGHTING: Natural Paris daylight. Warm tones, authentic atmosphere.
+She says: "Ton mec trompe avec un like Instagram ?!"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Cheeky, provocative, excited — like she's about to do something a little naughty.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #2 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Dis-moi la vérité, liker les stories d'une autre fille en couple, innocent ou tromperie ?"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER 1 (foreground, sharp): @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality. She wears a small black lavalier clip-on microphone on her jacket lapel — visible in every shot.
+CHARACTER 2 (background, soft focus): A 28-year-old Afro-Caribbean man with deep mahogany skin, sharp aristocratic cheekbones, and intricate white geometric eyeliner. His floor-length dreadlocks are sculpted into a soaring, crown-like updo pierced with heavy silver rings. He wears an oversized, heavily embroidered emerald-green baroque tailcoat left open over a metallic silver mesh crop top, paired with flowing high-waisted magenta velvet trousers. On his feet are towering neon-yellow platform boots. He overflows with draped pearl necklaces, mirrored shield sunglasses perched on his forehead, and rests elegantly on an antique silver-headed walking cane. His posture is effortlessly regal, radiating an amused, untouchable confidence..
+SHOT: Medium shot MS. A 28-year-old Afro-Caribbean man with deep mahogany skin, sharp aristocratic cheekbones, and intricate white geometric eyeliner. His floor-length dreadlocks are sculpted into a soaring, crown-like updo pierced with heavy silver rings. He wears an oversized, heavily embroidered emerald-green baroque tailcoat left open over a metallic silver mesh crop top, paired with flowing high-waisted magenta velvet trousers. On his feet are towering neon-yellow platform boots. He overflows with draped pearl necklaces, mirrored shield sunglasses perched on his forehead, and rests elegantly on an antique silver-headed walking cane. His posture is effortlessly regal, radiating an amused, untouchable confidence. is visible over her shoulder in soft background focus.
+STAGING: They face each other at roughly 45° angle — classic street interview two-shot. Camille holds her lavalier mic cable or extends her hand with the mic toward the stranger. She is sharp in foreground, stranger softly visible behind.
+CAMERA: Handheld at natural eye level. Slight Dutch tilt for energy. Camera positioned slightly to the side of the blogger — the two subjects form a diagonal in frame.
+LIGHTING: Natural Paris street lighting. Authentic, slightly raw look.
+She says: "Dis-moi la vérité, liker les stories d'une autre fille en couple, innocent ou tromperie ?"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Curious, slightly provocative smile — she knows this question will get a reaction.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #3 — 🗣️ STRANGER reply
+------------------------------------------------------------------------
+🗣 Says: "Quoi ? Mais non ! Un simple like ça veut absolument rien dire, c'est innocent !"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER 1 (foreground, sharp): A 28-year-old Afro-Caribbean man with deep mahogany skin, sharp aristocratic cheekbones, and intricate white geometric eyeliner. His floor-length dreadlocks are sculpted into a soaring, crown-like updo pierced with heavy silver rings. He wears an oversized, heavily embroidered emerald-green baroque tailcoat left open over a metallic silver mesh crop top, paired with flowing high-waisted magenta velvet trousers. On his feet are towering neon-yellow platform boots. He overflows with draped pearl necklaces, mirrored shield sunglasses perched on his forehead, and rests elegantly on an antique silver-headed walking cane. His posture is effortlessly regal, radiating an amused, untouchable confidence..
+CHARACTER 2 (background, soft focus): @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality — her lavalier mic clip visible on lapel, her hand or the mic cable enters frame from the side toward the stranger.
+SHOT: Medium close-up MCU on the stranger. Camille is visible over their shoulder in soft background focus.
+STAGING: They face each other at 45° angle — authentic street interview framing. Stranger is sharp in foreground. Camille's silhouette and lavalier mic are softly visible behind. The Paris street unfolds behind them.
+CAMERA: Handheld, natural eye level, slight natural sway. Camera is on the stranger's side of the 45° axis — we see their face clearly, blogger's profile softly behind.
+LIGHTING: Natural daylight, authentic street atmosphere. No artificial lighting.
+They say: "Quoi ? Mais non ! Un simple like ça veut absolument rien dire, c'est innocent !"
+Voice: A velvety, melodic baritone with a distinct Parisian-Caribbean lilt, speaking in a slow, purring drawl colored by playful, theatrical sarcasm.
+MOOD: curious and inquisitive, head slightly tilted, one eyebrow raised — authentic, slightly caught off-guard, real human reaction.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #4 — 💬 ASIDE (blogger to camera)
+------------------------------------------------------------------------
+🗣 Says: "Traduction : il balance des likes sur des photos en bikini à trois heures !"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality. She wears a small black lavalier clip-on microphone on her jacket lapel — visible in every shot.
+SHOT: Extreme close-up ECU on Camille's face. She has just stepped away from a stranger out of frame.
+STAGING: She turns slightly toward camera, making direct eye contact with a mischievous, cheeky smirk. One eyebrow raised. Subtle suppressed laugh — like she can't believe what she just heard. The lavalier mic clip is visible on her lapel.
+CAMERA: Locked-off, slightly handheld wobble. Camera at face level. Shallow depth of field — Paris street completely blurred behind her.
+LIGHTING: Natural golden-hour or overcast daylight, soft and flattering.
+She says: "Traduction : il balance des likes sur des photos en bikini à trois heures !"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Sarcastic, witty, playful — like she's sharing a private joke with the viewer.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #5 — 🎤 BLOGGER question
+------------------------------------------------------------------------
+🗣 Says: "Donc tu assumes devant ta copine les cœurs envoyés à minuit sur des maillots ?"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER 1 (foreground, sharp): @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality. She wears a small black lavalier clip-on microphone on her jacket lapel — visible in every shot.
+CHARACTER 2 (background, soft focus): A 28-year-old Afro-Caribbean man with deep mahogany skin, sharp aristocratic cheekbones, and intricate white geometric eyeliner. His floor-length dreadlocks are sculpted into a soaring, crown-like updo pierced with heavy silver rings. He wears an oversized, heavily embroidered emerald-green baroque tailcoat left open over a metallic silver mesh crop top, paired with flowing high-waisted magenta velvet trousers. On his feet are towering neon-yellow platform boots. He overflows with draped pearl necklaces, mirrored shield sunglasses perched on his forehead, and rests elegantly on an antique silver-headed walking cane. His posture is effortlessly regal, radiating an amused, untouchable confidence..
+SHOT: Medium shot MS. A 28-year-old Afro-Caribbean man with deep mahogany skin, sharp aristocratic cheekbones, and intricate white geometric eyeliner. His floor-length dreadlocks are sculpted into a soaring, crown-like updo pierced with heavy silver rings. He wears an oversized, heavily embroidered emerald-green baroque tailcoat left open over a metallic silver mesh crop top, paired with flowing high-waisted magenta velvet trousers. On his feet are towering neon-yellow platform boots. He overflows with draped pearl necklaces, mirrored shield sunglasses perched on his forehead, and rests elegantly on an antique silver-headed walking cane. His posture is effortlessly regal, radiating an amused, untouchable confidence. is visible over her shoulder in soft background focus.
+STAGING: They face each other at roughly 45° angle — classic street interview two-shot. Camille holds her lavalier mic cable or extends her hand with the mic toward the stranger. She is sharp in foreground, stranger softly visible behind.
+CAMERA: Handheld at natural eye level. Slight Dutch tilt for energy. Camera positioned slightly to the side of the blogger — the two subjects form a diagonal in frame.
+LIGHTING: Natural Paris street lighting. Authentic, slightly raw look.
+She says: "Donc tu assumes devant ta copine les cœurs envoyés à minuit sur des maillots ?"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Curious, slightly provocative smile — she knows this question will get a reaction.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #6 — 🗣️ STRANGER reply
+------------------------------------------------------------------------
+🗣 Says: "Oula, pas besoin de vérifier... On se fait totalement confiance dans mon couple !"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER 1 (foreground, sharp): A 28-year-old Afro-Caribbean man with deep mahogany skin, sharp aristocratic cheekbones, and intricate white geometric eyeliner. His floor-length dreadlocks are sculpted into a soaring, crown-like updo pierced with heavy silver rings. He wears an oversized, heavily embroidered emerald-green baroque tailcoat left open over a metallic silver mesh crop top, paired with flowing high-waisted magenta velvet trousers. On his feet are towering neon-yellow platform boots. He overflows with draped pearl necklaces, mirrored shield sunglasses perched on his forehead, and rests elegantly on an antique silver-headed walking cane. His posture is effortlessly regal, radiating an amused, untouchable confidence..
+CHARACTER 2 (background, soft focus): @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality — her lavalier mic clip visible on lapel, her hand or the mic cable enters frame from the side toward the stranger.
+SHOT: Medium close-up MCU on the stranger. Camille is visible over their shoulder in soft background focus.
+STAGING: They face each other at 45° angle — authentic street interview framing. Stranger is sharp in foreground. Camille's silhouette and lavalier mic are softly visible behind. The Paris street unfolds behind them.
+CAMERA: Handheld, natural eye level, slight natural sway. Camera is on the stranger's side of the 45° axis — we see their face clearly, blogger's profile softly behind.
+LIGHTING: Natural daylight, authentic street atmosphere. No artificial lighting.
+They say: "Oula, pas besoin de vérifier... On se fait totalement confiance dans mon couple !"
+Voice: A velvety, melodic baritone with a distinct Parisian-Caribbean lilt, speaking in a slow, purring drawl colored by playful, theatrical sarcasm.
+MOOD: enthusiastic, expressive hand gesture, passionate delivery — authentic, slightly caught off-guard, real human reaction.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+
+🎬 Scene #7 — 💬 ASIDE (blogger to camera)
+------------------------------------------------------------------------
+🗣 Says: "Les filles, alerte rouge ! Commandez un audit complet de ses interactions récentes immédiatement !"
+
+📝 Video Prompt:
+Vertical TikTok street video, 9:16 portrait.
+CHARACTER: @Camille — A highly detailed, photorealistic portrait of a young beautiful French woman blogger, 22-26 years old, full-body shot, platinum blonde hair in a loose casual updo, fair skin with realistic texture, curvy feminine figure with a large natural bust, wearing a light blue low-cut tank top and cream casual pants, beautiful makeup, glossy lips, defined lashes, friendly smile, looking at the camera, standing confidently in a relaxed pose, holding a microphone or smartphone, vibrant Paris street background, golden hour lighting, 9:16 portrait aspect ratio, cinematic quality. She wears a small black lavalier clip-on microphone on her jacket lapel — visible in every shot.
+SHOT: Extreme close-up ECU on Camille's face. She has just stepped away from a stranger out of frame.
+STAGING: She turns slightly toward camera, making direct eye contact with a mischievous, cheeky smirk. One eyebrow raised. Subtle suppressed laugh — like she can't believe what she just heard. The lavalier mic clip is visible on her lapel.
+CAMERA: Locked-off, slightly handheld wobble. Camera at face level. Shallow depth of field — Paris street completely blurred behind her.
+LIGHTING: Natural golden-hour or overcast daylight, soft and flattering.
+She says: "Les filles, alerte rouge ! Commandez un audit complet de ses interactions récentes immédiatement !"
+Voice: young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech
+MOOD: Sarcastic, witty, playful — like she's sharing a private joke with the viewer.
+Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.
+Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.
+------------------------------------------------------------------------
+

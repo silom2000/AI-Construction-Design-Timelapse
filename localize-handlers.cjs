@@ -5,7 +5,7 @@ const { pipeline } = require('stream');
 const { promisify } = require('util');
 const streamPipeline = promisify(pipeline);
 const { request } = require('undici');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 
 const ai = require('./ai-client.cjs');
 
@@ -232,14 +232,19 @@ function splitTranscriptIntoUtterances(words) {
 
     for (let i = 1; i < words.length; i++) {
         const gap = words[i].start - words[i - 1].end;
-        if (gap > PAUSE_THRESHOLD) {
-            // Natural pause — end current utterance
-            const text = currentWords.map(w => w.word).join(' ');
-            utterances.push({
-                text,
-                start: currentWords[0].start,
-                end: currentWords[currentWords.length - 1].end
-            });
+        const prevWord = words[i - 1].word.trim();
+        const hasPunctuation = /[.!?]$/.test(prevWord);
+        
+        if (gap > PAUSE_THRESHOLD || hasPunctuation) {
+            // Natural pause or sentence boundary — end current utterance
+            const text = currentWords.map(w => w.word).join(' ').trim();
+            if (text) {
+                utterances.push({
+                    text,
+                    start: currentWords[0].start,
+                    end: currentWords[currentWords.length - 1].end
+                });
+            }
             currentWords = [words[i]];
         } else {
             currentWords.push(words[i]);
@@ -248,11 +253,14 @@ function splitTranscriptIntoUtterances(words) {
 
     // Don't forget the last utterance
     if (currentWords.length > 0) {
-        utterances.push({
-            text: currentWords.map(w => w.word).join(' '),
-            start: currentWords[0].start,
-            end: currentWords[currentWords.length - 1].end
-        });
+        const text = currentWords.map(w => w.word).join(' ').trim();
+        if (text) {
+            utterances.push({
+                text,
+                start: currentWords[0].start,
+                end: currentWords[currentWords.length - 1].end
+            });
+        }
     }
 
     console.log(`[Localize] Split transcript into ${utterances.length} utterances (pause threshold: ${PAUSE_THRESHOLD}s)`);
