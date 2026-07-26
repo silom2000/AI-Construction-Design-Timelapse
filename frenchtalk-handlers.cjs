@@ -668,16 +668,22 @@ ${!shortVersion ? `▶ LINES 8-10 — STRANGER reveals something unexpected or f
 
 ▶ LINE 11 — ASIDE: Blogger's final witty punchline to camera. MAX 12 WORDS. Memorable closing line.
 
-▶ LINE 12 — OUTRO: Blogger's cheeky CTA to viewers.
+▶ LINE 12 — OUTRO: TWO parts in one line (MAX 22-24 words total):
+   PART 1: Engage viewers — ask them how THEY would answer the question (e.g. "А ты бы что ответил? Пиши в комментариях!" or "And you? What would YOU say? Tell me in the comments!"). 8-12 words.
+   PART 2: Cheeky CTA for like/subscribe.
 🎭 THIS TIME the CTA mood is: "${ctaStyle.mood.toUpperCase()}" — ${ctaStyle.direction}
 Invent a UNIQUE phrase that matches this energy. Inspired by (but NEVER copying) these examples:
 ${ctaSamples}
-Must be original, match the ${ctaStyle.mood} mood, MAX 12 WORDS.` : `▶ LINE 5-6 — ASIDE: Blogger's final witty punchline to camera.
-▶ LINE 7 — OUTRO: Blogger's cheeky CTA to viewers.
+Must be original, match the ${ctaStyle.mood} mood, 8-12 words.
+TOTAL OUTRO LINE: 18-24 words. Do NOT exceed 24 words.` : `▶ LINE 5-6 — ASIDE: Blogger's final witty punchline to camera.
+▶ LINE 7 — OUTRO: TWO parts in one line (MAX 22-24 words total):
+   PART 1: Engage viewers — ask them how THEY would answer the question (8-12 words).
+   PART 2: Cheeky CTA for like/subscribe.
 🎭 THIS TIME the CTA mood is: "${ctaStyle.mood.toUpperCase()}" — ${ctaStyle.direction}
 Invent a UNIQUE phrase that matches this energy. Inspired by (but NEVER copying) these examples:
 ${ctaSamples}
-Must be original, match the ${ctaStyle.mood} mood, MAX 12 WORDS.`}
+Must be original, match the ${ctaStyle.mood} mood, 8-12 words.
+TOTAL OUTRO LINE: 18-24 words. Do NOT exceed 24 words.`}
 
 RULES:
 - Format: "${bloggerName}: [text]" OR "Stranger: [text]" OR "Aside: [text]" OR "Outro: [text]"
@@ -717,7 +723,9 @@ ${scriptRaw}`;
             const match = scriptLines[i].match(/^([^:]+):\s*(.*)$/);
             if (match) {
                 const wordCount = match[2].trim().split(/\s+/).length;
-                if (wordCount > 20) {
+                const isOutro = match[1].trim().toLowerCase() === 'outro';
+                const maxWords = isOutro ? 24 : 20; // Outro has 2 parts: viewer question + CTA
+                if (wordCount > maxWords) {
                     overlongLines.push({ line: i + 1, words: wordCount, text: scriptLines[i].substring(0, 60) });
                 }
             }
@@ -794,11 +802,14 @@ Format:
 - "Aside: [text]" — blogger's sassy aside to camera
 - "Outro: [text]" — blogger's cheeky call-to-action to viewers (like/subscribe).
 
-THE LAST LINE MUST ALWAYS BE "Outro:" — a cheeky CTA to viewers.
+THE LAST LINE MUST ALWAYS BE "Outro:" — TWO parts in one line (MAX 22-24 words total):
+   PART 1: Ask viewers how THEY would answer the question (e.g. "А ты бы что ответил? Пиши в комментариях!" or "And you? What would YOU say? Tell me in the comments!"). 8-12 words.
+   PART 2: Cheeky CTA for like/subscribe.
 🎭 THIS TIME the CTA mood is: "${ctaStyleVA.mood.toUpperCase()}" — ${ctaStyleVA.direction}
-Invent a UNIQUE phrase that matches this energy. Inspired by (but NEVER copying) these examples:
+Invent a UNIQUE CTA phrase that matches this energy. Inspired by (but NEVER copying) these examples:
 ${ctaSamplesVA}
-Must be original, match the ${ctaStyleVA.mood} mood, MAX 12 WORDS.
+Must be original, match the ${ctaStyleVA.mood} mood, 8-12 words.
+TOTAL OUTRO LINE: 18-24 words. Do NOT exceed 24 words.
 
 Exactly ${lineCount.split('-')[1]} lines, MAX 20 words per line.
 
