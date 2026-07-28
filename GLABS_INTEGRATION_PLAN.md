@@ -1,16 +1,6 @@
-# 🤖 G-Labs Integration — План реализации вкладки в Kimi
+# 🤖 G-Labs Integration — План реализации вкладки в AIStudio
 
-## Статус: ИССЛЕДОВАНИЕ ЗАВЕРШЕНО
-
----
-
-## 📋 СУТЬ ЗАДАЧИ
-
-Добавить в приложение **Kimi** новую вкладку **"G-Labs Studio"**, которая:
-1. Управляет Google аккаунтами верифицированными на `labs.google/fx`
-2. Запускает G-Labs Automation через **Webhook API** (`http://127.0.0.1:8765`)
-3. Генерирует картинки и видео для всех разделов Kimi (Skeleton, HealthTalk, Timelapse и др.)
-4. Получает результаты обратно в Kimi и сохраняет их локально
+https://github.com/duckmartians/G-Labs-Automation/blob/main/WEBHOOK_INTEGRATION.en.md
 
 ---
 
@@ -325,7 +315,7 @@ D:\Open_Project\G-Labs-Automation-v2.0.0\
 Аккаунты читаем через:
 1. **Вариант A**: Webhook API (если G-Labs добавит endpoint `/api/accounts`)
 2. **Вариант B**: Чтение JSON файла напрямую из папки G-Labs
-3. **Вариант C**: Kimi хранит свой список аккаунтов независимо
+
 
 **Рекомендуем Вариант C** — Kimi хранит отдельный `glabs-accounts.json`:
 ```json
@@ -349,7 +339,7 @@ D:\Open_Project\G-Labs-Automation-v2.0.0\
 ```
 GLABS_WEBHOOK_URL=http://127.0.0.1:8765
 GLABS_API_KEY=your_webhook_api_key_here
-GLABS_EXE_PATH=D:\Open_Project\G-Labs-Automation-v2.0.0\G-LabsAutomation.exe
+
 ```
 
 ---
@@ -395,7 +385,7 @@ GLABS_EXE_PATH=D:\Open_Project\G-Labs-Automation-v2.0.0\G-LabsAutomation.exe
 
 | Риск | Описание | Решение |
 |------|----------|---------|
-| **MAX лицензия** | Webhook требует MAX план G-Labs | Приобрести MAX план |
+| **MAX лицензия** | Webhook требует MAX план G-Labs |
 | **G-Labs не запущен** | Webhook недоступен | Auto-launch exe + retry |
 | **Кредиты закончились** | Задача упадёт с ошибкой | Ротация аккаунтов |
 | **Нет PRO аккаунта** | Видео не генерируется | Предупреждение в UI |
@@ -405,7 +395,7 @@ GLABS_EXE_PATH=D:\Open_Project\G-Labs-Automation-v2.0.0\G-LabsAutomation.exe
 
 ## 🔑 УТОЧНЕНИЯ — ПОЛУЧЕНЫ ОТВЕТЫ
 
-1. ✅ **MAX план** — будет приобретен скоро. Реализуем заранее.
+1. ✅ **MAX план** 
 2. ✅ **API Key**: `bR6yWXzNrvHDJmvPKzn9WqZ1c0sUFDEeUf83jxhDj5o`
 3. ✅ **Авто-запуск**: НЕТ. Кнопка ручного запуска в UI.
 4. ✅ **Приоритет**: Skeleton Shorts → затем остальные по образцу.
@@ -427,5 +417,136 @@ GLABS_EXE_PATH=D:\Open_Project\G-Labs-Automation-v2.0.0\G-LabsAutomation.exe
 *Документ создан на основе:*
 - *Исследования https://github.com/duckmartians/G-Labs-Automation*
 - *Изучения WEBHOOK_API_GUIDE.md*
-- *Анализа структуры D:\Open_Project\G-Labs-Automation-v2.0.0*
-- *Анализа архитектуры текущего приложения Kimi*
+- *Анализа архитектуры текущего приложения AIStudio*
+
+// Image Generation — POST /api/image/generate
+{
+  "prompt": "your image description",       // Required
+  "model": "nano_banana_2",                 // See model table above
+  "aspect_ratio": "16:9",                   // See model table above
+  "reference_images": [                    // Optional: array of base64 images
+    "data:image/..."
+  ],
+  "upscale": ["2K"]                         // Optional: "2K", "4K" (4K requires ULTRA, model must support upscale)
+}
+
+// Video Generation — POST /api/video/generate
+{
+  "prompt": "video motion description",      // Required
+  "model": "veo_31_fast",                   // See model table above
+  "aspect_ratio": "16:9",                    // 16:9 or 9:16
+  "mode": "text_to_video",                   // mode: text_to_video (default, 0 refs),
+                                             //   start_image (1 ref), start_end_image (2 refs),
+                                             //   components (Veo up to 3 refs / Omni Flash up to 7, supports voice)
+                                             // Omni Flash (model "omni_flash"): text_to_video, start_image,
+                                             //   components only — start_end_image is not supported.
+  "reference_images": ["data:image/..."],    // Required if mode != text_to_video
+  "resolution": ["720p", "1080p"],           // Optional: "720p", "1080p", "4K" (4K requires ULTRA)
+  "voice": "achernar",                       // Optional: voice name (lowercase). Only used in components mode.
+  "video_length": 8                          // Optional: clip seconds. Veo 4/6/8, Omni Flash 4/6/8/10 (Veo 4/6 need ULTRA)
+}
+
+// Grok Generation — POST /api/grok/generate
+{
+  "prompt": "your prompt",                   // Required
+  "mode": "t2i",                             // t2i (text→image), i2i (image→image), t2v (text→video), i2v (image→video)
+  "aspect_ratio": "9:16",                    // 9:16, 16:9, 1:1, 2:3, 3:2
+  "reference_images": ["data:image/..."],    // Required for i2v / i2i
+  "video_length": 6,                         // Optional: 6, 10 or 15 (seconds). Video modes only (t2v / i2v).
+  "resolution": "480p"                       // Optional: "480p" or "720p". Video modes only (t2v / i2v). Image modes (t2i / i2i) always output 1K.
+}
+
+// Meta AI Generation — POST /api/meta/generate
+{
+  "prompt": "your prompt",                   // Required
+  "mode": "t2i",                             // t2i (text→image), t2v (text→video), i2i (image→image), i2v (image→video)
+  "aspect_ratio": "9:16",                    // 9:16, 16:9, 1:1
+  "resolution": "720p",                      // Optional: "480p" or "720p". Video modes only (t2v / i2v).
+  "count": 1,                                // Optional: 1–4 outputs per prompt (default 1)
+  "character_image": "data:image/...",       // i2i: subject/character component (base64)
+  "scene_image": "data:image/...",           // i2i: scene component (base64)
+  "style_image": "data:image/...",           // i2i: style component (base64)
+  "start_image": "data:image/...",           // i2v: required start frame (base64)
+  "end_image": "data:image/..."              // i2v: optional end frame for interpolation (base64)
+}
+
+# Image (basic)
+curl -X POST http://127.0.0.1:8765/api/image/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "a cat wearing sunglasses", "model": "nano_banana_2"}'
+
+# Image + Reference
+curl -X POST http://127.0.0.1:8765/api/image/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "same person", "model": "nano_banana_2", "reference_images": ["data:image/png;base64,..."]}'
+
+# Image + Reference + Upscale 4K (Requires ULTRA, model must support upscale)
+curl -X POST http://127.0.0.1:8765/api/image/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "modern house", "model": "nano_banana_pro", "reference_images": ["data:image/png;base64,..."], "upscale": ["4K"]}'
+
+# Video (start image)
+curl -X POST http://127.0.0.1:8765/api/video/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "flowing water", "mode": "start_image", "reference_images": ["data:image/png;base64,..."], "resolution": ["1080p"]}'
+
+# Video (components mode with voice)
+curl -X POST http://127.0.0.1:8765/api/video/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "she says hello", "mode": "components", "reference_images": ["data:image/png;base64,..."], "voice": "aoede"}'
+
+# Grok — Text to Image
+curl -X POST http://127.0.0.1:8765/api/grok/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "a girl swimming in a pool", "mode": "t2i", "aspect_ratio": "16:9"}'
+
+# Grok — Image to Image
+curl -X POST http://127.0.0.1:8765/api/grok/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "same character, sunset lighting", "mode": "i2i", "aspect_ratio": "1:1", "reference_images": ["data:image/png;base64,..."]}'
+
+# Grok — Text to Video
+curl -X POST http://127.0.0.1:8765/api/grok/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "neon city at night", "mode": "t2v", "aspect_ratio": "9:16", "video_length": 6, "resolution": "480p"}'
+
+# Grok — Image to Video
+curl -X POST http://127.0.0.1:8765/api/grok/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "make it rain", "mode": "i2v", "aspect_ratio": "16:9", "resolution": "720p", "reference_images": ["data:image/png;base64,..."]}'
+
+# Meta — Text to Image
+curl -X POST http://127.0.0.1:8765/api/meta/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "a cat astronaut", "mode": "t2i", "aspect_ratio": "1:1", "count": 1}'
+
+# Meta — Text to Video
+curl -X POST http://127.0.0.1:8765/api/meta/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "waves on a beach at dawn", "mode": "t2v", "aspect_ratio": "9:16", "resolution": "720p"}'
+
+# Meta — Image to Image (components: character/scene/style)
+curl -X POST http://127.0.0.1:8765/api/meta/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "same character in a forest", "mode": "i2i", "aspect_ratio": "16:9", "character_image": "data:image/png;base64,...", "scene_image": "data:image/png;base64,..."}'
+
+# Meta — Image to Video (start_image required, end_image optional)
+curl -X POST http://127.0.0.1:8765/api/meta/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o" \
+  -d '{"prompt": "pan across the scene", "mode": "i2v", "aspect_ratio": "16:9", "resolution": "720p", "start_image": "data:image/png;base64,...", "end_image": "data:image/png;base64,..."}'
+
+# List all recent tasks
+curl http://127.0.0.1:8765/api/tasks -H "X-API-Key: bR6yWXzNrvHDJmvPKzn9WqZlc0sUFDEeUf83jxhDj5o"

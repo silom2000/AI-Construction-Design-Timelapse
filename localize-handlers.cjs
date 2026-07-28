@@ -68,7 +68,7 @@ For each distinct character provide:
 - "name": Short descriptive name
 - "description": What they do in the video, their role
 - "appearance": Detailed physical description — hair color/style, face shape, build, clothing, accessories
-- "imagePrompt": A professional image generation prompt in English to recreate this character as a photorealistic portrait for a vertical 9:16 TikTok video. Include age, face details, hair, clothing, pose, lighting. Be specific about colors and textures. Format: "Photorealistic portrait of a [description], vertical 9:16 TikTok frame, professional lighting, sharp focus, 8k detail."
+- "imagePrompt": A professional image generation prompt in English to recreate this character as a photorealistic portrait for a vertical 9:16 TikTok video. Include age, face details, hair, clothing, pose, lighting. Be specific about colors and textures. NO text, NO subtitles. Format: "Photorealistic portrait of a [description], vertical 9:16 TikTok frame, professional lighting, clean background, NO text, NO subtitles."
 - "bestFrameIndex": Which frame (1-${KEY_FRAME_COUNT}) best shows this character
 
 Also provide:
@@ -157,10 +157,11 @@ The prompt MUST include:
 2. CHARACTER: How the character looks, their pose, clothing, expression
 3. ACTION: What the character is doing (speaking, gesturing, reacting)
 4. EMOTION: The emotional state matching the dialogue tone
-5. CAMERA: Camera angle and movement (close-up, medium shot, static, slow zoom)
+5. CAMERA: MUST INCLUDE subtle, cinematic camera movement (e.g., "very slow zoom in", "subtle tracking shot", "slight pan left", "gentle zoom out") along with the angle (close-up, medium shot). Keep motion minimal.
 6. LIGHTING: Lighting conditions matching the original frame
 7. DIALOGUE: The exact translated text as spoken audio
 8. STYLE: "Photorealistic" or "3D animated" based on the original frame style
+9. NEGATIVE: Add "NO text, NO subtitles, NO captions, NO typography, clean frame" to ensure the generated video has no text overlays.
 
 OUTPUT: Return ONLY valid JSON:
 {
@@ -342,17 +343,20 @@ function splitIntoSegments(speakerTimeline, speakers) {
         // Skip segments shorter than MIN_SEGMENT_DURATION — they get merged with neighbors
     }
 
-    // Merge very short segments with adjacent same-speaker segments
+    // Merge adjacent segments from the same speaker up to MAX_SEGMENT_DURATION
     const merged = [];
     for (const seg of segments) {
-        if (seg.duration < MIN_SEGMENT_DURATION && merged.length > 0 && merged[merged.length - 1].speakerId === seg.speakerId) {
+        if (merged.length > 0 && merged[merged.length - 1].speakerId === seg.speakerId) {
             const prev = merged[merged.length - 1];
-            prev.text += ' ' + seg.text;
-            prev.endTime = seg.endTime;
-            prev.duration = Math.round((prev.endTime - prev.startTime) * 100) / 100;
-        } else {
-            merged.push(seg);
+            const newDuration = Math.round((seg.endTime - prev.startTime) * 100) / 100;
+            if (newDuration <= MAX_SEGMENT_DURATION) {
+                prev.text += ' ' + seg.text;
+                prev.endTime = seg.endTime;
+                prev.duration = newDuration;
+                continue;
+            }
         }
+        merged.push(seg);
     }
 
     console.log(`[Localize] Built ${merged.length} final segments (≤${MAX_SEGMENT_DURATION}s each)`);
@@ -375,9 +379,11 @@ function extractSegmentSceneFrames(videoPath, segments, projectDir) {
     const sceneFrames = [];
     for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
-        const timestamp = Math.max(0, seg.startTime || 0);
+        // Extract frame from the middle of the segment to avoid fade-in/out transitions
+        const timestamp = Math.max(0, (seg.startTime || 0) + ((seg.duration || 0) / 2));
         const framePath = path.join(projectDir, `scene_frame_${i + 1}.jpg`);
         try {
+            // Extract frame as-is (we now use Image-to-Image to remove subtitles instead of cropping)
             execSync(`ffmpeg -ss ${timestamp.toFixed(2)} -i "${videoPath}" -frames:v 1 -q:v 3 "${framePath}" -y`, { stdio: 'pipe' });
             const base64 = fs.readFileSync(framePath, 'base64');
             sceneFrames.push({
@@ -489,7 +495,7 @@ async function generateVideoPromptForSegment(segment, sceneFrameBase64, characte
         const promptContent = [
             {
                 type: 'text',
-                text: `Generate a detailed video generation prompt based on this scene frame.\n\nTRANSLATED DIALOGUE: "${translatedText}"\nCHARACTER: ${character?.appearance || character?.name || segment.speakerName || 'Speaker'}\nSCENE DESCRIPTION: ${sceneDescription || 'A dialogue scene'}\nSEGMENT DURATION: ${segment.duration || 5} seconds\n\nAnalyze the start frame below and create a prompt that recreates this exact visual scene with the new dialogue.`
+                text: `Generate a detailed video generation prompt based on this scene frame.\n\nTRANSLATED DIALOGUE: "${translatedText}"\nCHARACTER: ${character?.appearance || character?.name || segment.speakerName || 'Speaker'}\nSCENE DESCRIPTION: ${sceneDescription || 'A dialogue scene'}\nSEGMENT DURATION: ${segment.duration || 5} seconds\n\nAnalyze the start frame below and create a prompt that recreates this exact visual scene with the new dialogue.\n\nIMPORTANT: You MUST include very subtle camera movements in the prompt (e.g., "very slow zoom in", "subtle tracking shot", "slight pan left", "gentle zoom out"). Make the motion cinematic but minimal.`
             },
             {
                 type: 'image_url',
@@ -519,7 +525,7 @@ async function generateVideoPromptForSegment(segment, sceneFrameBase64, characte
         console.error(`[Localize] Video prompt generation failed:`, e.message);
         // Fallback
         return {
-            videoPrompt: `A ${segment.speakerName || 'character'} speaking directly to camera in a scene. DIALOGUE: "${translatedText}". Vertical 9:16 TikTok frame, professional lighting.`,
+            videoPrompt: `A ${segment.speakerName || 'character'} speaking directly to camera in a scene. DIALOGUE: "${translatedText}". Vertical 9:16 TikTok frame, professional lighting. NO text, NO subtitles, NO typography.`,
             cameraAngle: 'close-up',
             emotion: 'neutral',
             action: 'speaking to camera',
@@ -569,8 +575,10 @@ function registerLocalizeHandlers(ipcMain) {
             const frames = [];
             for (let i = 0; i < utterances.length; i++) {
                 const u = utterances[i];
-                const timestamp = Math.max(0, u.start).toFixed(2);
+                // Median timestamp to avoid transitions
+                const timestamp = Math.max(0, u.start + ((u.end - u.start) / 2)).toFixed(2);
                 const framePath = path.join(projectDir, `utterance_frame_${i + 1}.jpg`);
+                // Scale to save memory
                 execSync(`ffmpeg -ss ${timestamp} -i "${videoPath}" -frames:v 1 -vf "scale=512:-1" -q:v 6 "${framePath}" -y`, { stdio: 'pipe' });
                 frames.push({
                     index: i + 1,
@@ -650,7 +658,7 @@ function registerLocalizeHandlers(ipcMain) {
     // ═══════════════════════════════════════════════════════════════════════════
     // Handler 3: Step 3 - Character Analysis
     // ═══════════════════════════════════════════════════════════════════════════
-    ipcMain.handle('localize-step3-characters', async (event, { projectFolder, frames, speakers }) => {
+    ipcMain.handle('localize-step3-characters', async (event, { projectFolder, frames, sceneFrames, segments, speakers }) => {
         try {
             const projectDir = path.join(LOCALIZE_DIR, projectFolder);
             console.log('[Localize] Step 3: Analyzing character appearances...');
@@ -697,29 +705,44 @@ function registerLocalizeHandlers(ipcMain) {
                 }
             }
 
-            console.log(`[Localize] Step 3: Generating reference images for ${characters.length} characters...`);
-            for (let i = 0; i < characters.length; i++) {
+            console.log(`[Localize] Step 3: Cleaning subtitles from ${(sceneFrames || []).length} scene frames via i2i...`);
+            for (let i = 0; i < (sceneFrames || []).length; i++) {
+                if (!sceneFrames[i] || !sceneFrames[i].base64) continue;
                 try {
                     const savedPaths = await ai.generateImage({
-                        prompt: characters[i].imagePrompt + ' Single full-frame vertical 9:16 TikTok image, one person only, photorealistic portrait, 8k detail, professional lighting, clean background.',
+                        prompt: 'Photorealistic, 8k, exact original scene, exact character, NO text, NO subtitles, clear face. Remove any text at the bottom. Keep original colors and composition.',
                         model: 'nano_banana_2',
                         aspectRatio: '9:16',
                         count: 1,
                         sectionDir: LOCALIZE_DIR,
                         subFolder: projectFolder,
-                        sceneIndex: i
+                        sceneIndex: i,
+                        referenceImages: [sceneFrames[i].base64]
                     });
                     if (savedPaths && savedPaths.length > 0) {
                         const imgBuffer = fs.readFileSync(savedPaths[0]);
                         const imgExt = path.extname(savedPaths[0]).toLowerCase();
                         const imgMime = imgExt === '.png' ? 'image/png' : 'image/jpeg';
-                        characters[i].generatedImageUrl = `data:${imgMime};base64,${imgBuffer.toString('base64')}`;
+                        sceneFrames[i].cleanBase64 = `data:${imgMime};base64,${imgBuffer.toString('base64')}`;
+                        sceneFrames[i].cleanUrl = `media:///${savedPaths[0].replace(/\\/g, '/')}?t=${Date.now()}`;
                     }
                 } catch (imgErr) {
-                    console.error(`[Localize] Image generation failed for "${characters[i].name}":`, imgErr.message);
+                    console.error(`[Localize] Image cleaning failed for frame ${i}:`, imgErr.message);
                 }
-                const bestIdx = Math.max(1, Math.min(frames.length, characters[i].bestFrameIndex || 1)) - 1;
-                characters[i].bestFrameUrl = frames[bestIdx]?.url;
+            }
+
+            // Map character avatars from cleaned scene frames
+            for (let i = 0; i < characters.length; i++) {
+                const speakerId = i + 1;
+                const segIndex = (segments || []).findIndex(s => s.speakerId === speakerId);
+                if (segIndex !== -1 && sceneFrames && sceneFrames[segIndex]) {
+                    characters[i].generatedImageUrl = sceneFrames[segIndex].cleanBase64 || sceneFrames[segIndex].base64;
+                    characters[i].bestFrameUrl = sceneFrames[segIndex].url;
+                } else {
+                    const bestIdx = Math.max(1, Math.min(frames.length, characters[i].bestFrameIndex || 1)) - 1;
+                    characters[i].bestFrameUrl = frames[bestIdx]?.url;
+                    characters[i].generatedImageUrl = frames[bestIdx]?.base64;
+                }
             }
 
             fs.writeFileSync(path.join(projectDir, 'scene_description.txt'), sceneDescription, 'utf8');
@@ -727,7 +750,7 @@ function registerLocalizeHandlers(ipcMain) {
                 name: c.name, description: c.description, appearance: c.appearance, imagePrompt: c.imagePrompt
             })), null, 2));
 
-            return { characters, sceneDescription };
+            return { characters, sceneDescription, sceneFrames };
         } catch (err) {
             console.error('[Localize] Step 3 failed:', err.message);
             throw err;
@@ -813,12 +836,54 @@ function registerLocalizeHandlers(ipcMain) {
         console.log(`[Localize] Translated ${translated.length} segments to ${langLabel}`);
         return translated;
     });
+    // ═══════════════════════════════════════════════════════════════════════════
+    ipcMain.handle('localize-generate-metadata', async (event, { projectFolder, transcript, targetLanguage, originalTitle }) => {
+        const isGerman = targetLanguage === 'german' || targetLanguage === 'German' || targetLanguage === 'de';
+        const isEnglish = targetLanguage === 'english' || targetLanguage === 'English' || targetLanguage === 'en';
+        const langLabel = isGerman ? 'German' : isEnglish ? 'English' : 'French';
+
+        console.log(`[Localize] Generating SEO Metadata for ${langLabel}...`);
+        try {
+            // Clean up original title: remove everything from "..." onwards, and remove extensions
+            let cleanTitle = originalTitle || 'Video';
+            cleanTitle = cleanTitle.replace(/\.[^/.]+$/, ""); // remove extension
+            const ellipsisIndex = cleanTitle.indexOf('...');
+            if (ellipsisIndex !== -1) {
+                cleanTitle = cleanTitle.substring(0, ellipsisIndex).trim();
+            }
+            
+            const prompt = `Act as an expert social media manager. Based on the following video transcript and the original title, generate a catchy, viral title, a short engaging description (1-2 sentences max), and 2-3 highly relevant hashtags.
+The new title should be a localized, polished version of the original title, but feel free to make slight improvements for virality.
+The output MUST be in ${langLabel}.
+Return ONLY valid JSON in this exact format, with no markdown formatting:
+{
+  "title": "Your viral title here...",
+  "description": "Your short description here...",
+  "hashtags": "#hashtag1 #hashtag2"
+}
+
+ORIGINAL TITLE: ${cleanTitle}
+
+TRANSCRIPT:
+${transcript}`;
+            const raw = await ai.chat([{ role: 'user', content: prompt }], true);
+            const metadata = safeParseJson(raw, 'seo metadata');
+            return {
+                title: metadata.title || 'Untitled',
+                description: metadata.description || '',
+                hashtags: metadata.hashtags || ''
+            };
+        } catch (e) {
+            console.error('[Localize] SEO Metadata generation failed:', e);
+            return { title: 'Generated Video', description: '', hashtags: '' };
+        }
+    });
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Handler 3: Generate one dialogue video clip (segment + translated text + TTS + mux)
     // ═══════════════════════════════════════════════════════════════════════════
-    ipcMain.handle('localize-generate-segment-video', async (event, { projectFolder, segmentIndex, segments, targetLanguage, characterImages, sceneFrames, characters, sceneDescription, speakerVoices, customPrompt }) => {
-        const projectDir = path.join(LOCALIZE_DIR, projectFolder);
+    async function doGenerateSegmentVideo({ projectFolder, segmentIndex, segments, targetLanguage, characterImages, sceneFrames, characters, sceneDescription, speakerVoices, customPrompt }) {
+const projectDir = path.join(LOCALIZE_DIR, projectFolder);
         if (!fs.existsSync(projectDir)) throw new Error(`Project folder not found: ${projectFolder}`);
 
         const seg = segments[segmentIndex];
@@ -861,8 +926,9 @@ function registerLocalizeHandlers(ipcMain) {
             videoPrompt += ` DIALOGUE: "${translatedText}". Duration: ${Math.min(seg.duration || 5, 8)} seconds. Vertical 9:16 TikTok format. No text overlays, no watermark.`;
         }
 
-        // Step 2: Determine start_image — prefer scene frame from original video
-        let startImageBase64 = sceneFrameBase64 || referenceImageBase64;
+        // Step 2: Determine start_image — prefer clean scene frame, then character avatar, then original frame
+        const cleanSceneFrameBase64 = sceneFrame?.cleanBase64 || null;
+        let startImageBase64 = cleanSceneFrameBase64 || referenceImageBase64 || sceneFrameBase64;
 
         // Step 3: Generate video with Omni Flash
         let videoPath;
@@ -900,12 +966,17 @@ function registerLocalizeHandlers(ipcMain) {
 
         console.log(`[Localize] Segment ${segmentIndex} complete: ${result.videoUrl}`);
         return result;
+    
+}
+
+ipcMain.handle('localize-generate-segment-video', async (event, opts) => {
+        return await doGenerateSegmentVideo(opts);
     });
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Handler 4: Batch generate all segment videos for one language
     // ═══════════════════════════════════════════════════════════════════════════
-    ipcMain.handle('localize-batch-generate-segments', async (event, { projectFolder, segments, targetLanguage, characterImages }) => {
+    ipcMain.handle('localize-batch-generate-segments', async (event, { projectFolder, segments, targetLanguage, characterImages, sceneFrames, characters, sceneDescription, speakerVoices }) => {
         const results = [];
         const langLabel = (targetLanguage === 'german' || targetLanguage === 'German' || targetLanguage === 'de') ? 'German' : 'French';
 
@@ -913,8 +984,9 @@ function registerLocalizeHandlers(ipcMain) {
 
         for (let i = 0; i < segments.length; i++) {
             try {
-                const result = await ipcMain.emit('localize-generate-segment-video', event, {
-                    projectFolder, segmentIndex: i, segments, targetLanguage, characterImages
+                const result = await doGenerateSegmentVideo({
+                    projectFolder, segmentIndex: i, segments, targetLanguage, characterImages,
+                    sceneFrames, characters, sceneDescription, speakerVoices
                 });
                 results.push({ segmentIndex: i, ...result, status: 'completed' });
             } catch (err) {
@@ -923,7 +995,6 @@ function registerLocalizeHandlers(ipcMain) {
             }
         }
 
-        // Save results manifest
         const projectDir = path.join(LOCALIZE_DIR, projectFolder);
         const langCode = (targetLanguage === 'german' || targetLanguage === 'German' || targetLanguage === 'de') ? 'de' : 'fr';
         fs.writeFileSync(path.join(projectDir, `batch_results_${langCode}.json`), JSON.stringify(results, null, 2));
@@ -1021,6 +1092,26 @@ function registerLocalizeHandlers(ipcMain) {
 
         console.log(`[Localize] Generating video prompts for ${segments.length} segments...`);
         const prompts = [];
+        
+        // --- NEW: GEMINI VIDEO ANALYSIS LOGIC ---
+        let geminiFileUri = null;
+        let useGeminiVideo = false;
+        const apiKey = process.env.GEMINI_API_KEY?.trim();
+        const sourceVideoPath = path.join(projectDir, 'source_video.mp4');
+        
+        if (apiKey && fs.existsSync(sourceVideoPath)) {
+            try {
+                console.log('[Localize] Found GEMINI_API_KEY! Uploading full video for deep analysis...');
+                const { fileUri, fileName } = await ai.uploadVideoToGemini(sourceVideoPath);
+                await ai.waitForGeminiProcessing(fileName);
+                geminiFileUri = fileUri;
+                useGeminiVideo = true;
+                console.log('[Localize] Video successfully processed by Gemini!');
+            } catch (err) {
+                console.error('[Localize] Gemini video upload failed, falling back to basic analysis:', err.message);
+                useGeminiVideo = false;
+            }
+        }
 
         for (let i = 0; i < segments.length; i++) {
             const seg = segments[i];
@@ -1030,15 +1121,38 @@ function registerLocalizeHandlers(ipcMain) {
             const sceneFrameBase64 = seg.sceneFrameBase64 || null;
 
             try {
-                const promptData = await generateVideoPromptForSegment(
-                    seg, sceneFrameBase64, character, sceneDescription || '', translatedText
-                );
+                let promptData;
+                
+                if (useGeminiVideo && geminiFileUri) {
+                    // Ask Gemini to watch the specific segment of the video
+                    const startTime = seg.startTime || 0;
+                    const endTime = seg.endTime || (startTime + 5);
+                    const promptText = `Please act as a professional film director. Watch the video clip carefully from timestamp ${startTime.toFixed(2)}s to ${endTime.toFixed(2)}s. The character speaking is "${character?.name || 'Unknown'}". The translated dialogue they say is: "${translatedText}". 
+Write a highly descriptive and technical video generation prompt (max 3 sentences) that recreates this exact visual scene, capturing the exact camera angle, lighting, background, and character's emotion/action during this specific timeframe. Ensure the prompt is optimized for a Text-to-Video AI model.
+IMPORTANT: You MUST include very subtle camera movements in the prompt (e.g., "very slow zoom in", "subtle tracking shot", "slight pan left", "gentle zoom out"). Make the motion cinematic but minimal.
+Return ONLY valid JSON in this exact format:
+{
+  "videoPrompt": "The detailed director's prompt...",
+  "cameraAngle": "e.g., close-up, wide shot",
+  "emotion": "e.g., angry, happy, neutral",
+  "action": "e.g., speaking aggressively, smiling",
+  "environmentDescription": "e.g., dimly lit office, sunny street"
+}`;
+                    const rawGeminiResponse = await ai.generateVideoPromptWithGemini(geminiFileUri, promptText);
+                    promptData = safeParseJson(rawGeminiResponse, 'gemini video prompt');
+                    promptData.duration = seg.duration || 5;
+                } else {
+                    promptData = await generateVideoPromptForSegment(
+                        seg, sceneFrameBase64, character, sceneDescription || '', translatedText
+                    );
+                }
+
                 prompts.push({
                     segmentIndex: i,
                     ...promptData,
                     status: 'generated'
                 });
-                console.log(`[Localize] Prompt ${i + 1}/${segments.length} generated`);
+                console.log(`[Localize] Prompt ${i + 1}/${segments.length} generated${useGeminiVideo ? ' (Gemini Video)' : ''}`);
             } catch (e) {
                 console.error(`[Localize] Prompt generation failed for segment ${i}:`, e.message);
                 prompts.push({

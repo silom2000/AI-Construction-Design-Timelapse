@@ -414,7 +414,88 @@ class AntigravityClient {
     }
 
     // =========================================================================
-    // 4. IMAGE GENERATION (Proxy to G-Labs)
+    // 4. GEMINI VIDEO PROCESSING (NATIVE FILE API)
+    // =========================================================================
+    async uploadVideoToGemini(filePath) {
+        const apiKey = process.env.GEMINI_API_KEY?.trim();
+        if (!apiKey) throw new Error("GEMINI_API_KEY is missing in .env");
+
+        const stats = fs.statSync(filePath);
+        const numBytes = stats.size;
+        console.log(`[AiClient:Gemini] Initiating upload for ${filePath} (${(numBytes/1024/1024).toFixed(2)} MB)...`);
+
+        const initRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+                'X-Goog-Upload-Protocol': 'resumable',
+                'X-Goog-Upload-Command': 'start',
+                'X-Goog-Upload-Header-Content-Length': numBytes.toString(),
+                'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ file: { display_name: path.basename(filePath) } })
+        });
+        
+        if (!initRes.ok) throw new Error("Init fail: " + await initRes.text());
+        const uploadUrl = initRes.headers.get('x-goog-upload-url');
+        
+        console.log(`[AiClient:Gemini] Uploading data to Google...`);
+        const fileBuffer = fs.readFileSync(filePath);
+        const uploadRes = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+                'X-Goog-Upload-Command': 'upload, finalize',
+                'X-Goog-Upload-Offset': '0',
+                'Content-Length': numBytes.toString(),
+                'Content-Type': 'video/mp4'
+            },
+            body: fileBuffer
+        });
+        
+        if (!uploadRes.ok) throw new Error("Upload fail: " + await uploadRes.text());
+        const uploadData = await uploadRes.json();
+        console.log(`[AiClient:Gemini] Upload complete! File URI: ${uploadData.file.uri}`);
+        return { fileUri: uploadData.file.uri, fileName: uploadData.file.name };
+    }
+
+    async waitForGeminiProcessing(fileName) {
+        const apiKey = process.env.GEMINI_API_KEY?.trim();
+        console.log(`[AiClient:Gemini] Waiting for Google to process the video...`);
+        while (true) {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
+            const data = await res.json();
+            if (data.state === 'ACTIVE') return;
+            if (data.state === 'FAILED') throw new Error("Video processing failed on Google servers");
+            await new Promise(r => setTimeout(r, 3000));
+        }
+    }
+
+    async generateVideoPromptWithGemini(fileUri, promptText) {
+        const apiKey = process.env.GEMINI_API_KEY?.trim();
+        console.log(`[AiClient:Gemini] Analyzing video segment with gemini-2.0-flash...`);
+        
+        const payload = {
+            contents: [{
+                parts: [
+                    { fileData: { mimeType: 'video/mp4', fileUri: fileUri } },
+                    { text: promptText }
+                ]
+            }]
+        };
+
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error("Analyze fail: " + JSON.stringify(data));
+        return data.candidates[0].content.parts[0].text;
+    }
+
+    // =========================================================================
+    // 5. IMAGE GENERATION (Proxy to G-Labs)
     // =========================================================================
     async generateImage(options) {
         return await generateImageViaGLabs(options);

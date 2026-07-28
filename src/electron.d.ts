@@ -178,9 +178,10 @@ export interface IElectronAPI {
   // TikTok Video Localizer — Dialogue Processing
   localizeStep1STT: (params: { videoBase64: string }) => Promise<{ projectFolder: string, transcript: string, transcriptWords: any[], utterances: any[], frames: any[], videoUrl: string }>,
   localizeStep2Diarize: (params: { projectFolder: string, transcriptWords: any[], utterances: any[], frames: any[] }) => Promise<{ speakers: any[], timeline: any[], segments: any[], sceneFrames: any[] }>,
-  localizeStep3Characters: (params: { projectFolder: string, frames: any[], speakers: any[] }) => Promise<{ characters: any[], sceneDescription: string }>,
+  localizeStep3Characters: (params: { projectFolder: string, frames: any[], sceneFrames?: any[], segments?: any[], speakers: any[] }) => Promise<{ characters: any[], sceneDescription: string, sceneFrames?: any[] }>,
   localizeStep4Voices: (params: { projectFolder: string, segments: any[], speakers: any[] }) => Promise<{ voiceProfiles: any, speakerVoices: any, speakers: any[] }>,
   localizeTranslateSegments: (projectFolder: string, segments: DialogueSegment[], targetLanguage: string) => Promise<DialogueSegment[]>,
+  localizeGenerateMetadata: (projectFolder: string, transcript: string, targetLanguage: string, originalTitle: string) => Promise<{ title: string, description: string, hashtags: string }>,
   localizeGenerateSegmentVideo: (params: {
     projectFolder: string;
     segmentIndex: number;
@@ -240,15 +241,12 @@ export interface IElectronAPI {
   frenchtalkGetSeoKeywords: (data: { country: string, language: string }) => Promise<{ original: string, ru: string }[]>,
   frenchtalkAutoTopic: (data: { language: string, country: string, bloggerName: string, strangerType?: string, mode?: 'trending' | 'custom_topic' | 'custom_text', customInput?: string, shortVersion?: boolean }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, question?: string, script: string, scriptRu?: string, overlongLines?: any[] }>,
   frenchtalkAnalyzeVideo: (data: { videoBase64: string, language: string, bloggerName: string, strangerType?: string, shortVersion?: boolean }) => Promise<{ topic: string, topicEn: string, topicRu?: string, hook: string, hookRu?: string, question?: string, script: string, scriptRu?: string }>,
-  frenchtalkGenerateSegment: (data: {
-    segmentIndex: number, role: string, dialogueText: string, speakerLabel: string,
-    bloggerOutfit?: string, location: string, episodeTitle: string,
-    aspectRatio?: string, language?: string, videoModel?: string,
-    strangerDescription?: string, strangerVoiceDescription?: string,
-    strangerRefBase64?: string
-  }) => Promise<{ videoPath: string, videoBase64: string, segmentIndex: number }>,
+  frenchtalkGenerateSegment: (data: any) => Promise<{ videoPath: string, videoBase64: string, segmentIndex: number }>,
   frenchtalkSaveAllPrompts: (data: any) => Promise<{ success: boolean }>,
-  onFrenchTalkProgress: (callback: (data: { status: string, progress?: number }) => void) => void,
+  frenchtalkGenerateLocationRef: (data: { locationName: string, visualPrompt: string, model?: string }) => Promise<{ imagePath: string, base64: string }>,
+  frenchtalkGetLocationRefs: () => Promise<Array<{ name: string, path: string, url: string, base64: string }>>,
+  frenchtalkAutoVlogTopic: (data: { language: string, country: string, bloggerName: string, vlogTopic: string, outfit: string, location: string, customInput?: string, useWebSearch?: boolean }) => Promise<{ script: string, scriptRu?: string, metadata?: { title: string, description: string, hashtags: string } }>,
+  onFrenchTalkProgress: (callback: (data: { status: string, progress: number }) => void) => void,
   removeFrenchTalkProgressListener: () => void,
 
   // PrimateCast

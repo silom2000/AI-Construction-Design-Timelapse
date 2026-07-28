@@ -24,7 +24,7 @@ const IMAGE_MODELS = [
   { value: 'grok', label: 'Grok Generation' },
 ];
 
-type SegmentRole = 'blogger' | 'stranger' | 'aside' | 'outro';
+type SegmentRole = 'blogger' | 'stranger' | 'aside' | 'outro' | 'vlog_action' | 'vlog_comment';
 
 type SegmentState = {
   index: number;
@@ -44,6 +44,8 @@ const ROLE_COLORS: Record<SegmentRole, string> = {
   stranger: '#5a8f5a',
   aside: '#c0722a',
   outro: '#e91e63',
+  vlog_action: '#007acc',
+  vlog_comment: '#c0722a',
 };
 
 const ROLE_LABELS: Record<SegmentRole, string> = {
@@ -51,10 +53,12 @@ const ROLE_LABELS: Record<SegmentRole, string> = {
   stranger: '🗣 Stranger',
   aside: '💬 Aside',
   outro: '🎬 Outro',
+  vlog_action: '🎬 Vlog Action',
+  vlog_comment: '💬 Girl Secret',
 };
 
 const FrenchTalkTab: React.FC = () => {
-  const [subTab, setSubTab] = useState<'blogger' | 'episode'>('blogger');
+  const [subTab, setSubTab] = useState<'blogger' | 'episode' | 'vlog'>('blogger');
   const [llmProvider, setLlmProvider] = useState('pollinations');
   const [imageModel, setImageModel] = useState<'nano_banana_2' | 'nano_banana_pro' | 'grok'>('nano_banana_2');
   const [videoModel, setVideoModel] = useState<'omni_flash' | 'veo_31_lite' | 'grok'>('omni_flash');
@@ -69,6 +73,7 @@ const FrenchTalkTab: React.FC = () => {
 
   // Episode state
   const [bloggerOutfit, setBloggerOutfit] = useState('');
+  const [customBloggerOutfit, setCustomBloggerOutfit] = useState('');
   const [location, setLocation] = useState('Paris street, busy urban area');
   const [strangerType, setStrangerType] = useState('a random adult person on the street');
   const [strangerDescription, setStrangerDescription] = useState('');
@@ -101,6 +106,21 @@ const FrenchTalkTab: React.FC = () => {
   const stopAutoRef = React.useRef(false);
   const [previewVideo, setPreviewVideo] = useState<string | null>(null);
 
+  // Vlog state
+  const [vlogLocation, setVlogLocation] = useState('Paris Studio Apartment - Living Room');
+  const [vlogOutfit, setVlogOutfit] = useState('Cozy Homewear / Loungewear');
+  const [customVlogOutfit, setCustomVlogOutfit] = useState('');
+  const [vlogTopic, setVlogTopic] = useState('beauty_secret');
+  const [customVlogTopic, setCustomVlogTopic] = useState('');
+  const [useWebSearchVlog, setUseWebSearchVlog] = useState(false);
+  const [isGeneratingLocationRef, setIsGeneratingLocationRef] = useState(false);
+  const [locationRefs, setLocationRefs] = useState<Array<{ name: string; path: string; url: string; base64: string }>>([]);
+  const [isGeneratingVlogScript, setIsGeneratingVlogScript] = useState(false);
+  const [vlogScript, setVlogScript] = useState('');
+  const [vlogMetadata, setVlogMetadata] = useState<{ title: string; description: string; hashtags: string } | null>(null);
+  const [vlogSegments, setVlogSegments] = useState<SegmentState[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
   // Script stats
   const scriptWords = script.trim().split(/\s+/).filter(w => w.length > 0).length;
   const estimatedDuration = Math.round(scriptWords / 2.5);
@@ -117,8 +137,16 @@ const FrenchTalkTab: React.FC = () => {
     .filter(Boolean);
   const hasOverlongLines = scriptLineStats.some(s => s && s.tooLong);
 
+  const loadLocationRefs = async () => {
+    try {
+      const refs = await window.electronAPI.frenchtalkGetLocationRefs();
+      setLocationRefs(refs);
+    } catch (e) {}
+  };
+
   useEffect(() => {
     loadBlogger();
+    loadLocationRefs();
     window.electronAPI.onFrenchTalkProgress((data: { status: string; progress?: number }) => {
       if (data.status) setStatus(data.status);
     });
@@ -366,12 +394,17 @@ const FrenchTalkTab: React.FC = () => {
   };
 
   const updateSegment = (index: number, updates: Partial<SegmentState>) => {
-    setSegments(prev => prev.map(s => s.index === index ? { ...s, ...updates } : s));
+    if (subTab === 'vlog') {
+      setVlogSegments(prev => prev.map(s => s.index === index ? { ...s, ...updates } : s));
+    } else {
+      setSegments(prev => prev.map(s => s.index === index ? { ...s, ...updates } : s));
+    }
   };
 
   const handleGenerateSegment = async (seg: SegmentState) => {
     if (!blogger || !episodeTitle) { alert('Заполните Episode Title и создайте блогера!'); return; }
     const market = MARKETS.find(m => m.id === selectedMarket)!;
+    const isVlog = subTab === 'vlog';
     updateSegment(seg.index, { status: 'generating', errorMsg: undefined });
     try {
       const result = await window.electronAPI.frenchtalkGenerateSegment({
@@ -379,8 +412,8 @@ const FrenchTalkTab: React.FC = () => {
         role: seg.role,
         dialogueText: seg.text,
         speakerLabel: seg.speakerLabel,
-        bloggerOutfit,
-        location,
+        bloggerOutfit: isVlog ? (vlogOutfit === 'custom' ? customVlogOutfit : vlogOutfit) : (bloggerOutfit === 'custom' ? customBloggerOutfit : bloggerOutfit),
+        location: isVlog ? vlogLocation : location,
         episodeTitle,
         aspectRatio,
         language: market.language,
@@ -399,7 +432,8 @@ const FrenchTalkTab: React.FC = () => {
     if (!blogger || !episodeTitle) { alert('Заполните Episode Title и создайте блогера!'); return; }
     stopAutoRef.current = false;
     setIsAutoRunning(true);
-    for (const seg of segments) {
+    const targetSegments = subTab === 'vlog' ? vlogSegments : segments;
+    for (const seg of targetSegments) {
       if (stopAutoRef.current) break;
       if (seg.status === 'done') continue;
       await handleGenerateSegment(seg);
@@ -489,7 +523,7 @@ const FrenchTalkTab: React.FC = () => {
             }}>
               ✅ 3. Одобрить и сохранить блогера
             </button>
-            <img src={generatedImage.base64} alt="Base" style={{ width: '100%', borderRadius: '8px', maxHeight: '400px', objectFit: 'cover' }} />
+            <img src={generatedImage.base64} alt="Base" onClick={() => setLightboxImage(generatedImage.base64)} style={{ width: '100%', borderRadius: '8px', maxHeight: '400px', objectFit: 'cover', cursor: 'pointer' }} />
           </div>
         )}
       </div>
@@ -503,7 +537,7 @@ const FrenchTalkTab: React.FC = () => {
           <div>
             <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
               {blogger.base64 && (
-                <img src={blogger.base64} alt={blogger.name} style={{ width: '120px', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #7c4dff' }} />
+                <img src={blogger.base64} alt={blogger.name} onClick={() => setLightboxImage(blogger.base64)} style={{ width: '120px', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #7c4dff', cursor: 'pointer' }} />
               )}
               <div style={{ flex: 1 }}>
                 <h4 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '16px' }}>{blogger.name}</h4>
@@ -712,10 +746,18 @@ const FrenchTalkTab: React.FC = () => {
         </div>
         <div>
           <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>Blogger Outfit (необязательно)</div>
-          <input value={bloggerOutfit} onChange={e => setBloggerOutfit(e.target.value)}
-            placeholder="Light trench coat, white blouse, sunglasses..."
-            style={{ width: '100%', padding: '7px 10px', backgroundColor: '#252535', color: '#fff', border: '1px solid #444', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
-          />
+          <select value={bloggerOutfit} onChange={e => setBloggerOutfit(e.target.value)}
+            style={{ width: '100%', padding: '7px 10px', backgroundColor: '#252535', color: '#fff', border: '1px solid #444', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', marginBottom: bloggerOutfit === 'custom' ? '8px' : '0' }}>
+            {OUTFIT_PRESETS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          {bloggerOutfit === 'custom' && (
+            <input value={customBloggerOutfit} onChange={e => setCustomBloggerOutfit(e.target.value)}
+              placeholder="Опишите одежду (на английском)..."
+              style={{ width: '100%', padding: '7px 10px', backgroundColor: '#252535', color: '#fff', border: '1px solid #e8c4a0', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+            />
+          )}
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -739,7 +781,8 @@ const FrenchTalkTab: React.FC = () => {
                 <img
                   src={generatedStrangerPreview}
                   alt="Stranger preview"
-                  style={{ width: '80px', height: '107px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #5a3a9a', flexShrink: 0 }}
+                  onClick={() => setLightboxImage(generatedStrangerPreview)}
+                  style={{ width: '80px', height: '107px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #5a3a9a', flexShrink: 0, cursor: 'pointer' }}
                 />
               )}
               {generatedStrangerHint && (
@@ -915,9 +958,376 @@ const FrenchTalkTab: React.FC = () => {
     </div>
   );
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#0d0d1a', color: '#e0e0e0' }}>
+  const OUTFIT_PRESETS = [
+    { value: 'Cozy Homewear / Loungewear', label: '🏠 Домашний уютный комплект (Loungewear)' },
+    { value: 'Casual Cooking Top & Apron', label: '🍳 Фартук поверх стильного топа (Готовка)' },
+    { value: 'Gym Activewear (Leggings & Sports Top)', label: '🏋️‍♀️ Спортивный костюм (Легинсы и топ)' },
+    { value: 'Tennis Outfit (Sporty Skirt & Polo)', label: '🎾 Теннисный комплект (Юбка и поло)' },
+    { value: 'One-piece Swimsuit (Закрытый купальник)', label: '🏊‍♀️ Закрытый купальник для бассейна' },
+    { value: 'Chic Parisian Evening Dress', label: '👗 Элегантное вечернее платье' },
+    { value: 'custom', label: '✏️ Свой вариант...' },
+  ];
 
+  const LOCATION_PRESETS = [
+    { value: 'Paris Studio Apartment - Living Room', label: '🛋 Квартира-студия в Париже — Гостиная' },
+    { value: 'Paris Studio Apartment - Kitchen', label: '🍳 Квартира-студия в Париже — Кухня' },
+    { value: 'Fitness Gym Interior', label: '🏋️‍♀️ Спортивный зал / Фитнес-клуб' },
+    { value: 'Outdoor Tennis Court', label: '🎾 Открытый теннисный корт' },
+    { value: 'Luxury Swimming Poolside', label: '🏊‍♀️ Бассейн / Зона отдыха у воды' },
+  ];
+
+  const VLOG_TOPIC_PRESETS = [
+    { value: 'beauty_secret', label: '💅 Девичьи секреты и уход ("Секрет утренней свежести")' },
+    { value: 'cooking', label: '🍳 Готовка и рецепт ("Секретный парижский десерт")' },
+    { value: 'gym_workout', label: '🏋️‍♀️ Фитнес-влог ("Моя тренировка в зале")' },
+    { value: 'tennis_match', label: '🎾 Теннис ("Учимся подаче и стильный аутфит")' },
+    { value: 'pool_day', label: '🏊‍♀️ День у бассейна ("Отдых и мои мысли обо всем")' },
+    { value: 'custom', label: '✏️ Своя тема...' },
+  ];
+
+  const handleGenerateLocationRef = async () => {
+    setIsGeneratingLocationRef(true);
+    try {
+      const prompt = `A photorealistic interior or exterior shot of ${vlogLocation}, high end aesthetic design, warm natural lighting, 9:16 portrait.`;
+      await window.electronAPI.frenchtalkGenerateLocationRef({
+        locationName: vlogLocation,
+        visualPrompt: prompt,
+        model: imageModel
+      });
+      await loadLocationRefs();
+    } catch (e: any) {
+      alert('Ошибка генерации локации: ' + e.message);
+    } finally {
+      setIsGeneratingLocationRef(false);
+    }
+  };
+
+  const handleGenerateVlogScript = async () => {
+    if (!blogger) { alert('Сначала создайте и сохраните блогера!'); return; }
+    const market = MARKETS.find(m => m.id === selectedMarket)!;
+    setIsGeneratingVlogScript(true);
+    try {
+      const effectiveOutfit = vlogOutfit === 'custom' ? customVlogOutfit : vlogOutfit;
+      const effectiveTopic = vlogTopic === 'custom' ? customVlogTopic : vlogTopic;
+
+      const result = await window.electronAPI.frenchtalkAutoVlogTopic({
+        language: market.language,
+        country: market.country,
+        bloggerName: blogger.name,
+        vlogTopic: effectiveTopic,
+        outfit: effectiveOutfit,
+        location: vlogLocation,
+        customInput: customVlogTopic,
+        useWebSearch: useWebSearchVlog
+      });
+
+      setVlogScript(result.script);
+      setVlogMetadata(result.metadata || null);
+      setEpisodeTitle('Vlog_' + vlogLocation.replace(/[^a-z0-9]/gi, '_').substring(0, 18) + '_' + Date.now().toString().slice(-4));
+
+      // Clean markdown blocks
+      const cleanScript = result.script.replace(/```[a-z]*\n?/gi, '').replace(/```\n?/gi, '').trim();
+      const cleanScriptRu = (result.scriptRu || '').replace(/```[a-z]*\n?/gi, '').replace(/```\n?/gi, '').trim();
+
+      // Highly permissive regex to catch roles even if LLM uses dashes, markdown, or forgets colons
+      const roleRegex = /^.*?((?:vlog\s*)?action|(?:blogger\s*)?comment|outro|girl\s*secret|секрет|комментарий|действие)s?\b[^a-zA-Z0-9А-Яа-я"']*(.*)$/i;
+
+      const parsedLines = cleanScript.split('\n').map(l => l.trim()).filter(l => roleRegex.test(l));
+      const parsedRuLines = cleanScriptRu.split('\n').map(l => l.trim()).filter(l => roleRegex.test(l));
+      const rawRuLines = cleanScriptRu.split('\n').map(l => l.trim()).filter(l => l && l.length > 5);
+
+      const parsed: SegmentState[] = [];
+      
+      parsedLines.forEach((l, idx) => {
+        const match = l.match(roleRegex);
+        if (!match) return;
+        
+        const rawRole = match[1].toLowerCase();
+        let text = match[2].trim();
+        // Strip surrounding quotes if the LLM added them
+        text = text.replace(/^["'](.*)["']$/, '$1').trim();
+
+        let translationRu = '';
+        if (parsedRuLines[idx]) {
+          const ruMatch = parsedRuLines[idx].match(roleRegex);
+          if (ruMatch) {
+              translationRu = ruMatch[2].replace(/^["'](.*)["']$/, '$1').trim();
+          }
+        } 
+        
+        if (!translationRu && rawRuLines[idx]) {
+            // Fallback if Russian translation didn't use the role prefix at all
+            const ruMatch = rawRuLines[idx].match(roleRegex);
+            translationRu = ruMatch ? ruMatch[2].replace(/^["'](.*)["']$/, '$1').trim() : rawRuLines[idx].replace(/^["'](.*)["']$/, '$1').trim();
+        }
+
+        let role: SegmentRole = 'vlog_comment';
+        let speaker = 'Blogger Comment';
+        
+        if (rawRole.includes('action') || rawRole.includes('действие')) {
+            role = 'vlog_action';
+            speaker = 'Vlog Action';
+        } else if (rawRole.includes('outro') || rawRole.includes('аутро')) {
+            role = 'outro';
+            speaker = 'Outro';
+        }
+
+        parsed.push({
+          index: idx,
+          role,
+          speakerLabel: speaker,
+          text,
+          translationRu,
+          words: text.split(/\s+/).length,
+          status: 'idle'
+        });
+      });
+      setVlogSegments(parsed);
+    } catch (e: any) {
+      alert('Ошибка генерации влог-сценария: ' + e.message);
+    } finally {
+      setIsGeneratingVlogScript(false);
+    }
+  };
+
+  const renderVlogTab = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px' }}>
+      
+      {/* VLOG GENERATION PANEL */}
+      <div style={{
+        background: 'linear-gradient(135deg, #2e0a24 0%, #4e1b3e 50%, #2e0a24 100%)',
+        border: '1px solid #7a2a6a', borderRadius: '12px', padding: '18px', marginBottom: '16px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <h3 style={{ margin: 0, color: '#f8c4e0', fontSize: '15px' }}>💅 Life & Girl Secrets — Личный Влог Блогера</h3>
+          <div style={{ fontSize: '12px', color: '#ffb3da' }}>Локации студии, рецепты, фитнес, теннис & бассейн</div>
+        </div>
+
+        {/* Location & References */}
+        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
+          <div style={{ flex: 1, minWidth: '180px' }}>
+            <label style={{ fontSize: '12px', color: '#ffb3da', display: 'block', marginBottom: '4px' }}>🌐 Язык сценария и озвучки:</label>
+            <select value={selectedMarket} onChange={e => setSelectedMarket(e.target.value)} style={{
+              width: '100%', padding: '8px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #7a2a6a', borderRadius: '6px', fontSize: '13px'
+            }}>
+              {MARKETS.map(m => (
+                <option key={m.id} value={m.id}>{m.flag} {m.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <label style={{ fontSize: '12px', color: '#ffb3da', display: 'block', marginBottom: '4px' }}>📍 Выберите локацию съемок:</label>
+            <select value={vlogLocation} onChange={e => setVlogLocation(e.target.value)} style={{
+              width: '100%', padding: '8px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #7a2a6a', borderRadius: '6px', fontSize: '13px'
+            }}>
+              {LOCATION_PRESETS.map(loc => (
+                <option key={loc.value} value={loc.value}>{loc.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <label style={{ fontSize: '12px', color: '#ffb3da', display: 'block', marginBottom: '4px' }}>👗 Выберите аутфит блогера:</label>
+            <select value={vlogOutfit} onChange={e => setVlogOutfit(e.target.value)} style={{
+              width: '100%', padding: '8px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #7a2a6a', borderRadius: '6px', fontSize: '13px'
+            }}>
+              {OUTFIT_PRESETS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <label style={{ fontSize: '12px', color: '#ffb3da', display: 'block', marginBottom: '4px' }}>💡 Тема влога / Секрет:</label>
+            <select value={vlogTopic} onChange={e => setVlogTopic(e.target.value)} style={{
+              width: '100%', padding: '8px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #7a2a6a', borderRadius: '6px', fontSize: '13px'
+            }}>
+              {VLOG_TOPIC_PRESETS.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', cursor: 'pointer', fontSize: '11px', color: '#ffb3da' }}>
+              <input type="checkbox" checked={useWebSearchVlog} onChange={e => setUseWebSearchVlog(e.target.checked)} />
+              <span>🔍 Искать свежие рецепты/тренды в сети</span>
+            </label>
+          </div>
+        </div>
+
+        {vlogOutfit === 'custom' && (
+          <div style={{ marginBottom: '14px' }}>
+            <input type="text" value={customVlogOutfit} onChange={e => setCustomVlogOutfit(e.target.value)}
+              placeholder="Введите описание одежды (например: бежевый свитшот и джинсы)..."
+              style={{ width: '100%', padding: '8px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #7a2a6a', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
+          </div>
+        )}
+
+        {vlogTopic === 'custom' && (
+          <div style={{ marginBottom: '14px' }}>
+            <input type="text" value={customVlogTopic} onChange={e => setCustomVlogTopic(e.target.value)}
+              placeholder="Введите тему влога (например: Готовим французские круассаны и секрет выпечки)..."
+              style={{ width: '100%', padding: '8px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #7a2a6a', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
+          </div>
+        )}
+
+        {/* Location Reference Gallery */}
+        <div style={{ backgroundColor: '#250c20', padding: '12px', borderRadius: '8px', border: '1px solid #5a1e4d', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', color: '#e8c4a0', fontWeight: 'bold' }}>🏠 Референсы интерьеров и локаций (Omni Flash Consistency)</span>
+            <button onClick={handleGenerateLocationRef} disabled={isGeneratingLocationRef} style={{
+              padding: '5px 12px', backgroundColor: isGeneratingLocationRef ? '#444' : '#e91e63', color: '#fff',
+              border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'
+            }}>
+              {isGeneratingLocationRef ? '⏳ Создаю интерьер...' : '🎨 Создать фото локации'}
+            </button>
+          </div>
+          {locationRefs.length > 0 ? (
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+              {locationRefs.map(ref => (
+                <div key={ref.name} style={{ flexShrink: 0, textAlign: 'center' }}>
+                  <img src={ref.base64} alt={ref.name} onClick={() => setLightboxImage(ref.base64)} style={{ width: '70px', height: '100px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #7a2a6a', cursor: 'pointer' }} />
+                  <div style={{ fontSize: '9px', color: '#aaa', width: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ref.name}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: '11px', color: '#aaa', fontStyle: 'italic' }}>Нет сохраненных фото локаций. Нажмите "Создать фото локации", чтобы сгенерировать интерьер студии/зала.</div>
+          )}
+        </div>
+
+        <button onClick={handleGenerateVlogScript} disabled={isGeneratingVlogScript} style={{
+          width: '100%', padding: '10px', backgroundColor: isGeneratingVlogScript ? '#444' : '#d81b60', color: '#fff',
+          border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px'
+        }}>
+          {isGeneratingVlogScript ? '⏳ Пишу сценарий влога...' : '✨ Сгенерировать сценарий Влога'}
+        </button>
+
+        {vlogScript && (
+          <div style={{ marginTop: '12px' }}>
+            <textarea value={vlogScript} onChange={e => setVlogScript(e.target.value)}
+              style={{ width: '100%', height: '80px', backgroundColor: '#250c20', color: '#f8c4e0', border: '1px solid #5a1e4d', borderRadius: '6px', padding: '8px', fontSize: '12px', boxSizing: 'border-box' }} />
+          </div>
+        )}
+
+        {vlogMetadata && (
+          <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#1a0515', border: '1px solid #7a2a6a', borderRadius: '8px' }}>
+            <div style={{ fontSize: '12px', color: '#e8c4a0', fontWeight: 'bold', marginBottom: '8px' }}>📱 TikTok Метаданные (Копировать)</div>
+            
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <label style={{ fontSize: '10px', color: '#ffb3da', display: 'block', marginBottom: '2px' }}>Название (Title)</label>
+                <div style={{ display: 'flex' }}>
+                  <input type="text" readOnly value={vlogMetadata.title || ''} style={{ flex: 1, padding: '6px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #5a1e4d', borderRadius: '4px 0 0 4px', fontSize: '11px' }} />
+                  <button onClick={() => navigator.clipboard.writeText(vlogMetadata.title || '')} style={{ padding: '6px 10px', backgroundColor: '#5a1e4d', color: '#fff', border: '1px solid #5a1e4d', borderRadius: '0 4px 4px 0', cursor: 'pointer', fontSize: '11px' }}>Copy</button>
+                </div>
+              </div>
+              
+              <div style={{ flex: 2, minWidth: '300px' }}>
+                <label style={{ fontSize: '10px', color: '#ffb3da', display: 'block', marginBottom: '2px' }}>Описание (Description)</label>
+                <div style={{ display: 'flex' }}>
+                  <input type="text" readOnly value={vlogMetadata.description || ''} style={{ flex: 1, padding: '6px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #5a1e4d', borderRadius: '4px 0 0 4px', fontSize: '11px' }} />
+                  <button onClick={() => navigator.clipboard.writeText(vlogMetadata.description || '')} style={{ padding: '6px 10px', backgroundColor: '#5a1e4d', color: '#fff', border: '1px solid #5a1e4d', borderRadius: '0 4px 4px 0', cursor: 'pointer', fontSize: '11px' }}>Copy</button>
+                </div>
+              </div>
+
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <label style={{ fontSize: '10px', color: '#ffb3da', display: 'block', marginBottom: '2px' }}>Хэштеги (Hashtags)</label>
+                <div style={{ display: 'flex' }}>
+                  <input type="text" readOnly value={vlogMetadata.hashtags || ''} style={{ flex: 1, padding: '6px', backgroundColor: '#3e1635', color: '#fff', border: '1px solid #5a1e4d', borderRadius: '4px 0 0 4px', fontSize: '11px' }} />
+                  <button onClick={() => navigator.clipboard.writeText(vlogMetadata.hashtags || '')} style={{ padding: '6px 10px', backgroundColor: '#5a1e4d', color: '#fff', border: '1px solid #5a1e4d', borderRadius: '0 4px 4px 0', cursor: 'pointer', fontSize: '11px' }}>Copy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* VLOG SEGMENTS RENDER */}
+      {vlogSegments.length > 0 && (
+        <div style={{ backgroundColor: '#151520', borderRadius: '10px', padding: '16px', border: '1px solid #3a1a4e' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div style={{ fontSize: '13px', color: '#f8c4e0', fontWeight: 'bold' }}>
+              🎬 Генерация влог-клипов — {vlogSegments.length} сцен
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: '#888', alignSelf: 'center' }}>
+                {vlogSegments.filter(s => s.status === 'done').length}/{vlogSegments.length} готово
+              </span>
+              {!isAutoRunning ? (
+                <button onClick={handleAutoGenerateAll} style={{
+                  padding: '7px 14px', backgroundColor: '#e91e63', color: '#fff',
+                  border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'
+                }}>⚡ Авто-генерация всех</button>
+              ) : (
+                <button onClick={() => { stopAutoRef.current = true; setIsAutoRunning(false); }} style={{
+                  padding: '7px 14px', backgroundColor: '#cc3333', color: '#fff',
+                  border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'
+                }}>⛔ Стоп</button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {vlogSegments.map(seg => (
+              <div key={seg.index} style={{
+                display: 'flex', gap: '12px', alignItems: 'flex-start',
+                backgroundColor: '#0d0d1a', borderRadius: '8px', padding: '10px',
+                border: `1px solid ${seg.status === 'done' ? '#2a5a2a' : seg.status === 'error' ? '#5a1a1a' : seg.status === 'generating' ? '#2a4a7f' : '#252535'}`
+              }}>
+                {/* Role badge */}
+                <div style={{ flexShrink: 0, paddingTop: '2px' }}>
+                  <span style={{
+                    display: 'inline-block', padding: '3px 8px', borderRadius: '10px', fontSize: '11px',
+                    backgroundColor: ROLE_COLORS[seg.role] + '33',
+                    color: ROLE_COLORS[seg.role], border: `1px solid ${ROLE_COLORS[seg.role]}66`,
+                    fontWeight: 'bold', whiteSpace: 'nowrap'
+                  }}>
+                    {ROLE_LABELS[seg.role]}
+                  </span>
+                  <div style={{ fontSize: '10px', color: '#555', marginTop: '2px', textAlign: 'center' }}>#{seg.index + 1} · {seg.words}w</div>
+                </div>
+
+                {/* Text */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', color: '#e6edf3', marginBottom: '2px' }}>"{seg.text}"</div>
+                  {seg.translationRu && (
+                    <div style={{ fontSize: '11px', color: '#ffb3da', fontStyle: 'italic' }}>🇷🇺 {seg.translationRu}</div>
+                  )}
+                  {seg.status === 'error' && (
+                    <div style={{ fontSize: '11px', color: '#ff6666', marginTop: '4px' }}>⚠️ {seg.errorMsg}</div>
+                  )}
+                </div>
+
+                {/* Video preview */}
+                {seg.videoBase64 && (
+                  <div style={{ flexShrink: 0, cursor: 'pointer' }} onClick={() => setPreviewVideo(seg.videoBase64!)}>
+                    <video src={seg.videoBase64} style={{ width: '60px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #2a5a2a' }} muted />
+                    <div style={{ fontSize: '9px', color: '#8bc34a', textAlign: 'center', marginTop: '2px' }}>▶ Play</div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                  <button onClick={() => handleGenerateSegment(seg)} disabled={seg.status === 'generating'} style={{
+                    padding: '6px 12px', fontSize: '11px',
+                    backgroundColor: seg.status === 'done' ? '#1a3a1a' : seg.status === 'generating' ? '#1a2a4a' : '#252535',
+                    color: seg.status === 'generating' ? '#7ac4ff' : seg.status === 'done' ? '#8bc34a' : '#ccc',
+                    border: `1px solid ${seg.status === 'done' ? '#2a6a2a' : seg.status === 'generating' ? '#2a4a8a' : '#444'}`,
+                    borderRadius: '5px', cursor: seg.status === 'generating' ? 'default' : 'pointer', whiteSpace: 'nowrap'
+                  }}>
+                    {seg.status === 'generating' ? '⏳ Генерирую...' : seg.status === 'done' ? '🔄 Пересоздать' : '🎬 Создать'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderHeader = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(90deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%)',
@@ -928,7 +1338,7 @@ const FrenchTalkTab: React.FC = () => {
           <span style={{ fontSize: '22px' }}>🇫🇷</span>
           <div>
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#e8c4a0' }}>FrenchTalk</div>
-            <div style={{ fontSize: '11px', color: '#888' }}>Paris Street Interview Generator for TikTok</div>
+            <div style={{ fontSize: '11px', color: '#888' }}>Paris Street Interview & Lifestyle Vlog Generator for TikTok</div>
           </div>
         </div>
         {blogger && (
@@ -947,7 +1357,8 @@ const FrenchTalkTab: React.FC = () => {
       }}>
         {[
           { id: 'blogger', label: '🎀 Blogger Setup' },
-          { id: 'episode', label: '🎬 Episode Generator' }
+          { id: 'episode', label: '🎬 Episode Generator' },
+          { id: 'vlog', label: '💅 Life & Girl Secrets' }
         ].map(t => (
           <button key={t.id} onClick={() => setSubTab(t.id as any)} style={{
             padding: '7px 18px', fontSize: '13px', fontWeight: 'bold',
@@ -961,7 +1372,7 @@ const FrenchTalkTab: React.FC = () => {
 
       {/* Content */}
       <div style={{ flex: 1, overflow: 'hidden', overflowY: 'auto' }}>
-        {subTab === 'blogger' ? renderBloggerTab() : renderEpisodeTab()}
+        {subTab === 'blogger' ? renderBloggerTab() : subTab === 'episode' ? renderEpisodeTab() : renderVlogTab()}
       </div>
 
       {/* Video Preview Modal */}
@@ -983,8 +1394,30 @@ const FrenchTalkTab: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Image Preview Modal */}
+      {lightboxImage && (
+        <div onClick={() => setLightboxImage(null)} style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.9)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, cursor: 'pointer'
+        }}>
+          <div onClick={e => e.stopPropagation()}>
+            <img src={lightboxImage} alt="Preview" style={{
+              maxHeight: '85vh', maxWidth: '90vw', borderRadius: '8px', boxShadow: '0 0 40px rgba(124,77,255,0.5)', objectFit: 'contain'
+            }} />
+            <div style={{ textAlign: 'center', marginTop: '10px' }}>
+              <button onClick={() => setLightboxImage(null)} style={{
+                padding: '6px 16px', backgroundColor: '#333', color: '#ccc',
+                border: '1px solid #555', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'
+              }}>✕ Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  return renderHeader();
 };
 
 export default FrenchTalkTab;

@@ -84,6 +84,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   localizeStep3Characters: (params) => ipcRenderer.invoke('localize-step3-characters', params),
   localizeStep4Voices: (params) => ipcRenderer.invoke('localize-step4-voices', params),
   localizeTranslateSegments: (projectFolder, segments, targetLanguage) => ipcRenderer.invoke('localize-translate-segments', { projectFolder, segments, targetLanguage }),
+  localizeGenerateMetadata: (projectFolder, transcript, targetLanguage, originalTitle) => ipcRenderer.invoke('localize-generate-metadata', { projectFolder, transcript, targetLanguage, originalTitle }),
   localizeGenerateSegmentVideo: (data) => ipcRenderer.invoke('localize-generate-segment-video', data),
   localizeBatchGenerateSegments: (data) => ipcRenderer.invoke('localize-batch-generate-segments', data),
   localizeRegenerateCharacterImage: (projectFolder, characterIndex, customPrompt) => ipcRenderer.invoke('localize-regenerate-character-image', { projectFolder, characterIndex, customPrompt }),
@@ -114,6 +115,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   frenchtalkAnalyzeVideo: (data) => ipcRenderer.invoke('frenchtalk-analyze-video', data),
   frenchtalkGenerateSegment: (data) => ipcRenderer.invoke('frenchtalk-generate-segment', data),
   frenchtalkSaveAllPrompts: (data) => ipcRenderer.invoke('frenchtalk-save-all-prompts', data),
+  frenchtalkGenerateLocationRef: (data) => ipcRenderer.invoke('frenchtalk-generate-location-ref', data),
+  frenchtalkGetLocationRefs: () => ipcRenderer.invoke('frenchtalk-get-location-refs'),
+  frenchtalkAutoVlogTopic: (data) => ipcRenderer.invoke('frenchtalk-auto-vlog-topic', data),
   onFrenchTalkProgress: (callback) => ipcRenderer.on('frenchtalk-progress', (event, data) => callback(data)),
   removeFrenchTalkProgressListener: () => ipcRenderer.removeAllListeners('frenchtalk-progress'),
 

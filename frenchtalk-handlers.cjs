@@ -11,6 +11,9 @@ const BLOGGER_FILE = path.join(FRENCHTALK_DIR, 'blogger.json');
 // Fixed voice ID for the blogger girl — always consistent across all videos
 const BLOGGER_VOICE_DESCRIPTION = 'young French woman, bright cheerful energetic voice, slightly cheeky and playful tone, fast-paced millennial speech';
 
+// ─── CINEMATIC AESTHETICS ───────────────────────────────────────────────────
+const CINEMATIC_MODIFIERS = `Cinematic aesthetics: Hasselblad 80mm f/2.8 medium format, golden hour backlight with warm SSS, softbox 45° wraparound, subtle haze, depth layering, Kodak Portra 400 film simulation with visible grain structure, lifted blacks and warm shadow rolloff, visible skin micro-texture, natural pores, subsurface scattering, individual eyelash variation, hair translucency, ultra-detailed 8K resolution equivalent, photorealistic, professional editorial photography vibe.`;
+
 // ─── CTA (Call-To-Action) PHRASE BANK ───────────────────────────────────────
 // Inspired by Cinema World Builder's Dialogue Engine — each CTA has a distinct
 // emotional "voice" so the blogger never repeats the same energy twice.
@@ -125,7 +128,7 @@ function getEmotionFromText(text) {
 //   aside    — blogger steps away and reacts to camera (ECU, cheeky smirk)
 //
 function buildVideoPrompt({ role, isHook, dialogueText, bloggerName, bloggerVisual, bloggerVoice,
-    bloggerOutfit, strangerDescription, strangerVoice, location, emotion, streetNoiseSuffix }) {
+    bloggerOutfit, strangerDescription, strangerVoice, location, emotion, streetNoiseSuffix, targetLanguage }) {
 
     // @anchor tag helps Omni Flash keep blogger identity consistent across all clips
     const bloggerAnchor = `@${bloggerName.replace(/\s+/g, '')}`;
@@ -136,8 +139,11 @@ function buildVideoPrompt({ role, isHook, dialogueText, bloggerName, bloggerVisu
         ? `OUTFIT (must stay exactly the same in every shot): ${bloggerOutfit}.`
         : `OUTFIT: match exactly what she wears in the reference photo — do not invent, add, or change any clothing item.`;
 
-    // One specific mic model everywhere — Rode Wireless GO II on an Interview GO handle (very recognisable, matte-grey capsule)
-    const micDetail = `Holding a matte-grey Rode Wireless GO II microphone on a short black Interview GO handle grip.`;
+    // For vlog roles (including vlog outro), NO microphone should be present in hands
+    const isVlogRole = role === 'vlog_action' || role === 'vlog_comment' || (role === 'outro' && location && location.toLowerCase() !== 'paris street');
+    const micDetail = isVlogRole
+        ? `NO MICROPHONE IN HANDS. Her hands are completely free, natural vlogging posture.`
+        : `Holding a small, square, matte-black wireless microphone (Rode Wireless GO II) with a black foam windshield on top, mounted on a 15cm long cylindrical black handle grip (Interview GO). The entire microphone setup is strictly black and grey, no bright colors.`;
 
     const strangerDesc = strangerDescription || 'a random Parisian person on the street';
 
@@ -146,49 +152,55 @@ function buildVideoPrompt({ role, isHook, dialogueText, bloggerName, bloggerVisu
 ${outfitLine}
 MIC: ${micDetail}`;
 
+    const translationRule = (targetLanguage && targetLanguage !== 'English')
+        ? `\nTRANSLATION OVERRIDE: The speaker MUST translate and speak the dialogue in fluent natural ${targetLanguage.toUpperCase()}. Ensure perfect lip sync for ${targetLanguage}.`
+        : '';
+
     // ─── OUTRO: Director Mode — randomized camera staging ───────────────
     // Inspired by Cinema World Builder's Shot Designer + Director Mode.
     // Each outro gets a different cinematic feel so the channel never looks repetitive.
     if (role === 'outro') {
+        const isVlogContext = location && location.toLowerCase() !== 'paris street';
+        
         const outroStyles = [
             { // Classic hero angle push-in
                 shot: `Medium close-up MCU on ${bloggerName}, slightly tilted angle from below (hero angle).`,
-                staging: `Direct eye contact with the camera lens. Warm confident smile, playful wink or blown kiss at the end. She points at the camera or makes a heart gesture with her hands. She holds her Rode Wireless GO II mic casually at her side. Blurred Paris street behind her.`,
+                staging: `Direct eye contact with the camera lens. Warm confident smile, playful wink or blown kiss at the end. She points at the camera or makes a heart gesture with her hands. ${isVlogContext ? 'She is actively in her environment.' : 'She stands casually.'}`,
                 camera: `handheld shot. Medium close-up MCU on ${bloggerName}. Direct eye contact with the camera. Warm confident smile, playful energy, pointing at camera. Movement: hold the camera at human operator height with natural body movement, slight push-in toward the subject. Speed: responsive and organic. End: finish closer to the subject with a warm inviting composition.`,
                 lighting: `Natural golden hour daylight, warm and flattering. Soft backlight glow.`,
                 mood: `Flirty, confident, warm — directly addressing the viewer as if talking to a friend.`
             },
             { // Walk-away-turn-back (dramatic farewell)
                 shot: `Medium shot MS on ${bloggerName} walking away from camera, then turning back over her shoulder.`,
-                staging: `She walks a few steps away, then spins back with a cheeky grin and points at the camera. She holds her Rode Wireless GO II mic loosely at her side. Golden Paris light behind her. Playful "catch you later" energy.`,
+                staging: `She walks a few steps away, then spins back with a cheeky grin and points at the camera. Playful "catch you later" energy.`,
                 camera: `static shot. Medium shot MS. ${bloggerName} walks away then turns back toward camera. Movement: camera stays still, subject moves. Speed: natural walking pace. End: she faces camera again with a confident pose.`,
                 lighting: `Warm backlit golden hour, silhouette rim light on hair and shoulders.`,
                 mood: `Playful farewell energy — "I'm leaving but you'll miss me" attitude.`
             },
             { // Extreme close-up whisper (conspiratorial)
                 shot: `Extreme close-up ECU on ${bloggerName}'s face, eyes and lips filling the frame.`,
-                staging: `She leans in close to the camera lens like sharing a secret. Mischievous half-smile, eyes sparkling. She whispers the CTA. Rode Wireless GO II mic held near her chin. Shallow depth of field, background completely blurred.`,
+                staging: `She leans in close to the camera lens like sharing a secret. Mischievous half-smile, eyes sparkling. She whispers the CTA. Shallow depth of field, background completely blurred.`,
                 camera: `handheld shot. Extreme close-up ECU. She leans toward the lens conspiratorially. Movement: subtle drift closer. Speed: slow, intimate. End: her face fills 80% of the frame.`,
                 lighting: `Soft diffused natural light, warm skin tones, bokeh background.`,
                 mood: `Intimate, conspiratorial whisper — like she's telling only YOU a secret.`
             },
             { // Spinning/twirl celebration
                 shot: `Medium shot MS on ${bloggerName}, full upper body visible.`,
-                staging: `She does a playful spin or twirl on the spot, then stops facing camera with a radiant smile and finger guns or peace signs. Rode Wireless GO II mic in one hand. Energetic, celebratory, end-of-show vibes. Paris street alive behind her.`,
+                staging: `She does a playful spin or twirl on the spot, then stops facing camera with a radiant smile and finger guns or peace signs. ${isVlogContext ? 'She is actively in her environment.' : 'She stands casually.'} Energetic, celebratory, end-of-show vibes.`,
                 camera: `orbit shot. Slow arc around ${bloggerName} as she twirls. Movement: camera orbits 90 degrees around subject during the spin. Speed: smooth and cinematic. End: front-facing composition with subject centered.`,
                 lighting: `Bright natural daylight, vivid colors, high energy.`,
                 mood: `Celebratory, high-energy, triumphant — like dropping the mic after a great show.`
             },
             { // Lean on wall (cool casual)
-                shot: `Medium close-up MCU on ${bloggerName} leaning casually against a Parisian wall or lamppost.`,
-                staging: `She leans back with one foot against the wall, relaxed and cool. Arms crossed or one hand on hip, Rode Wireless GO II mic dangling casually. She looks at camera with a slow confident smile. Classic Parisian nonchalance.`,
+                shot: `Medium close-up MCU on ${bloggerName} leaning casually.`,
+                staging: `She leans back with one foot against a surface, relaxed and cool. Arms crossed or one hand on hip. She looks at camera with a slow confident smile. Classic Parisian nonchalance.`,
                 camera: `static shot with subtle handheld sway. Medium close-up MCU. Movement: minimal, just natural handheld breathing. Speed: calm. End: hold the cool composed framing.`,
                 lighting: `Soft afternoon shade, even flattering light, muted warm tones.`,
                 mood: `Cool, effortless, unbothered — "I don't need to try, I'm already iconic" energy.`
             },
             { // Dutch angle dramatic
                 shot: `Medium close-up MCU on ${bloggerName}, Dutch angle (15° tilt), dramatic composition.`,
-                staging: `Direct eye contact with camera. One eyebrow raised, sly smirk. She slowly raises her Rode Wireless GO II mic like a trophy. Dynamic diagonal composition against Paris skyline. Bold, provocative, slightly theatrical.`,
+                staging: `Direct eye contact with camera. One eyebrow raised, sly smirk. Dynamic diagonal composition. Bold, provocative, slightly theatrical.`,
                 camera: `handheld shot with intentional Dutch angle tilt. Movement: slow straightening from tilted to level during the line. Speed: deliberate, cinematic. End: camera levels out as she delivers the final word.`,
                 lighting: `Dramatic side-lighting, strong contrast, cinematic shadows.`,
                 mood: `Dramatic, theatrical, boss energy — like ending a movie trailer.`
@@ -196,9 +208,11 @@ MIC: ${micDetail}`;
         ];
 
         const style = outroStyles[Math.floor(Math.random() * outroStyles.length)];
+        const videoType = isVlogContext ? 'aesthetic vlog' : 'street video';
 
-        return `Vertical TikTok street video, 9:16 portrait.
+        return `Vertical TikTok ${videoType}, 9:16 portrait.
 ${bloggerPin}
+LOCATION: ${location || 'Paris street'}
 SHOT: ${style.shot}
 STAGING: ${style.staging}
 ${style.camera}
@@ -206,8 +220,52 @@ LIGHTING: ${style.lighting}
 She says: "${dialogueText}"
 Voice: ${bloggerVoice}
 MOOD: ${style.mood} Playful call-to-action energy.
-${streetNoiseSuffix}
-Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.`;
+${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+No text overlay. No subtitles.`;
+    }
+
+    const isRelaxedIndoor = /bedroom|bed|sofa|living room|couch/i.test(location);
+    const isWorkingIndoor = /kitchen|cooking|cleaning|office/i.test(location);
+    
+    let poseDescription = '';
+    if (isRelaxedIndoor) {
+        poseDescription = 'She is sitting comfortably (e.g., in a lotus pose, or with her legs tucked under her) on a bed or sofa.';
+    } else if (isWorkingIndoor) {
+        poseDescription = 'She is standing up and actively engaged in her task.';
+    } else {
+        poseDescription = 'She is positioned naturally for the environment, fully immersed in the aesthetic moment.';
+    }
+
+    if (role === 'vlog_action') {
+        return `Vertical TikTok aesthetic vlog, 9:16 portrait.
+${bloggerPin}
+LOCATION: ${location}.
+SHOT: Medium shot MS showing ${bloggerName} performing an activity in ${location}.
+STAGING: Authentic aesthetic vlog moment. ${poseDescription} ${bloggerName} is naturally engaged in her activity (e.g. reading, stretching, preparing food, relaxing). She is focused on the task, looking effortless and beautifully composed.
+CAMERA: Handheld camera movement, cinematic depth of field. Soft organic camera drift.
+LIGHTING: Natural aesthetic lighting matching the environment.
+She says: "${dialogueText}"
+Voice: ${bloggerVoice}
+Audio: Ambient sounds of ${location}. ${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+No text overlay. No subtitles.`;
+    }
+
+    if (role === 'vlog_comment') {
+        return `Vertical TikTok aesthetic vlog, 9:16 portrait.
+${bloggerPin}
+LOCATION: ${location}.
+SHOT: Medium close-up MCU on ${bloggerName}.
+STAGING: ${poseDescription} ${bloggerName} turns directly to face the camera lens, intimate conspiratorial eye contact. She shares a tip or secret with the viewer. Friendly, cheeky, aesthetic girl-vlog vibe.
+CAMERA: Handheld, slight push-in, face-level framing.
+LIGHTING: Flattering warm indoor/outdoor natural light.
+She says: "${dialogueText}"
+Voice: ${bloggerVoice}
+MOOD: Intimate, witty, playful, sharing a girl secret.
+${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+No text overlay. No subtitles.`;
     }
 
     if (role === 'aside') {
@@ -220,8 +278,9 @@ LIGHTING: Natural daylight, soft and flattering.
 She says: "${dialogueText}"
 Voice: ${bloggerVoice}
 MOOD: Sarcastic, witty, playful — sharing a private joke with the viewer.
-${streetNoiseSuffix}
-Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.`;
+${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+No text overlay. No subtitles.`;
     }
 
     if (role === 'blogger' && isHook) {
@@ -234,8 +293,9 @@ LIGHTING: Natural Paris daylight. Warm authentic tones.
 She says: "${dialogueText}"
 Voice: ${bloggerVoice}
 MOOD: Cheeky, provocative, excited.
-${streetNoiseSuffix}
-Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.`;
+${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+No text overlay. No subtitles.`;
     }
 
     if (role === 'blogger') {
@@ -248,38 +308,29 @@ LIGHTING: Natural Paris street lighting.
 She says: "${dialogueText}"
 Voice: ${bloggerVoice}
 MOOD: Curious, slightly provocative smile.
-${streetNoiseSuffix}
-Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.`;
+${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+No text overlay. No subtitles.`;
     }
 
     if (role === 'stranger') {
-        // Find if blogger outfit describes sleeves/jacket
-        const bloggerLowerOutfit = (bloggerOutfit || '').toLowerCase();
-        const hasSleeves = bloggerLowerOutfit.includes('jacket') ||
-                           bloggerLowerOutfit.includes('coat') ||
-                           bloggerLowerOutfit.includes('long sleeve') ||
-                           bloggerLowerOutfit.includes('sweater') ||
-                           bloggerLowerOutfit.includes('hoodie');
-
-        const armDescription = hasSleeves
-            ? "A woman's arm (wearing the sleeve described in her outfit) holding a matte-grey Rode Wireless GO II on a short black handle grip"
-            : "A woman's bare arm and hand holding a matte-grey Rode Wireless GO II on a short black handle grip";
-
         return `Vertical TikTok street video, 9:16 portrait.
 STRANGER: ${strangerDesc}.
-SHOT: Medium close-up MCU on the stranger's face. Clean single shot.
-STAGING: The stranger is looking slightly off-camera (screen-left) answering the question. ${armDescription} enters the frame from the left edge, pointed at the stranger's mouth. Do NOT show the blogger's face in this shot. IMPORTANT: The arm holding the microphone MUST perfectly match the blogger's outfit details (sleeveless vs sleeves).
-handheld shot. The stranger is looking slightly off-camera (screen-left) answering the question. ${armDescription} enters the frame from the left edge. Movement: hold the camera at human operator height with natural body movement. Speed: responsive and organic. Framing: keep the subject readable while the frame has subtle sway and micro-adjustments. End: finish with a natural handheld composition.
+${bloggerPin}
+SHOT: Over-the-shoulder (OTS) medium shot. The camera is positioned behind ${bloggerName}.
+STAGING: ${bloggerName} is standing with her BACK entirely to the camera in the immediate foreground, slightly out of focus. We only see the back of her head and her back. The STRANGER is standing facing the camera (and facing ${bloggerName}), in sharp focus in the background. ${bloggerName} extends her right arm, holding the black microphone toward the stranger's mouth. 
+CAMERA: Handheld, natural eye level, slight natural sway. Over-the-shoulder framing.
 LIGHTING: Natural daylight, authentic street atmosphere.
 They say: "${dialogueText}"
 Voice: ${strangerVoice}
 MOOD: ${emotion} — authentic, slightly caught off-guard.
-${streetNoiseSuffix}
-Cinematic 4K. 9:16 portrait. No text overlay. No subtitles.`;
+${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+No text overlay. No subtitles.`;
     }
 
     // Fallback
-    return `Vertical TikTok street video, 9:16 portrait. ${dialogueText}. ${streetNoiseSuffix} Cinematic 4K. No text overlay.`;
+    return `Vertical TikTok street video, 9:16 portrait. ${dialogueText}. ${streetNoiseSuffix}\n${CINEMATIC_MODIFIERS}\nNo text overlay.`;
 }
 
 function saveEpisodePromptsMetadata(episodeDir, episodeTitle, newPrompt) {
@@ -418,8 +469,9 @@ Return ONLY valid JSON:
     // 2. Generate Base Image for Blogger
     ipcMain.handle('frenchtalk-generate-base-image', async (event, { visualPrompt, model }) => {
         const imageModel = model || 'nano_banana_2';
+        const enhancedPrompt = `${visualPrompt}\n\n${CINEMATIC_MODIFIERS}`;
         const imagePaths = await ai.generateImage({
-            prompt: visualPrompt,
+            prompt: enhancedPrompt,
             model: imageModel,
             aspectRatio: '9:16',
             sectionDir: FRENCHTALK_DIR,
@@ -901,7 +953,7 @@ Script:\n${topicData.script}`;
 
         const emotion = getEmotionFromText(dialogueText);
         const effectiveStrangerVoice = strangerVoiceDescription || DEFAULT_STRANGER_VOICE_DESCRIPTION;
-        const streetNoiseSuffix = `Ambient Paris street noise in background — light traffic, distant chatter, urban atmosphere. Natural handheld camera shake.`;
+        const streetNoiseSuffix = `AUDIO: Clear and audible ambient Paris street noise in the background (traffic, distant chatter, bustling urban atmosphere) underneath the voice. Natural handheld camera shake.`;
 
         // isHook = first blogger line of the episode (segmentIndex 0) — direct-to-camera opener
         const isHook = role === 'blogger' && segmentIndex === 0;
@@ -910,34 +962,75 @@ Script:\n${topicData.script}`;
         let referenceImages = [];
         let hostImgBase64 = null;
 
-        if (role === 'blogger' || role === 'aside' || role === 'outro') {
-            const cacheSuffix = aspectRatio.replace(':', '_');
+        if (role === 'blogger' || role === 'aside' || role === 'outro' || role === 'vlog_action' || role === 'vlog_comment') {
+            const isVlog = role === 'vlog_action' || role === 'vlog_comment';
+            const outfitSlug = (bloggerOutfit || 'default').replace(/[^a-z0-9]/gi, '_');
+            const cacheSuffix = `${outfitSlug}_${aspectRatio.replace(':', '_')}`;
             const cachedImgPath = path.join(imagesDir, `blogger_${cacheSuffix}.jpg`);
 
             let hostImgPath;
             if (fs.existsSync(cachedImgPath)) {
                 hostImgPath = cachedImgPath;
-            } else if (!bloggerOutfit && blogger.imagePath && fs.existsSync(blogger.imagePath)) {
-                hostImgPath = await ensureImageAspectRatio(blogger.imagePath, aspectRatio, cachedImgPath);
             } else {
-                const episodeVisualPrompt = `${blogger.visualPrompt} Wearing exactly the same outfit as in the reference photo${bloggerOutfit ? `: ${bloggerOutfit}` : ' — do not change or add any clothing'}. Standing in ${location}, holding a microphone or smartphone. Cinematic portrait, 9:16.`;
-                let refBase64 = null;
+                let validBloggerImg = null;
                 if (blogger.imagePath && fs.existsSync(blogger.imagePath)) {
-                    refBase64 = fs.readFileSync(blogger.imagePath, 'base64');
+                    validBloggerImg = blogger.imagePath;
+                } else {
+                    // Fallback: search for the newest image in BloggerImages directory
+                    const bloggerImgDir = path.join(FRENCHTALK_DIR, 'BloggerImages');
+                    if (fs.existsSync(bloggerImgDir)) {
+                        let files = fs.readdirSync(bloggerImgDir).filter(f => f.match(/\.(jpg|jpeg|png)$/i) && !f.startsWith('stranger'));
+                        if (files.length > 0) {
+                            // Prioritize manually uploaded files over system-generated ones
+                            const manualFiles = files.filter(f => !f.startsWith('scene_blogger_base_') && !f.startsWith('blogger_'));
+                            if (manualFiles.length > 0) {
+                                files = manualFiles;
+                            }
+                            
+                            // Get the most recently modified image from the prioritized list
+                            files.sort((a, b) => fs.statSync(path.join(bloggerImgDir, b)).mtimeMs - fs.statSync(path.join(bloggerImgDir, a)).mtimeMs);
+                            validBloggerImg = path.join(bloggerImgDir, files[0]);
+                            console.log(`[FrenchTalk] Fallback: using prioritized blogger image ${files[0]}`);
+                        }
+                    }
                 }
-                const imgPaths = await ai.generateImage({
-                    prompt: episodeVisualPrompt,
-                    model: 'nano_banana_2',
-                    aspectRatio,
-                    sectionDir: imagesDir,
-                    subFolder: '',
-                    sceneIndex: `blogger_ep`,
-                    referenceImages: refBase64 ? [{ data: refBase64 }] : []
-                });
-                hostImgPath = imgPaths[0];
-                if (hostImgPath !== cachedImgPath) {
-                    fs.copyFileSync(hostImgPath, cachedImgPath);
-                    hostImgPath = cachedImgPath;
+
+                if (validBloggerImg) {
+                    if (bloggerOutfit && bloggerOutfit.toLowerCase() !== 'default' && bloggerOutfit !== blogger.outfitBase) {
+                        console.log(`[FrenchTalk] Outfit changed to "${bloggerOutfit}". Generating 4-angle character reference sheet...`);
+                        
+                        const characterSheetPrompt = `A highly detailed, photorealistic 4-angle character design sheet (front view, side profile view, back view, three-quarter view) of a young beautiful French woman blogger, ${blogger.name}. ${blogger.visualPrompt || ''}. 
+IMPORTANT: She must be wearing exactly this outfit: ${bloggerOutfit}. Do not use her old clothes. White studio background, full body shots, clean layout.
+
+${CINEMATIC_MODIFIERS}`;
+
+                        try {
+                            const imagePaths = await ai.generateImage({
+                                prompt: characterSheetPrompt,
+                                model: 'nano_banana_2',
+                                aspectRatio: aspectRatio,
+                                sectionDir: imagesDir,
+                                subFolder: '',
+                                sceneIndex: `blogger_sheet_${Date.now()}`
+                            });
+
+                            if (imagePaths && imagePaths.length > 0 && fs.existsSync(imagePaths[0])) {
+                                fs.copyFileSync(imagePaths[0], cachedImgPath);
+                                hostImgPath = cachedImgPath;
+                                console.log(`[FrenchTalk] Successfully generated outfit character sheet: ${cachedImgPath}`);
+                            } else {
+                                throw new Error('No image returned from generateImage');
+                            }
+                        } catch (imgErr) {
+                            console.error(`[FrenchTalk] Failed to generate 4-angle character sheet:`, imgErr);
+                            console.log(`[FrenchTalk] Falling back to base image crop.`);
+                            hostImgPath = await ensureImageAspectRatio(validBloggerImg, aspectRatio, cachedImgPath);
+                        }
+                    } else {
+                        hostImgPath = await ensureImageAspectRatio(validBloggerImg, aspectRatio, cachedImgPath);
+                    }
+                } else {
+                    throw new Error('Blogger reference image not found! Please create a blogger first.');
                 }
             }
 
@@ -955,25 +1048,25 @@ Script:\n${topicData.script}`;
                 strangerVoice: effectiveStrangerVoice,
                 location,
                 emotion,
-                streetNoiseSuffix
+                streetNoiseSuffix,
+                targetLanguage: lang
             });
 
-            // For mid-interview blogger shots (not hook, not aside): add stranger as 2nd reference
-            // so the model sees both faces and keeps blogger's identity stable in the two-shot
-            if (role === 'blogger' && !isHook) {
-                const strangerRefImagePath = path.join(imagesDir, `stranger_reference_${aspectRatio.replace(':', '_')}.jpg`);
-                const strangerFramePath = path.join(imagesDir, `stranger_frame.jpg`);
-                let strangerRef = null;
-                if (fs.existsSync(strangerFramePath)) {
-                    strangerRef = fs.readFileSync(strangerFramePath, 'base64');
-                } else if (fs.existsSync(strangerRefImagePath)) {
-                    strangerRef = fs.readFileSync(strangerRefImagePath, 'base64');
+            // Gather location reference images (if available) for Vlog / Interior consistency
+            referenceImages = [{ data: hostImgBase64 }];
+            const locationsDir = path.join(FRENCHTALK_DIR, 'Locations');
+            if (fs.existsSync(locationsDir) && location) {
+                const sanitizedLoc = location.replace(/[^a-z0-9]/gi, '_');
+                const locFiles = fs.readdirSync(locationsDir)
+                    .filter(f => /\.(jpg|jpeg|png)$/i.test(f) && f.toLowerCase().includes(sanitizedLoc.toLowerCase()))
+                    .slice(0, 3);
+                for (const f of locFiles) {
+                    const locPath = path.join(locationsDir, f);
+                    if (fs.existsSync(locPath)) {
+                        const locB64 = fs.readFileSync(locPath, 'base64');
+                        referenceImages.push({ data: locB64 });
+                    }
                 }
-                referenceImages = strangerRef
-                    ? [{ data: hostImgBase64 }, { data: strangerRef }]
-                    : [{ data: hostImgBase64 }];
-            } else {
-                referenceImages = [{ data: hostImgBase64 }];
             }
 
         } else {
@@ -1024,7 +1117,8 @@ Script:\n${topicData.script}`;
                 strangerVoice: effectiveStrangerVoice,
                 location,
                 emotion,
-                streetNoiseSuffix
+                streetNoiseSuffix,
+                targetLanguage: lang
             });
             // Add blogger as 2nd reference so the model keeps both faces consistent in the two-shot
             const cachedBloggerPath = path.join(imagesDir, `blogger_${aspectRatio.replace(':', '_')}.jpg`);
@@ -1038,9 +1132,25 @@ Script:\n${topicData.script}`;
                 ? [{ data: strangerImgBase64 }, { data: bloggerRefForStranger }]
                 : [{ data: strangerImgBase64 }];
         }
+        // Inject Rode microphone reference image if it exists
+        const micRefPath = path.join(FRENCHTALK_DIR, 'rode_mic_ref.jpg');
+        if (fs.existsSync(micRefPath)) {
+            const micB64 = fs.readFileSync(micRefPath, 'base64');
+            referenceImages.push({ data: micB64 });
+        }
+
+        // Extremely aggressive sanitation to avoid false-positive NSFW filters on Omni Flash
+        const safeVideoPrompt = videoPrompt
+            .replace(/large natural bust/gi, 'elegant posture')
+            .replace(/curvy feminine figure/gi, 'graceful figure')
+            .replace(/low-cut/gi, 'v-neck')
+            .replace(/cleavage/gi, 'neckline')
+            .replace(/sexual/gi, '')
+            .replace(/naked/gi, '')
+            .replace(/nude/gi, '');
 
         const videoPath = await ai.generateVideo({
-            prompt: videoPrompt,
+            prompt: safeVideoPrompt,
             model: videoModel,
             mode: 'start_image',
             aspectRatio,
@@ -1118,6 +1228,139 @@ Script:\n${topicData.script}`;
         }
         fs.writeFileSync(txtPath, txtContent, 'utf8');
         return { success: true };
+    });
+
+    // 11. Generate 4 Multi-Angle Location Reference Images (Studio Apartment, Kitchen, Gym, etc.)
+    ipcMain.handle('frenchtalk-generate-location-ref', async (event, { locationName, visualPrompt, model }) => {
+        const locationsDir = path.join(FRENCHTALK_DIR, 'Locations');
+        if (!fs.existsSync(locationsDir)) fs.mkdirSync(locationsDir, { recursive: true });
+
+        console.log(`[FrenchTalk Locations] Generating 4 multi-angle reference images for: ${locationName}`);
+        
+        const angles = [
+            'Main frontal view showing main room interior layout',
+            'Reverse angle shot facing the opposite wall and entrance',
+            'Side angle view focusing on furniture, materials and decor',
+            'Wide corner perspective showing full space architecture'
+        ];
+
+        const generatedImages = [];
+        const sanitizedLoc = locationName.replace(/[^a-z0-9]/gi, '_');
+
+        for (let i = 0; i < angles.length; i++) {
+            const angleText = angles[i];
+            const prompt = `A photorealistic 9:16 portrait architectural photo of ${visualPrompt}. Angle ${i+1}: ${angleText}. Consistent interior design, high end aesthetic, natural lighting, 4K, no people.`;
+            
+            const imagePaths = await ai.generateImage({
+                prompt,
+                model: model || 'nano_banana_2',
+                aspectRatio: '9:16',
+                sectionDir: FRENCHTALK_DIR,
+                subFolder: 'Locations',
+                sceneIndex: `loc_${sanitizedLoc}_angle${i+1}_${Date.now()}`
+            });
+
+            const imagePath = imagePaths[0];
+            const base64 = fs.readFileSync(imagePath, 'base64');
+            generatedImages.push({ imagePath, base64: `data:image/jpeg;base64,${base64}` });
+        }
+
+        return generatedImages[0];
+    });
+
+    // 12. Get existing location reference images
+    ipcMain.handle('frenchtalk-get-location-refs', async () => {
+        const locationsDir = path.join(FRENCHTALK_DIR, 'Locations');
+        if (!fs.existsSync(locationsDir)) return [];
+
+        const files = fs.readdirSync(locationsDir).filter(f => /\.(jpg|jpeg|png)$/i.test(f));
+        return files.map(f => {
+            const fullPath = path.join(locationsDir, f);
+            const base64 = fs.readFileSync(fullPath).toString('base64');
+            return {
+                name: f,
+                path: fullPath,
+                url: `media:///${fullPath.replace(/\\/g, '/')}?t=${Date.now()}`,
+                base64: `data:image/jpeg;base64,${base64}`
+            };
+        });
+    });
+
+    // 13. Generate Girl Secrets & Vlog Script (Action -> Comment -> Outro)
+    ipcMain.handle('frenchtalk-auto-vlog-topic', async (event, {
+        language, country, bloggerName, vlogTopic, outfit, location, customInput = '', webContext = ''
+    }) => {
+        console.log(`[FrenchTalk Vlog] Generating script for topic="${vlogTopic}", outfit="${outfit}", location="${location}"`);
+
+        const prompt = `You are a scriptwriter for a viral aesthetic TikTok vlog series featuring ${bloggerName}, a young, witty, beautiful French blogger in Paris.
+
+VLOG THEME / TOPIC: "${vlogTopic}" (${customInput || 'Girl secrets, lifestyle, cooking, workout, or pool day'})
+OUTFIT: "${outfit}"
+LOCATION: "${location}"
+LANGUAGE: ${language || 'French'}
+
+══════════════════════════════════════
+⚠️ CRITICAL SPEECH AND ROLE RULES:
+1. THIS IS A SPOKEN VLOG SCRIPT. EVERY SINGLE LINE (both Vlog Action and Blogger Comment) IS REAL SPOKEN DIALOGUE / VOICE-OVER BY ${bloggerName}.
+2. DO NOT write 3rd-person descriptions like "Camille en pyjama masse son visage". Write FIRST-PERSON spoken lines!
+3. PROVIDE REAL, VALUABLE CONTENT: Do NOT generate empty aesthetic fluff. If the topic is cooking, you MUST provide a real recipe with actual ingredients and steps (e.g. "First, I fry 2 cloves of garlic in olive oil", "Add 100g of fresh basil"). If the topic is lifestyle or fashion, provide a practical, concrete tip the viewer can actually use.
+4. GENERATE EXACTLY 7 TO 9 LINES TOTAL (MINIMUM 7 CLIPS).
+5. HARD WORD COUNT LIMIT: EVERY LINE MUST CONTAIN 12 TO 22 WORDS (Optimized for an 8-second video clip). Count your words carefully for each line!
+══════════════════════════════════════
+
+STRUCTURE (7-9 spoken lines):
+▶ LINE 1 — Vlog Action: ${bloggerName} introduces the specific task/recipe/topic she is doing in ${location}. 12-20 words.
+▶ LINE 2 — Blogger Comment: First concrete, actionable tip or specific ingredient/step directly to camera. 12-22 words.
+▶ LINE 3 — Vlog Action: ${bloggerName} speaks while performing the next specific step (with real details) in ${location}. 12-20 words.
+▶ LINE 4 — Blogger Comment: Second valuable advice, secret, or specific instruction to camera. 12-22 words.
+▶ LINE 5 — Vlog Action: ${bloggerName} speaks while showing the final result or final step in ${location}. 12-20 words.
+▶ LINE 6 — Blogger Comment: Final cheeky advice / vlog commentary summarizing the value provided. 12-22 words.
+▶ LINE 7+ — Outro: Flirty, witty call-to-action asking for likes, comments & subscribe. 10-18 words.
+
+Format EXACTLY as:
+Speaker: [direct spoken text]
+Where Speaker is "Vlog Action" or "Blogger Comment" or "Outro".
+
+Output ONLY the direct spoken script lines in ${language}.`;
+
+        const scriptRaw = await ai.chat([{ role: 'user', content: prompt }], false);
+
+        // Translate to Russian
+        let scriptRu = '';
+        try {
+            const translationPrompt = `Translate this vlog script to Russian line-by-line. Keep the exact format "Speaker: Translation".\n\nScript:\n${scriptRaw}`;
+            scriptRu = await ai.chat([{ role: 'user', content: translationPrompt }], false);
+        } catch (e) {
+            console.error('[FrenchTalk Vlog] Translation failed:', e.message);
+        }
+
+        // Generate TikTok Metadata (Title, Description, Hashtags)
+        let tiktokMetadata = { title: '', description: '', hashtags: '' };
+        try {
+            const metadataPrompt = `Based on this vlog script, generate metadata for TikTok.
+Script:
+${scriptRaw}
+
+Output EXACTLY in this JSON format, nothing else:
+{
+  "title": "A catchy short title for the video (in ${language || 'French'})",
+  "description": "A 1-2 sentence description for the TikTok caption (in ${language || 'French'})",
+  "hashtags": "#paris #vlog #etc (4-6 relevant hashtags)"
+}`;
+            const metadataRaw = await ai.chat([{ role: 'user', content: metadataPrompt }], true);
+            const match = metadataRaw.match(/\{[\s\S]*\}/);
+            if (match) {
+                tiktokMetadata = JSON.parse(match[0]);
+            }
+        } catch (e) {
+            console.error('[FrenchTalk Vlog] Metadata generation failed:', e.message);
+        }
+
+        return {
+            script: scriptRaw.trim(),
+            scriptRu: scriptRu.trim(),
+            metadata: tiktokMetadata
+        };
     });
 }
 
