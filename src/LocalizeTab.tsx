@@ -528,9 +528,9 @@ const LocalizeTab: React.FC = () => {
 
       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
         {/* Left Side: Video player */}
-        <div style={{ flex: '0 0 35%', position: 'sticky', top: '20px' }}>
-          <div style={{ ...card, padding: '8px', marginBottom: 0 }}>
-            <video src={result!.videoUrl} controls style={{ width: '100%', borderRadius: 8, backgroundColor: '#000' }} />
+        <div style={{ flex: '0 0 18%', minWidth: '200px', maxWidth: '280px', position: 'sticky', top: '20px' }}>
+          <div style={{ ...card, padding: '8px', marginBottom: 0, display: 'flex', justifyContent: 'center' }}>
+            <video src={result!.videoUrl} controls style={{ width: '100%', maxHeight: '65vh', borderRadius: 8, backgroundColor: '#000' }} />
           </div>
         </div>
 

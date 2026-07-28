@@ -481,7 +481,7 @@ async function generateVideoPromptForSegment(segment, sceneFrameBase64, characte
         // Fallback: generate a basic prompt without the frame
         const speakerName = segment.speakerName || 'Speaker';
         return {
-            videoPrompt: `A photorealistic ${speakerName} speaking directly to camera. DIALOGUE: "${translatedText}". Natural mouth movements, slight head movements, expressive. Vertical 9:16 TikTok frame, professional lighting, 8k detail.`,
+            videoPrompt: `A photorealistic ${speakerName} speaking directly to camera. DIALOGUE: "${translatedText}". Natural mouth movements, slight head movements, expressive. Vertical 9:16 TikTok frame, professional lighting, 8k detail. Very subtle camera movement (e.g. slow zoom in, slight pan).`,
             cameraAngle: 'close-up',
             emotion: 'neutral',
             action: 'speaking to camera',
