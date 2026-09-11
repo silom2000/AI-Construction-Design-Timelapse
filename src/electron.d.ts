@@ -285,6 +285,7 @@ export interface IElectronAPI {
   frenchtalkGenerateStreamPackScript: (data: { day: string }) => Promise<{ day: string, clips: any[] }>,
   frenchtalkGenerateStreamPackImage: (data: { day: string, type: 'room' | 'scene' }) => Promise<{ success: boolean, bgRoomBase64?: string, sceneBase64?: string }>,
   frenchtalkGenerateStreamPackClip: (data: { day: string, clipIndex: number, videoModel?: string, aspectRatio?: string }) => Promise<{ videoPath: string, videoBase64: string, clipIndex: number }>,
+  frenchtalkParseRecipe: (data: { url: string }) => Promise<{ url: string, site: string, title: string, servings: string, time: string, ingredients: string[], steps: string[], images: string[] }>,
   onFrenchTalkProgress: (callback: (data: { status: string, progress: number }) => void) => void,
   removeFrenchTalkProgressListener: () => void,
 

@@ -133,6 +133,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   frenchtalkGenerateStreamPackScript: (data) => ipcRenderer.invoke('frenchtalk-generate-streampack-script', data),
   frenchtalkGenerateStreamPackImage: (data) => ipcRenderer.invoke('frenchtalk-generate-streampack-image', data),
   frenchtalkGenerateStreamPackClip: (data) => ipcRenderer.invoke('frenchtalk-generate-streampack-clip', data),
+  frenchtalkParseRecipe: (data) => ipcRenderer.invoke('frenchtalk-parse-recipe', data),
   onFrenchTalkProgress: (callback) => ipcRenderer.on('frenchtalk-progress', (event, data) => callback(data)),
   removeFrenchTalkProgressListener: () => ipcRenderer.removeAllListeners('frenchtalk-progress'),
 

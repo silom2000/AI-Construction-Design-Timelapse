@@ -1242,6 +1242,28 @@ const FrenchTalkTab: React.FC = () => {
       const effectiveOutfit = vlogOutfit === 'custom' ? customVlogOutfit : vlogOutfit;
       const effectiveTopic = vlogTopic === 'custom' ? customVlogTopic : vlogTopic;
 
+      // Detect recipe URL (russianfood.com and similar food sites — not social media)
+      const isRecipeUrl = vlogReferenceUrl &&
+        /^https?:\/\//i.test(vlogReferenceUrl) &&
+        !/(tiktok|instagram|facebook|fb\.com|reels|shorts|youtube)/i.test(vlogReferenceUrl);
+
+      let recipeCustomInput = customVlogTopic;
+      let recipeImages: string[] = [];
+      if (isRecipeUrl) {
+        try {
+          const parsed = await window.electronAPI.frenchtalkParseRecipe({ url: vlogReferenceUrl });
+          if (parsed && parsed.title) {
+            const ingredientsList = parsed.ingredients.join(', ');
+            const stepsList = parsed.steps.map((s, i) => `Шаг ${i + 1}: ${s}`).join(' | ');
+            recipeCustomInput = `РЕЦЕПТ: "${parsed.title}". ИНГРЕДИЕНТЫ: ${ingredientsList}. ПРИГОТОВЛЕНИЕ: ${stepsList}. Порции: ${parsed.servings || '?'}. Время: ${parsed.time || '?'}.`;
+            recipeImages = parsed.images.slice(0, 5);
+            console.log(`[FrenchTalk] Recipe parsed: ${parsed.title}, ${parsed.ingredients.length} ingredients, ${parsed.steps.length} steps, ${recipeImages.length} images`);
+          }
+        } catch (parseErr: unknown) {
+          console.warn('[FrenchTalk] Recipe parse failed, continuing without it:', parseErr);
+        }
+      }
+
       const result = await window.electronAPI.frenchtalkAutoVlogTopic({
         language: market.language,
         country: market.country,
@@ -1249,9 +1271,9 @@ const FrenchTalkTab: React.FC = () => {
         vlogTopic: effectiveTopic,
         outfit: effectiveOutfit,
         location: vlogLocation,
-        customInput: customVlogTopic,
+        customInput: isRecipeUrl ? recipeCustomInput : customVlogTopic,
         useWebSearch: useWebSearchVlog,
-        referenceUrl: vlogReferenceUrl || undefined,
+        referenceUrl: isRecipeUrl ? undefined : (vlogReferenceUrl || undefined),
         screenshotBase64: vlogScreenshotBase64 || undefined,
         videoBase64: vlogVideoBase64 || undefined
       });
@@ -1436,7 +1458,7 @@ const FrenchTalkTab: React.FC = () => {
         {/* ─── Multimodal Reference Panel ─── */}
         <div style={{ backgroundColor: '#1a0528', padding: '12px', borderRadius: '8px', border: '1px solid #6a1e5d', marginBottom: '14px' }}>
           <div style={{ fontSize: '12px', color: '#e8c4a0', fontWeight: 'bold', marginBottom: '8px' }}>
-            🌐 Референс из сети (TikTok / Reels / Shorts / Facebook) или локальный файл (скриншот / видео)
+            🌐 Референс из сети (TikTok / Reels / Shorts / Facebook) или рецептный сайт (russianfood.com и др.)
           </div>
 
           {/* URL row */}
@@ -1445,7 +1467,7 @@ const FrenchTalkTab: React.FC = () => {
               type="text"
               value={vlogReferenceUrl}
               onChange={e => setVlogReferenceUrl(e.target.value)}
-              placeholder="Вставьте ссылку на TikTok, Reels, Shorts, Facebook..."
+              placeholder="Вставьте ссылку на TikTok, Reels, Shorts, Facebook или рецептный сайт (russianfood.com и др.)..."
               style={{ flex: 1, padding: '7px 10px', backgroundColor: '#3e1635', color: '#fff', border: vlogReferenceUrl ? '1px solid #3b82f6' : '1px solid #7a2a6a', borderRadius: '6px', fontSize: '12px' }}
             />
             <button
@@ -1509,7 +1531,9 @@ const FrenchTalkTab: React.FC = () => {
 
           {vlogReferenceUrl && (
             <div style={{ marginTop: '6px', fontSize: '10px', color: '#60a5fa' }}>
-              ✓ Ссылка будет скачана, транскрибирована и адаптирована под блогера
+              {/(tiktok|instagram|facebook|fb\.com|reels|shorts|youtube)/i.test(vlogReferenceUrl)
+                ? '✓ Ссылка будет скачана, транскрибирована и адаптирована под блогера'
+                : '🍳 Рецептный сайт — ингредиенты и шаги будут автоматически извлечены для влога'}
             </div>
           )}
         </div>

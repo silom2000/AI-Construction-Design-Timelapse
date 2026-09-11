@@ -2382,6 +2382,53 @@ LIGHTING & DEPTH OF FIELD: Lit by soft window light and warm ambient room lamps,
 
         return { videoPath: finalPath, videoBase64, clipIndex };
     });
+
+    // 14. Parse recipe from URL (russianfood.com and similar)
+    ipcMain.handle('frenchtalk-parse-recipe', async (event, { url }) => {
+        if (!url || typeof url !== 'string' || !url.trim().startsWith('http')) {
+            throw new Error('Некорректный URL рецепта.');
+        }
+        console.log(`[FrenchTalk Recipe] Parsing recipe from: ${url}`);
+
+        const { execFileSync } = require('child_process');
+        const scriptPath = path.join(__dirname, 'parse_recipe.py');
+
+        // Try to find python executable
+        let pythonExe = 'python';
+        const candidates = [
+            'C:\\Program Files\\Python310\\python.exe',
+            'C:\\Program Files\\Python311\\python.exe',
+            'C:\\Program Files\\Python312\\python.exe',
+            'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python310\\python.exe',
+            'python3',
+            'python'
+        ];
+        for (const c of candidates) {
+            try {
+                execFileSync(c, ['--version'], { windowsHide: true, encoding: 'utf8' });
+                pythonExe = c;
+                break;
+            } catch (_) {}
+        }
+
+        if (!fs.existsSync(scriptPath)) {
+            throw new Error('parse_recipe.py не найден в директории приложения.');
+        }
+
+        try {
+            const stdout = execFileSync(pythonExe, [scriptPath, url.trim()], {
+                windowsHide: true,
+                encoding: 'utf8',
+                timeout: 30000
+            });
+            const result = JSON.parse(stdout.trim());
+            console.log(`[FrenchTalk Recipe] Parsed: "${result.title}", ${result.ingredients.length} ingredients, ${result.steps.length} steps, ${result.images.length} images`);
+            return result;
+        } catch (err) {
+            console.error('[FrenchTalk Recipe] Parse error:', err.message);
+            throw new Error(`Ошибка парсинга рецепта: ${err.message.substring(0, 300)}`);
+        }
+    });
 }
 
 module.exports = { registerFrenchTalkHandlers };
