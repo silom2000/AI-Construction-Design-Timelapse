@@ -2120,13 +2120,13 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
                  - The FINAL SCENE (Scene ${isShort ? '5' : '8'}) is the Outro.
                  - Génie MUST deliver a clear, friendly, step-by-step call to action that ANY viewer of any age can follow WITHOUT confusion.
                  - THE EXACT 3-STEP SEQUENCE TO COMMUNICATE (in this order):
-                   STEP 1: "Go to the link in my bio / profile" → the viewer clicks the link in the TikTok/Instagram bio.
-                   STEP 2: "Enter the number ${effectiveAmazonProduct.code}" → on the website page, type the product number to find it.
-                   STEP 3: "You arrive directly on Amazon to buy it" → the site redirects them to the Amazon product page.
+                   STEP 1: "Click the link in my bio / profile" → viewer opens the "Laboratoire des Trouvailles" website.
+                   STEP 2: "Type the number ${effectiveAmazonProduct.code} on the keypad" → the site has a real numeric keypad, viewer taps the digits.
+                   STEP 3: "Press OK → you arrive directly on Amazon to buy it" → the OK button redirects to the Amazon product page.
                  - Language requirement: In ${langName} (especially French for @bertranna), the line MUST make all 3 steps explicit and simple.
-                   ✅ GOOD example: "Clique le lien dans mon profil, tape le numéro ${effectiveAmazonProduct.code} sur le site et tu arrives directement sur Amazon !"
-                   ✅ GOOD example: "Va sur le lien en bio, entre le ${effectiveAmazonProduct.code} sur la page et commande ce produit directement sur Amazon !"
-                   ❌ FORBIDDEN: vague phrases like "sur mon labo", "sur le clavier", "sur ma page", "en bio" alone without explaining what to do there.
+                   ✅ GOOD: "Clique le lien dans mon profil, tape le ${effectiveAmazonProduct.code} sur le clavier et OK t'envoie direct sur Amazon !"
+                   ✅ GOOD: "Va sur le lien en bio, entre le ${effectiveAmazonProduct.code} sur le clavier du site, OK et tu commandes sur Amazon !"
+                   ❌ FORBIDDEN: vague phrases like "sur mon labo" or "tape le code" without explaining that OK sends them to Amazon.
                  - Dialogue length: STRICTLY 18-22 words, natural conversational pace filling the 8-second video clip.
                  - Example French Outro line: "${amazonManager.getRandomCta(effectiveAmazonProduct.code)}"
             14. 🎯 STRICT 50/50 NARRATIVE FORMULA (MANDATORY WHEN AN AMAZON PRODUCT IS PRESENT):

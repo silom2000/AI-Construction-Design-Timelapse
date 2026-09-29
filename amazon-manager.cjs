@@ -23,13 +23,14 @@ const PRIMARY_PRODUCTS_FILE = path.join(AMAZON_DIR, 'products.json');
 const FALLBACK_PRODUCTS_FILE = path.join(__dirname, 'amazon_products_cache.json');
 
 // ── CTA Variations for Outro in French (18-22 words, natural, high retention) ──
-// 3-step sequence: (1) go to profile link → (2) enter number on site → (3) land on Amazon to buy
+// 3-step sequence: (1) click link in bio → (2) type number on the site keypad → (3) press OK → arrives on Amazon
+// The site "Laboratoire des Trouvailles" has a real numeric keypad — viewers tap the number then press OK→Amazon
 const OUTRO_CTA_TEMPLATES_FR = [
-    (code) => `Clique le lien dans mon profil, tape le numéro ${code} sur le site et tu arrives directement sur Amazon !`,
-    (code) => `Va sur le lien en bio, entre le ${code} sur la page et commande ce produit directement sur Amazon !`,
-    (code) => `Ouvre le lien dans ma bio, tape juste le ${code} et tu atterris direct sur la page Amazon pour commander !`,
-    (code) => `Clique mon lien en bio @bertranna, tape le numéro ${code} sur le site et accède au produit sur Amazon !`,
-    (code) => `Un clic sur mon lien en bio, entre le numéro ${code} et retrouve ce produit directement sur Amazon pour l'acheter !`
+    (code) => `Clique le lien dans mon profil, tape le ${code} sur le clavier et appuie sur OK pour aller direct sur Amazon !`,
+    (code) => `Va sur le lien en bio, entre le numéro ${code} sur le clavier du site et OK t'emmène directement sur Amazon !`,
+    (code) => `Ouvre le lien dans ma bio, tape le ${code} sur le clavier et un clic sur OK et tu arrives sur Amazon pour commander !`,
+    (code) => `Clique mon lien en bio, entre le ${code} sur le clavier du Laboratoire et OK t'envoie direct sur la page Amazon !`,
+    (code) => `Lien dans mon profil en bio, numéro ${code} sur le clavier, OK — et te voilà directement sur Amazon pour acheter !`
 ];
 
 function getProductsFilePath() {
