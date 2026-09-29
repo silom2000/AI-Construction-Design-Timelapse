@@ -2126,7 +2126,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
                  - Language requirement: In ${langName} (especially French for @bertranna), the line MUST make all 3 steps explicit and simple.
                    ✅ GOOD: "Clique le lien dans mon profil, tape le ${effectiveAmazonProduct.code} sur le clavier et OK t'envoie direct sur Amazon !"
                    ✅ GOOD: "Va sur le lien en bio, entre le ${effectiveAmazonProduct.code} sur le clavier du site, OK et tu commandes sur Amazon !"
-                   ❌ FORBIDDEN: vague phrases like "sur mon labo" or "tape le code" without explaining that OK sends them to Amazon.
+                   ❌ FORBIDDEN: vague phrases like "sur mon labo", "sur le site", or "tape le code" — the word "clavier" MUST appear explicitly (e.g. "sur le clavier") to name the numeric keypad. "sur le site" is not enough.
                  - Dialogue length: STRICTLY 18-22 words, natural conversational pace filling the 8-second video clip.
                  - Example French Outro line: "${amazonManager.getRandomCta(effectiveAmazonProduct.code)}"
             14. 🎯 STRICT 50/50 NARRATIVE FORMULA (MANDATORY WHEN AN AMAZON PRODUCT IS PRESENT):
