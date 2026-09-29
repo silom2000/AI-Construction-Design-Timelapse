@@ -912,7 +912,7 @@ ${scriptRaw}`;
             event.sender.send('primatecast-progress', { status: '🎵 Извлечение аудиодорожки из видео...', progress: 15 });
             const execSync = require('child_process').execSync;
             try {
-                execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 -y "${audioPath}"`, { stdio: 'pipe' });
+                execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -ar 16000 -ac 1 -b:a 32k -y "${audioPath}"`, { stdio: 'pipe' });
             } catch (ffmpegErr) {
                 const errOutput = ffmpegErr.stderr ? ffmpegErr.stderr.toString() : (ffmpegErr.message || '');
                 if (errOutput.includes('does not contain any stream') || errOutput.includes('Invalid argument')) {

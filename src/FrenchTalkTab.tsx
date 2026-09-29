@@ -114,6 +114,7 @@ const FrenchTalkTab: React.FC = () => {
   const [generatedStrangerPreview, setGeneratedStrangerPreview] = useState<string | null>(null);
   const [strangerRefBase64, setStrangerRefBase64] = useState<string | null>(null);
   const [isAutoRunning, setIsAutoRunning] = useState(false);
+  const [autoStatus, setAutoStatus] = useState('');
   const stopAutoRef = React.useRef(false);
   const [previewVideo, setPreviewVideo] = useState<string | null>(null);
 
@@ -564,6 +565,7 @@ const FrenchTalkTab: React.FC = () => {
       : (bloggerOutfit === 'custom' ? customBloggerOutfit : bloggerOutfit);
     try {
       // Step 1: сбрасываем старый кэш outfit
+      setAutoStatus('🔄 Сбрасываю кэш образа...');
       if (window.electronAPI?.frenchtalkResetOutfitCache) {
         await window.electronAPI.frenchtalkResetOutfitCache({ episodeTitle, bloggerOutfit: effectiveOutfit, aspectRatio });
       }
@@ -571,12 +573,19 @@ const FrenchTalkTab: React.FC = () => {
 
       // Step 2: генерируем НОВУЮ картинку блогера в новой одежде как отдельный шаг
       // Эта картинка сохраняется в кэш и станет референсом для ВСЕХ видео
+      setAutoStatus('📸 Генерирую образ блогера...');
       if (window.electronAPI?.frenchtalkGenerateOutfitReference) {
-        await window.electronAPI.frenchtalkGenerateOutfitReference({ episodeTitle, bloggerOutfit: effectiveOutfit, aspectRatio });
+        try {
+          await window.electronAPI.frenchtalkGenerateOutfitReference({ episodeTitle, bloggerOutfit: effectiveOutfit, aspectRatio });
+        } catch (outfitErr: any) {
+          const proceed = window.confirm(`⚠️ Не удалось создать образ блогера: ${outfitErr.message}\n\nПродолжить генерацию видео без нового референса?`);
+          if (!proceed || stopAutoRef.current) return;
+        }
       }
       if (stopAutoRef.current) return;
 
       // Step 3: все видео-сегменты запускаем параллельно — кэш образа блогера уже готов
+      setAutoStatus('🎬 Генерирую клипы...');
       await Promise.all(
         targetSegments.map(async (seg) => {
           if (stopAutoRef.current) return;
@@ -585,6 +594,7 @@ const FrenchTalkTab: React.FC = () => {
       );
     } finally {
       setIsAutoRunning(false);
+      setAutoStatus('');
     }
   };
 
@@ -1116,10 +1126,13 @@ const FrenchTalkTab: React.FC = () => {
                   border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'
                 }}>⚡ Авто-генерация всех</button>
               ) : (
-                <button onClick={() => { stopAutoRef.current = true; setIsAutoRunning(false); }} style={{
-                  padding: '7px 14px', backgroundColor: '#cc3333', color: '#fff',
-                  border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'
-                }}>⛔ Стоп</button>
+                <>
+                  {autoStatus && <span style={{ fontSize: '11px', color: '#aaa', alignSelf: 'center' }}>{autoStatus}</span>}
+                  <button onClick={() => { stopAutoRef.current = true; setIsAutoRunning(false); }} style={{
+                    padding: '7px 14px', backgroundColor: '#cc3333', color: '#fff',
+                    border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'
+                  }}>⛔ Стоп</button>
+                </>
               )}
             </div>
           </div>
@@ -1627,10 +1640,13 @@ const FrenchTalkTab: React.FC = () => {
                   border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'
                 }}>⚡ Авто-генерация всех</button>
               ) : (
-                <button onClick={() => { stopAutoRef.current = true; setIsAutoRunning(false); }} style={{
-                  padding: '7px 14px', backgroundColor: '#cc3333', color: '#fff',
-                  border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'
-                }}>⛔ Стоп</button>
+                <>
+                  {autoStatus && <span style={{ fontSize: '11px', color: '#aaa', alignSelf: 'center' }}>{autoStatus}</span>}
+                  <button onClick={() => { stopAutoRef.current = true; setIsAutoRunning(false); }} style={{
+                    padding: '7px 14px', backgroundColor: '#cc3333', color: '#fff',
+                    border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'
+                  }}>⛔ Стоп</button>
+                </>
               )}
             </div>
           </div>

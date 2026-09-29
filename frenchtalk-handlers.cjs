@@ -265,12 +265,12 @@ Clean edge-to-edge full-screen photographic framing, pure digital video feed.`;
                     return `${bloggerName} lifts the dish or spoon to her lips and tastes it on camera — eyes wide with genuine delight, a slow satisfied smile. Her hands hold the dish/utensil naturally. This is the payoff moment — make it mouth-watering.`;
                 }
                 if (verb && ingredient) {
-                    return `${bloggerName} is actively ${verb}-ing ${ingredient} with both hands — movement is purposeful and confident. Camera catches the action close up: her hands, the ingredient, the texture. She glances at the camera mid-action with a cheeky knowing smile.`;
+                    return `Extreme close-up on the action: ${bloggerName}'s hands ${verb}-ing ${ingredient} — purposeful, confident movement. Camera is LOW and CLOSE at counter level: texture, colour, and motion fill the frame. ${bloggerName}'s face may appear at the very top edge of frame — hands and food are the visual hero. No pause, no posed glance — she is fully absorbed in the task.`;
                 }
                 if (ingredient) {
-                    return `${bloggerName} holds up or handles ${ingredient} clearly visible in frame. She demonstrates it to the camera — showing the texture, color, or quantity. Natural kitchen movement, hands fully engaged.`;
+                    return `Extreme close-up on ${ingredient} — ${bloggerName}'s hands handle it purposefully: turning it, measuring, showing its raw texture or colour. Camera is macro-close: the ingredient fills the frame with shallow depth of field. Warm top-light makes the colours vibrant and appetizing. Her face is NOT required — hands and food are the visual focus.`;
                 }
-                return `${bloggerName} is actively preparing ingredients at the counter — hands moving with purpose, picking up, chopping, or mixing something directly relevant to what she says. Camera catches the action in detail.`;
+                return `Camera holds low and close on the food — hands at work: chopping, stirring, assembling. ${bloggerName}'s face is visible only in the soft background or at the top edge of frame. The FOOD and her HANDS are the visual subject of this shot. She is fully absorbed in cooking, not posing or looking at camera.`;
             }
 
             // Gym / fitness exercises
@@ -305,10 +305,10 @@ Clean edge-to-edge full-screen photographic framing, pure digital video feed.`;
 
         const cookingShot = isCooking
             ? `SHOT VARIETY (alternate between these within the 8 seconds):
-  - WIDE: Medium shot MS on ${bloggerName} actively cooking — hands moving, natural body language.
-  - CLOSE-UP: Extreme close-up ECU on the ingredients being added, chopped, poured, or mixed — fill the frame with textures, colors, steam, or liquids. Make it cinematic and mouth-watering.
-  - DETAIL: Macro shot of the final dish or key ingredient — sharp focus, shallow depth of field, beautiful food styling.
-CAMERA MOVEMENT: Cut between blogger wide shot → ingredient close-up → food detail. Each cut is motivated by the action. Handheld, organic, cinematic food-vlog style.`
+  - HERO OPEN: Extreme close-up ECU on the food or hands in action — chopping, pouring, stirring, food sizzling in the pan. THIS IS THE FIRST SHOT. Fill the frame with texture, colour, steam, or motion. Make it cinematic and mouth-watering.
+  - MID: Medium shot MS on ${bloggerName} actively cooking — hands moving, body fully engaged in the task. She is DOING, not posing or looking at camera.
+  - DETAIL: Macro shot of the dish or key ingredient — sharp focus, shallow depth of field, beautiful food styling. Blogger face NOT required in this shot.
+CAMERA MOVEMENT: Open on food ECU hero shot → pull back to reveal blogger at work → return to food detail close-up. Each cut motivated by the action. Handheld, low camera angle at counter level, cinematic food-vlog style.`
             : isGym
             ? `SHOT VARIETY (alternate between these within the 8 seconds):
   - WIDE: Full body medium shot MS showing the complete exercise movement — form and technique visible.
@@ -333,6 +333,25 @@ Clean edge-to-edge full-screen photographic framing, pure digital video feed.`;
     }
 
     if (role === 'vlog_comment') {
+        const isCookingComment = /kitchen|cooking|cook|recipe|ingredient|food|meal|prep|cuisine|dish|bowl|pan|pot|oven|fry|boil|bake|simmer|sauté|chop|slice|mix|blend/i.test(location + ' ' + dialogueText);
+
+        if (isCookingComment) {
+            return `Vertical TikTok aesthetic vlog, 9:16 portrait.
+${bloggerPin}
+MIC: ${micDetail}
+LOCATION: ${location}.
+SHOT: Food-first detail shot — camera stays on the cooking process. ${bloggerName}'s face is NOT required in this shot.
+STAGING: The DISH is the hero of this shot. Show exactly what is happening in the pan, bowl, or oven right now: sauce bubbling and reducing, colour deepening, steam rising, texture changing, crust forming. ${bloggerName}'s hands may appear at the frame edges — adjusting heat, stirring, tasting from a spoon. The viewer hears her voice but sees the FOOD reacting as she describes it.
+CAMERA: Counter-level low angle, macro-close to the food. Shallow depth of field — sharp food, soft bokeh background. Slow gentle push-in toward the most visually interesting detail (the bubbling edge, the caramelized bits, the colour change).
+LIGHTING: Warm soft top-light — makes the food look vibrant, appetizing, cinematic.
+${episodeContext}She says: "${dialogueText}"
+Voice: ${bloggerVoice}
+MOOD: Intimate kitchen moment — the food is alive, transforming, beautiful. The viewer wants to reach into the screen and taste it.
+${streetNoiseSuffix}${translationRule}
+${CINEMATIC_MODIFIERS}
+Clean edge-to-edge full-screen photographic framing, pure digital video feed.`;
+        }
+
         return `Vertical TikTok aesthetic vlog, 9:16 portrait.
 ${bloggerPin}
 MIC: ${micDetail}
@@ -975,7 +994,7 @@ ${script}`;
             event.sender.send('frenchtalk-progress', { status: '🎵 Извлечение аудио из видео...', progress: 15 });
             const execSync = require('child_process').execSync;
             try {
-                execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 -y "${audioPath}"`, { stdio: 'pipe' });
+                execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -ar 16000 -ac 1 -b:a 32k -y "${audioPath}"`, { stdio: 'pipe' });
             } catch (ffmpegErr) {
                 const errOutput = ffmpegErr.stderr ? ffmpegErr.stderr.toString() : (ffmpegErr.message || '');
                 if (errOutput.includes('does not contain any stream') || errOutput.includes('Invalid argument')) {
@@ -1095,6 +1114,23 @@ Script:\n${topicData.script}`;
         const episodeDir = path.join(FRENCHTALK_DIR, folderName);
         if (!fs.existsSync(episodeDir)) fs.mkdirSync(episodeDir, { recursive: true });
 
+        // Persist parsed recipe alongside this episode (if cache is fresh — within 2 hours)
+        const recipeCacheFile = path.join(FRENCHTALK_DIR, '_recipe_cache.json');
+        const recipeDestFile = path.join(episodeDir, 'recipe_parsed.json');
+        if (!fs.existsSync(recipeDestFile) && fs.existsSync(recipeCacheFile)) {
+            try {
+                const cacheRaw = fs.readFileSync(recipeCacheFile, 'utf8');
+                const cache = JSON.parse(cacheRaw);
+                const ageMs = Date.now() - new Date(cache.cachedAt).getTime();
+                if (ageMs < 2 * 60 * 60 * 1000) { // 2 hours freshness window
+                    fs.writeFileSync(recipeDestFile, JSON.stringify(cache.recipe, null, 2), 'utf8');
+                    console.log(`[FrenchTalk Segment] recipe_parsed.json saved for episode: ${folderName}`);
+                }
+            } catch (cacheErr) {
+                console.warn('[FrenchTalk Segment] Could not copy recipe cache:', cacheErr.message);
+            }
+        }
+
         const imagesDir = path.join(episodeDir, 'images');
         if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
 
@@ -1159,13 +1195,18 @@ IMPORTANT: She must be wearing exactly this outfit: ${bloggerOutfit}. Do not use
 ${CINEMATIC_MODIFIERS}`;
 
                         try {
+                            // Read blogger source image as reference — so the outfit sheet matches the actual blogger
+                            const bloggerRefBase64 = fs.readFileSync(validBloggerImg, 'base64');
+                            const bloggerRefExt = validBloggerImg.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+
                             const imagePaths = await ai.generateImage({
                                 prompt: characterSheetPrompt,
                                 model: 'nano_banana_2',
                                 aspectRatio: aspectRatio,
                                 sectionDir: imagesDir,
                                 subFolder: '',
-                                sceneIndex: `blogger_sheet_${Date.now()}`
+                                sceneIndex: `blogger_sheet_${Date.now()}`,
+                                referenceImages: [{ data: `data:${bloggerRefExt};base64,${bloggerRefBase64}` }]
                             });
 
                             if (imagePaths && imagePaths.length > 0 && fs.existsSync(imagePaths[0])) {
@@ -1505,7 +1546,9 @@ Extracted Details:
                     '-i', tempVideoPath,
                     '-vn',
                     '-acodec', 'libmp3lame',
-                    '-b:a', '128k',
+                    '-ar', '16000',   // 16 kHz — native Whisper/Gemini STT rate
+                    '-ac', '1',       // mono
+                    '-b:a', '32k',    // sufficient for speech recognition
                     '-y', targetMp3
                 ], { windowsHide: true });
                 let stderr = '';
@@ -1680,7 +1723,7 @@ Identify in detail:
 
     // 13. Generate Girl Secrets & Vlog Script (Action -> Comment -> Outro)
     ipcMain.handle('frenchtalk-auto-vlog-topic', async (event, {
-        language, country, bloggerName, vlogTopic, outfit, location, customInput = '', webContext = '',
+        language, country, bloggerName, vlogTopic, outfit, location, customInput = '', useWebSearch = false,
         referenceUrl = '', screenshotBase64 = null, videoBase64 = null
     }) => {
         console.log(`[FrenchTalk Vlog] Generating script for topic="${vlogTopic}", outfit="${outfit}", location="${location}"`);
@@ -1714,7 +1757,7 @@ Identify in detail:
         }
 
         if (event && event.sender) {
-            event.sender.send('frenchtalk-progress', { status: '✍️ ИИ пишет сценарий Личного Влога Блогера...', progress: 75 });
+            event.sender.send('frenchtalk-progress', { status: '📋 Анализирую материалы для сценария...', progress: 40 });
         }
 
         const effectiveTopic = localVideoData
@@ -1724,36 +1767,73 @@ Identify in detail:
                 : (refData ? `Transcript from Reference Video (${refData.url}): "${refData.transcript.slice(0, 500)}..."` : (customInput || vlogTopic)));
 
         // Detect if topic is cooking/recipe-oriented → use extended 12-14 scene structure
-        const isCookingTopic = /kitchen|cook|recipe|ingredient|food|meal|prep|cuisine|dish|bowl|salad|smoothie|juice|breakfast|lunch|dinner|snack|detox|сupe|bake|fry|boil|mix|blend|chop|slice/i.test(effectiveTopic + ' ' + location);
+        const isCookingTopic = /kitchen|cook|recipe|ingredient|food|meal|prep|cuisine|dish|bowl|salad|smoothie|juice|breakfast|lunch|dinner|snack|detox|bake|fry|boil|mix|blend|chop|slice|рецепт|ингредиент|готовить|блюдо|кулинария|еда|завтрак|обед|ужин|жарить|варить|печь|recette|cuisine|plat|repas|nourriture|cuisiner|ingrédient/i.test(effectiveTopic + ' ' + location);
 
-        const prompt = `You are a master viral scriptwriter for health, nutrition and girl secrets TikTok vlogs featuring ${bloggerName}, a chic, charming lifestyle blogger who is passionate about healthy eating, calories, diet, and vitamins.
+        // Web search for fresh trends/recipes (triggered by checkbox "Искать свежие рецепты/тренды в сети")
+        let webContext = '';
+        if (useWebSearch) {
+            if (event && event.sender) {
+                event.sender.send('frenchtalk-progress', { status: '🔍 Ищу свежие рецепты и тренды в сети...', progress: 55 });
+            }
+            const searchTopic = customInput ? customInput.slice(0, 80) : vlogTopic;
+            const searchQuery = isCookingTopic
+                ? `recette tendance TikTok France "${searchTopic}" facile rapide 2024`
+                : `tendances lifestyle beauté TikTok France "${searchTopic}" cette semaine`;
+            try {
+                webContext = await searchWeb(searchQuery);
+                console.log(`[FrenchTalk Vlog] Web search done: ${webContext.length} chars returned`);
+            } catch (e) {
+                console.warn('[FrenchTalk Vlog] Web search failed, continuing without it:', e.message);
+            }
+        }
 
-CHANNEL NICHE: Health, healthy eating, calories, diet, vitamins, weight management, clean eating, wellness.
-VLOG THEME / TOPIC: "${effectiveTopic}"
+        if (event && event.sender) {
+            event.sender.send('frenchtalk-progress', { status: '✍️ ИИ пишет сценарий Личного Влога Блогера...', progress: 75 });
+        }
+
+        const prompt = `You are a master viral scriptwriter for lifestyle, beauty, cooking, and girl secrets TikTok vlogs featuring ${bloggerName}, a chic, charming lifestyle blogger who is passionate about cooking techniques, delicious flavors, kitchen aesthetics, beauty, home comfort, and everyday girl secrets. She is a HOME COOK — not a nutritionist, not a dietitian. She NEVER talks about calories, macros, protein, or nutrition science.
+${isCookingTopic && (customInput || localVideoData || screenshotData) ? `
+🧑‍🍳 CULINARY EXPERT PERSONA (MANDATORY for this video): ${bloggerName} is a PASSIONATE AND SKILLED HOME CHEF — not just a lifestyle blogger who occasionally cooks. She has made this dish many times and knows it inside-out. She speaks with the confidence and authority of a culinary expert:
+- She knows EXACTLY WHY each step matters: why you brown the meat first, when the oil is at the right temperature, when the onion is properly caramelized — and she explains it naturally while doing it
+- She describes what she SEES (colour, texture, gloss), SMELLS (aromas blooming), HEARS (the sizzle, the bubble), and FEELS (pressing the dough, testing doneness)
+- She uses precise culinary language naturally: sauté, deglaze, fold in, reduce, simmer, season to taste, rest before serving
+- She shares insider chef tricks that separate a good dish from an extraordinary one
+- She cites exact quantities and timings with authority: not "some garlic" but "two fat cloves, finely minced"
+⚡ GOAL: After watching, the viewer thinks: "This girl REALLY knows how to cook — I'm making this today."
+` : ''}
+CHANNEL NICHE: Lifestyle, cooking recipes (focused on PROCESS & FLAVORS), beauty tips, aesthetic home routines, girls' secrets.
+⛔ STRICTLY FORBIDDEN CONTENT: calories, caloric values, macros, proteins, carbs, fats, nutrition facts, diet talk, weight loss. ZERO tolerance — replacing any such mention with a sensory cooking detail instead.
+VLOG THEME / TOPIC: "${vlogTopic}"
 OUTFIT: "${outfit}"
 LOCATION: "${location}"
 LANGUAGE: ${language || 'French'}
-CONTENT TYPE: ${isCookingTopic ? 'RECIPE / COOKING VLOG — use extended 12-14 scene structure below' : 'WELLNESS / TIPS VLOG — use standard 9-line structure below'}
+CONTENT TYPE: ${isCookingTopic ? 'RECIPE / COOKING VLOG — use extended 12-14 scene structure below' : 'LIFESTYLE / BEAUTY / TIPS VLOG — use standard 9-line structure below'}
 
 IMPORTANT — LOCATION RULE: Do NOT mention city names (Paris, Warsaw, London, etc.) or phrases like "my Parisian home / apartment / kitchen" in ANY line. Keep location references universal — just "my kitchen", "my room", "here at home", etc.
 
-${localVideoData ? `\nUPLOADED VIDEO MATERIAL (SPEECH & ACTIONS) — ADAPT THIS EXACT ROUTINE, RECIPE OR HEALTH SECRET FOR ${bloggerName.toUpperCase()} IN ${language.toUpperCase()}:\n"""\n${localVideoData.combinedSummary}\n"""\n` : ''}
-${screenshotData ? `\nSCREENSHOT CONTENT (OCR & RULES) — ADAPT THESE EXACT NUTRITION TIPS, DIET STEPS OR HEALTH FACTS FOR ${bloggerName.toUpperCase()} IN ${language.toUpperCase()}:\n"""\n${screenshotData.text}\n"""\n` : ''}
-${refData ? `\nREFERENCE VIDEO CONTENT — ADAPT THIS HEALTH/NUTRITION STORY FOR ${bloggerName.toUpperCase()} IN ${language.toUpperCase()}:\n"""\n${refData.transcript}\n"""\n` : ''}
+${localVideoData ? `\nUPLOADED VIDEO MATERIAL (SPEECH & ACTIONS) — ADAPT THIS EXACT ROUTINE OR RECIPE FOR ${bloggerName.toUpperCase()} IN ${language.toUpperCase()}:\n"""\n${localVideoData.combinedSummary}\n"""\n` : ''}
+${screenshotData ? `\nSCREENSHOT CONTENT (OCR & RULES) — ADAPT THESE EXACT TIPS, RECIPE STEPS OR FACTS FOR ${bloggerName.toUpperCase()} IN ${language.toUpperCase()}:\n"""\n${screenshotData.text}\n"""\n` : ''}
+${refData ? `\nREFERENCE VIDEO CONTENT — ADAPT THIS STORY OR RECIPE FOR ${bloggerName.toUpperCase()} IN ${language.toUpperCase()}:\n"""\n${refData.transcript}\n"""\n` : ''}
+${(customInput && !localVideoData && !screenshotData && !refData) ? `\n🍳 FULL RECIPE DATA — THIS IS YOUR PRIMARY SOURCE. USE EVERY INGREDIENT WITH ITS EXACT QUANTITY AND EVERY STEP WITH ITS EXACT TIMING. DO NOT SKIP ANYTHING:\n"""\n${customInput}\n"""\n⚠️ MANDATORY: Every ingredient name and quantity (e.g. "½ cup of red wine", "1 tbsp of anchovy paste", "1.3 kg chicken cut into 8 pieces") MUST appear spoken aloud in a Vlog Action line. Every timing from the recipe (e.g. "8 minutes", "3 minutes", "10 minutes", "reduce for 2 minutes") MUST be spoken aloud in the matching Vlog Action line.\n` : ''}
 
 ══════════════════════════════════════
 ⚠️ CRITICAL RULES (apply to ALL content types):
 1. THIS IS A SPOKEN VLOG SCRIPT. EVERY LINE IS REAL FIRST-PERSON SPOKEN DIALOGUE by ${bloggerName}. NO 3rd-person descriptions.
-2. HEALTH & NUTRITION CONTENT IS MANDATORY: Every vlog must naturally weave in at least 4-5 of these concrete elements:
-   - Exact calorie counts (e.g. "this has only 90 calories per serving")
-   - Named vitamins or minerals and their benefits (e.g. "rich in Vitamin C and iron")
-   - Specific foods with their health properties (e.g. "avocado's healthy fats keep you full longer")
-   - Diet or eating pattern tips (e.g. "eating protein first stabilizes blood sugar")
-   - Metabolism or digestion insights (e.g. "this speeds up my metabolism in the morning")
-   - Smart food swaps with calorie comparisons (e.g. "instead of cream, I use Greek yogurt — saves 120 calories")
-   - Gut health, antioxidants, omega-3, or micronutrient facts
-   - Practical diet hacks or meal prep secrets with real measurable results
-3. NO empty aesthetic fluff. Every line must carry real, actionable value — a specific food name, calorie number, vitamin, health benefit, or preparation step.
+2. ${isCookingTopic
+   ? `CULINARY & TASTE FOCUS IS MANDATORY: Every cooking vlog must naturally weave in at least 4-5 of these concrete elements:
+   - Specific flavor notes (e.g. "a sweet and tangy kick")
+   - Textural descriptions (e.g. "crispy on the outside, melting inside")
+   - Cooking techniques and tools (e.g. "blanch in ice water to keep it bright green")
+   - Exact cooking times and temperatures (e.g. "roast at 200 degrees for exactly 15 minutes")
+   - Pro chef tricks or plating aesthetics (e.g. "finish with a drizzle of olive oil for a glossy shine")
+   - ⛔ ABSOLUTE BAN: ZERO mentions of calories, caloric content, macros, proteins, carbs, fats, nutritional values, diet, or weight loss — in ANY line including the title hook. If you are tempted to say "320 calories" — replace it with a flavor or texture detail instead.`
+   : `LIFESTYLE & BEAUTY FOCUS IS MANDATORY: Every lifestyle vlog must weave in these elements:
+   - Practical everyday hacks (e.g. "this trick saves me 20 minutes every morning")
+   - Beauty/style secrets (e.g. "apply this on damp skin to absorb better")
+   - Home comfort aesthetics or practical steps
+   - ⛔ ABSOLUTE BAN: ZERO mentions of calories, nutrition, diets, macros, or weight loss. You are a lifestyle/beauty blogger — NOT a nutritionist!`
+}
+3. NO empty aesthetic fluff. Every line must carry real, actionable value — ${isCookingTopic ? `a specific ingredient quantity, cooking technique, flavor description, or preparation step` : `a specific life hack, beauty trick, practical step, or product description`}.
 4. HARD WORD COUNT LIMIT: EVERY LINE MUST CONTAIN 12 TO 22 WORDS (optimized for 8-second video clip). Count carefully!
 5. NEVER mention city names or "Parisian" — keep location neutral.
 6. EMOTIONAL PENDULUM (MANDATORY — alternating tension & relief each line):
@@ -1767,49 +1847,84 @@ ${refData ? `\nREFERENCE VIDEO CONTENT — ADAPT THIS HEALTH/NUTRITION STORY FOR
      or their natural equivalent in the script language.
    RULE: Every line must naturally embed one such phrase or its emotional equivalent.
 
-${isCookingTopic ? `
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${isCookingTopic ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🍳 RECIPE / COOKING VLOG — EXTRA MANDATORY RULES:
-R1. INGREDIENTS WITH EXACT QUANTITIES: At least 2 lines must name ingredients with precise amounts (e.g. "80g of quinoa", "one tablespoon of olive oil", "half an avocado"). Viewer must be able to shop from what they hear.
-R2. PREPARATION STEPS WITH TIMING: At least 3 lines must describe a concrete hands-on action with specific timing or technique (e.g. "rinse twice then boil exactly 12 minutes", "chop into small cubes and squeeze lemon immediately so it stays green", "let it rest 5 minutes off the heat").
-R3. SECRET TRICKS: At least 1 line must reveal a non-obvious cooking trick or hack that makes the recipe better (e.g. "I add lemon BEFORE avocado so it never turns brown", "I toast the seeds dry first — doubles the flavour").
-R4. GENERATE EXACTLY 12 TO 14 LINES TOTAL (minimum 12, maximum 14).
+R1. COOKING SHOW STYLE: Write like a home cook DOING the recipe live on camera — every line is a physical action, a sensory reaction, or a hands-on tip she is performing RIGHT NOW. NOT a food science class. NOT nutrition facts. The viewer must feel like they are standing in the kitchen with her.
+R2. INGREDIENTS WITH EXACT QUANTITIES: EVERY ingredient from the recipe MUST be spoken aloud with its exact quantity (e.g. "half a teaspoon of dried thyme", "one tablespoon of olive oil", "half a cup of red wine"). Viewer must be able to shop and cook from what they hear.
+R3. PREPARATION STEPS WITH TIMING: EVERY cooking step from the recipe MUST have its own Vlog Action line with exact timing (e.g. "I'm browning the chicken for exactly 8 minutes", "I sauté the onion and garlic for 3 minutes", "now I let it simmer covered for 10 minutes").
+R4. SENSORY REACTIONS: At least 2 Blogger Comment lines must describe what she SEES, SMELLS, HEARS or TASTES during cooking (e.g. "the kitchen smells incredible right now", "look at that golden crust forming").
+R5. SCENE COUNT IS FLEXIBLE — generate as many lines as needed to cover EVERY ingredient and EVERY step of the recipe. Minimum 12 lines. No maximum — if the recipe has many steps, use more lines. Always end with an Outro.
+R6. EMOTIONAL WAVE — MANDATORY FOR BLOGGER COMMENT LINES ONLY (Vlog Action lines must stay recipe-accurate, no emotional connectors):
+   Apply this tension→relief→tension pattern across Blogger Comment lines to keep viewers watching:
+   🔴 TENSION openers (create suspense, curiosity, a "wait for it" feeling) — use in comments 2, 6, 10:
+     FR: «Mais attention, ce n'est pas si simple...», «Et là, vous n'allez pas me croire...», «Et ce n'est pas tout !»
+     EN: «But here's what nobody tells you...», «And this is where it gets interesting...», «But wait — there's more»
+     RU: «Но не всё так просто...», «И вот тут начинаются вопросы...», «Обратите особое внимание на...», «И это ещё не всё»
+   🟢 RELIEF openers (resolve tension, deliver the payoff, give a tip or good news) — use in comments 4, 8:
+     FR: «Bonne nouvelle !», «Et justement, j'ai l'astuce !», «Et le résultat est bluffant !»
+     EN: «Good news — this is actually easy», «Here's the trick», «And the result is incredible»
+     RU: «К нашей радости...», «А вот сейчас самое важное», «Но есть и хорошая новость», «Забегая вперёд»
+   🏆 PAYOFF opener — mandatory in comment 12 (tasting/finale moment):
+     FR: «Et maintenant, LE moment de vérité...», «Et là — c'est à couper le souffle»
+     EN: «And now — the moment you've been waiting for», «This is it.»
+     RU: «А вот сейчас самое важное», «И вот в этот момент...», «И огорчает в этой ситуации только одно...»
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-STRUCTURE FOR RECIPE VLOG (12-14 lines):
-▶ LINE 1  — Vlog Action: ${bloggerName} delivers a powerful hook — names the dish and its key benefit or calorie count. 12-20 words.
-▶ LINE 2  — Blogger Comment: Shares the most surprising nutrition fact about this dish to trigger curiosity. 12-22 words.
-▶ LINE 3  — Vlog Action: ${bloggerName} lists the main ingredients OUT LOUD with exact quantities (grams, tablespoons, pieces). 12-20 words.
-▶ LINE 4  — Blogger Comment: Explains WHY these ingredients work together — vitamins, synergy, calorie math. 12-22 words.
-▶ LINE 5  — Vlog Action: ${bloggerName} demonstrates STEP 1 of preparation — specific action + timing (e.g. "rinse and boil 12 min"). 12-20 words.
-▶ LINE 6  — Blogger Comment: Drops a nutrition insight about the ingredient being handled right now. 12-22 words.
-▶ LINE 7  — Vlog Action: ${bloggerName} demonstrates STEP 2 — chopping, mixing, layering, seasoning — with exact detail. 12-20 words.
-▶ LINE 8  — Blogger Comment: Reveals a secret trick or non-obvious technique that makes the recipe better or healthier. 12-22 words.
-▶ LINE 9  — Vlog Action: ${bloggerName} demonstrates STEP 3 or adds the finishing touch — names it precisely. 12-20 words.
-▶ LINE 10 — Blogger Comment: Shares calorie total or macros of the finished dish — specific numbers. 12-22 words.
-▶ LINE 11 — Vlog Action: ${bloggerName} tastes the dish on camera — reacts authentically, names a flavor note. 12-20 words.
-▶ LINE 12 — Blogger Comment: Final punchy health summary — a memorable nutrition truth, metabolism benefit, or diet tip. 12-22 words.
-▶ LINE 13 (optional) — Vlog Action: ${bloggerName} shows the plated result beautifully — describes texture, color, or aroma. 12-20 words.
-▶ LINE 14 (optional) — Outro: Flirty, witty call-to-action — save the recipe, subscribe, send a photo of their version. 10-18 words.
-` : `
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 WELLNESS / TIPS VLOG — EXTRA MANDATORY RULES:
-W1. SPECIFICITY: Every tip must include at least one concrete number — a calorie amount, gram weight, duration in minutes, vitamin dose, or percentage.
-W2. ACTIONABILITY: Every line must describe something the viewer can do TODAY — not vague advice like "eat healthy", but "swap 200g of white rice for cauliflower rice and cut 180 calories tonight".
+⛔ BANNED PATTERNS IN COOKING VLOG LINES (automatic failure if present):
+- Any sentence starting with "This ingredient contains..." or "This releases..." or "This is rich in..."
+- Any explanation of food science, chemistry, or nutrition
+- Phrases like "essential oils", "umami depth", "nutritional value", "healthy fats", "antioxidants"
+- Any reference to WHY something is healthy or good for the body
+✅ INSTEAD: describe the SMELL, COLOR, SOUND, TEXTURE, or the PHYSICAL ACTION happening in the pan/oven/bowl RIGHT NOW.
+
+STRUCTURE FOR RECIPE VLOG — FIRST-PERSON LIVE COOKING NARRATION:
+📌 PATTERN: alternate Vlog Action → Blogger Comment → Vlog Action → Blogger Comment → ... → Outro
+📌 Each Vlog Action = a concrete cooking step with exact ingredients, quantities, timings from the recipe.
+📌 Each Blogger Comment = a sensory reaction, kitchen tip, or observation about what's happening RIGHT NOW.
+📌 Cover EVERY step and ingredient from the recipe — do not skip any. Add more lines if necessary.
+
+▶ LINE 1  — Vlog Action: ${bloggerName} names the dish, grabs the very first ingredient with its EXACT quantity, and starts cooking — what her hands are doing RIGHT NOW. 12-20 words. Example: "Today I'm making chicken provençal — I'm cutting 1.3 kg chicken into 8 pieces and seasoning with ¾ tsp salt and ½ tsp pepper right now."
+▶ LINE 2  — Blogger Comment: Reacts to what she sees or smells in the pan — a sensory observation + one hands-on tip for this exact step. 12-22 words. Example: "That sizzling sound tells me the oil is hot enough — exactly 8 minutes per side for a perfect golden crust."
+▶ LINE 3  — Vlog Action: ${bloggerName} adds the next ingredients OUT LOUD with exact quantities — what she is physically doing. 12-20 words. Example: "Now I add the finely chopped onion and 1 clove of garlic — stirring every 30 seconds for 3 minutes."
+▶ LINE 4  — Blogger Comment: Describes a specific kitchen moment — color change, aroma, texture — that signals the step is done. 12-22 words. Example: "When the onion turns translucent and smells sweet and caramelized — that's my signal to pour in the wine."
+▶ LINE 5  — Vlog Action: ${bloggerName} performs the next cooking step — names the action + exact quantity + timing from the recipe. 12-20 words. Example: "I pour in half a cup of red wine and let it bubble down for exactly 1-2 minutes."
+▶ LINE 6  — Blogger Comment: Quick personal kitchen trick she does at this exact moment — a shortcut or a detail she notices. 12-22 words. Example: "My trick — I tilt the pan so the wine hits the hot edges and evaporates faster and more evenly!"
+▶ LINE 7  — Vlog Action: ${bloggerName} adds the next layer of ingredients — names ALL of them with quantities, describes the action. 12-20 words. Example: "In go 1½ cups of canned tomatoes with juice, ½ tsp rosemary, ½ tsp thyme, ⅓ cup black olives, and 1 tsp anchovy paste."
+▶ LINE 8  — Blogger Comment: Reacts to the transformation — what the dish looks, smells, sounds like right now. 12-22 words. Example: "The whole kitchen smells like Provence right now — the herbs are blooming and the sauce is turning deep ruby red."
+▶ LINE 9  — Vlog Action: ${bloggerName} does the next key step with exact timing — covers, returns the protein, lowers heat. 12-20 words. Example: "I nestle the chicken thighs and legs back in, cover the pan, and simmer on low for exactly 10 minutes."
+▶ LINE 10 — Blogger Comment: Describes the dish visually and aromatically right now — color, texture, how the protein looks. 12-22 words. Example: "Look at this sauce — it has turned deep ruby and the chicken is already pulling away from the bone gently."
+▶ LINE 11 — Vlog Action: ${bloggerName} adds remaining pieces or finishes the final step with exact timing from the recipe. 12-20 words. Example: "Now I add the rest of the chicken pieces and cook everything together for another 10 minutes — then ¼ tsp more pepper."
+▶ LINE 12 — Blogger Comment: Tasting moment — immediate authentic reaction describing one specific flavor she can taste right now. 12-22 words. Example: "I'm tasting it right now — the anchovy paste dissolved completely into the sauce and gave it an incredible depth of flavor."
+▶ LINE 13 — Vlog Action: ${bloggerName} plates the dish — names what she serves alongside, describes what the plate looks like. 12-20 words. Example: "I serve it with crispy pan-fried potatoes — pour the ruby sauce over everything and finish with a rosemary sprig."
+▶ (Continue with more Vlog Action / Blogger Comment as needed to cover every recipe step. Do NOT stop early.)
+▶ FINAL LINE — Outro: Flirty, witty, personal call-to-action — save the recipe, subscribe, send a photo of their version. 10-18 words.`
+: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 LIFESTYLE / TIPS VLOG — EXTRA MANDATORY RULES:
+W1. SPECIFICITY: Every tip must include at least one concrete detail — a texture, a specific product property, duration in minutes, or exact lifehack step.
+W2. ACTIONABILITY: Every line must describe something the viewer can do TODAY — practical advice, beauty secrets, or home hacks. NEVER mention diets, calories, or weight loss.
 W3. GENERATE EXACTLY 9 LINES TOTAL (minimum 9).
+W4. EMOTIONAL WAVE — MANDATORY FOR BLOGGER COMMENT LINES (Lines 2, 4, 6, 8):
+   Alternate tension and relief across comment lines to keep viewers hooked:
+   🔴 TENSION openers (lines 2, 6) — spark curiosity or reveal a surprising twist:
+     FR: «Mais ce que personne ne te dit...», «Et pourtant, il y a un détail que tu rates»
+     EN: «But here's what most people miss...», «And this is the part nobody tells you»
+     RU: «Но не всё так просто...», «Как всегда, есть нюансы», «И вот тут начинаются вопросы», «Внимательные зрители могут заметить»
+   🟢 RELIEF openers (lines 4, 8) — deliver the payoff, give a clear solution or memorable truth:
+     FR: «Bonne nouvelle !», «Et la solution est plus simple qu'on croit»
+     EN: «Good news — here's all you need», «And honestly? It changed everything»
+     RU: «К нашей радости...», «А вот сейчас самое важное», «Очевидно, что...», «Конечно, есть и светлая сторона»
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-STRUCTURE FOR WELLNESS VLOG (9 lines):
-▶ LINE 1 — Vlog Action: ${bloggerName} introduces today's wellness topic with an intriguing hook + specific number or fact. 12-20 words.
-▶ LINE 2 — Blogger Comment: First concrete health tip with exact number — calorie, gram, minute, or vitamin dose. 12-22 words.
-▶ LINE 3 — Vlog Action: ${bloggerName} demonstrates or explains tip #2 — names a specific food/product/supplement. 12-20 words.
-▶ LINE 4 — Blogger Comment: Nutrition insight with a smart food swap and calorie comparison. 12-22 words.
-▶ LINE 5 — Vlog Action: ${bloggerName} reveals tip #3 — a metabolism or digestion hack with a concrete result. 12-20 words.
-▶ LINE 6 — Blogger Comment: Third specific health fact — something surprising about a superfood, vitamin, or gut health. 12-22 words.
+STRUCTURE FOR LIFESTYLE VLOG (9 lines):
+▶ LINE 1 — Vlog Action: ${bloggerName} introduces today's lifestyle/beauty topic with an intriguing hook + specific fact. 12-20 words.
+▶ LINE 2 — Blogger Comment: First concrete girl secret or lifehack tip. 12-22 words.
+▶ LINE 3 — Vlog Action: ${bloggerName} demonstrates or explains tip #2 — names a specific step or technique. 12-20 words.
+▶ LINE 4 — Blogger Comment: Insight explaining WHY this trick works so well (e.g. saves time, feels incredible). 12-22 words.
+▶ LINE 5 — Vlog Action: ${bloggerName} reveals tip #3 — a practical hack with a concrete result. 12-20 words.
+▶ LINE 6 — Blogger Comment: Another surprising fact or personal secret about this routine. 12-22 words.
 ▶ LINE 7 — Vlog Action: ${bloggerName} shows or demonstrates the final tip — makes it visual and actionable. 12-20 words.
-▶ LINE 8 — Blogger Comment: Final punchy health summary — one memorable truth the viewer will remember and share. 12-22 words.
-▶ LINE 9 — Outro: Flirty, witty call-to-action referencing health/wellness + asking for likes & subscribe. 10-18 words.
-`}
+▶ LINE 8 — Blogger Comment: Final punchy summary — one memorable truth the viewer will remember and share. 12-22 words.
+▶ LINE 9 — Outro: Flirty, witty call-to-action asking for likes & subscribe. 10-18 words.`}
 ══════════════════════════════════════
 
 Format EXACTLY as:
@@ -1818,12 +1933,60 @@ Where Speaker is "Vlog Action" or "Blogger Comment" or "Outro".
 
 Output ONLY the direct spoken script lines in ${language}.`;
 
-        const scriptRaw = await ai.chat([{ role: 'user', content: prompt }], false);
+        const fullPrompt = webContext
+            ? prompt + `\n\n🌐 FRESH WEB CONTEXT — CURRENT TRENDS & RECIPES FROM THE INTERNET (use this as inspiration and up-to-date reference, but ALWAYS adapt to ${bloggerName}'s voice and the given topic/recipe — do NOT copy verbatim):\n"""\n${webContext}\n"""\n`
+            : prompt;
+
+        const scriptRaw = await ai.chat([{ role: 'user', content: fullPrompt }], false);
+
+        // ── Chef Inspector ──────────────────────────────────────────────────────
+        // Automatically validates culinary accuracy before translation & video gen.
+        // Runs only for cooking topics; falls back to original script on error.
+        let finalScript = scriptRaw;
+        if (isCookingTopic) {
+            if (event && event.sender) {
+                event.sender.send('frenchtalk-progress', { status: '👨‍🍳 Шеф-повар инспектирует рецепт...', progress: 85 });
+            }
+            try {
+                const chefInspectionPrompt = `You are a Michelin-trained French culinary expert and recipe fact-checker. Your ONLY job is to silently fix factual culinary errors in this vlog script.
+
+SCRIPT TO INSPECT:
+"""
+${scriptRaw}
+"""
+
+FIX ONLY these types of errors (leave everything else untouched):
+1. Wrong culinary science explanations — e.g. claiming starch "prevents cream from binding" is wrong; excess starch makes cream gluey/pasty, not less bound. Fix the explanation to be accurate.
+2. Incorrect technique descriptions — wrong reason given for a cooking step, wrong method described.
+3. Impossible or implausible ingredient quantities or ratios.
+4. Wrong cooking temperatures or times for the specific dish.
+5. Illogical cooking step order.
+6. Factually wrong taste, texture, or aroma claims.
+
+DO NOT change:
+- Format: "Vlog Action: ..." / "Blogger Comment: ..." / "Outro: ..."
+- Number of lines — same count must be preserved
+- Emotional tone, style, tension/relief structure, word choice — unless a word is factually wrong
+- Anything that is culinarily correct
+
+If everything is correct — return the script exactly as-is, unchanged.
+Output ONLY the corrected script. No preamble, no explanation, no notes.`;
+
+                const inspected = await ai.chat([{ role: 'user', content: chefInspectionPrompt }], false);
+                if (inspected && inspected.trim().length > 100) {
+                    finalScript = inspected.trim();
+                    console.log('[FrenchTalk Vlog] ✅ Chef inspection passed');
+                }
+            } catch (e) {
+                console.warn('[FrenchTalk Vlog] Chef inspection failed — using original script:', e.message);
+            }
+        }
+        // ────────────────────────────────────────────────────────────────────────
 
         // Translate to Russian
         let scriptRu = '';
         try {
-            const translationPrompt = `Translate this vlog script to Russian line-by-line. Keep the exact format "Speaker: Translation".\n\nScript:\n${scriptRaw}`;
+            const translationPrompt = `Translate this vlog script to Russian line-by-line. Keep the exact format "Speaker: Translation".\n\nScript:\n${finalScript}`;
             scriptRu = await ai.chat([{ role: 'user', content: translationPrompt }], false);
         } catch (e) {
             console.error('[FrenchTalk Vlog] Translation failed:', e.message);
@@ -1834,13 +1997,20 @@ Output ONLY the direct spoken script lines in ${language}.`;
         try {
             const metadataPrompt = `Based on this vlog script, generate metadata for TikTok.
 Script:
-${scriptRaw}
+${finalScript}
+
+⛔ STRICT RULES FOR METADATA:
+- NEVER include calories, caloric values, macros, nutrition facts, proteins, carbs, fats, or any diet/weight-loss language in the title or description.
+- The title must highlight the DISH NAME and a sensory hook (flavor, texture, technique, ease) — NOT calorie counts.
+- The description must focus on the cooking experience, flavors, or a culinary tip — NOT nutritional content.
+- GOOD title example: "Crêpes roulées au fromage fondu et légumes — la recette parfaite du soir ! 🌯"
+- BAD title example: "Crêpes 320 cal : la recette saine !" ← FORBIDDEN
 
 Output EXACTLY in this JSON format, nothing else:
 {
-  "title": "A catchy short title for the video (in ${language || 'French'})",
-  "description": "A 1-2 sentence description for the TikTok caption (in ${language || 'French'})",
-  "hashtags": "#paris #vlog #etc (4-6 relevant hashtags)"
+  "title": "A catchy short title for the video (in ${language || 'French'}) — dish name + flavor/technique hook, NO calories",
+  "description": "A 1-2 sentence description for the TikTok caption (in ${language || 'French'}) — cooking process or taste focused, NO nutrition numbers",
+  "hashtags": "#recette #cuisine #etc (4-6 relevant hashtags)"
 }`;
             const metadataRaw = await ai.chat([{ role: 'user', content: metadataPrompt }], true);
             const match = metadataRaw.match(/\{[\s\S]*\}/);
@@ -1852,7 +2022,7 @@ Output EXACTLY in this JSON format, nothing else:
         }
 
         return {
-            script: scriptRaw.trim(),
+            script: finalScript.trim(),
             scriptRu: scriptRu.trim(),
             metadata: tiktokMetadata
         };
@@ -2423,6 +2593,20 @@ LIGHTING & DEPTH OF FIELD: Lit by soft window light and warm ambient room lamps,
             });
             const result = JSON.parse(stdout.trim());
             console.log(`[FrenchTalk Recipe] Parsed: "${result.title}", ${result.ingredients.length} ingredients, ${result.steps.length} steps, ${result.images.length} images`);
+
+            // Save parsed recipe to a global cache so the video generator can persist it per episode
+            try {
+                const cacheFile = path.join(FRENCHTALK_DIR, '_recipe_cache.json');
+                fs.writeFileSync(cacheFile, JSON.stringify({
+                    cachedAt: new Date().toISOString(),
+                    url: url.trim(),
+                    recipe: result
+                }, null, 2), 'utf8');
+                console.log('[FrenchTalk Recipe] Cache saved to _recipe_cache.json');
+            } catch (cacheErr) {
+                console.warn('[FrenchTalk Recipe] Could not save recipe cache:', cacheErr.message);
+            }
+
             return result;
         } catch (err) {
             console.error('[FrenchTalk Recipe] Parse error:', err.message);

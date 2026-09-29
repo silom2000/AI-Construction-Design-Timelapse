@@ -125,6 +125,51 @@ export interface StudioScript {
   intro: string;
   socialPost?: SocialPost;
   scenes: StudioScene[];
+  autoQueuedCount?: number; // Set by backend when lifehacks were auto-extracted to queue
+}
+
+export interface AmazonProduct {
+  code: number;
+  title: string;
+  category: string;
+  featured?: boolean;
+  img?: string;
+  hackMethod?: string;
+  quote?: string;
+  verdict?: string;
+  features?: string[];
+  asin?: string;
+  rating?: number;
+  reviews?: number;
+  price?: string;
+  amazonUrl: string;
+}
+
+export interface StudioVideoCover {
+  id: number;
+  styleId: 'eureka' | 'before_after' | 'product_hero' | 'insider_secret' | string;
+  styleTitle: string;
+  badge: string;
+  description: string;
+  prompt: string;
+  imageUrl: string;
+  fileName?: string;
+  isSelected?: boolean;
+  error?: string;
+}
+
+export interface LifehackQueueItem {
+  id: number;
+  title: string;
+  description: string;
+  topicForLlm: string;
+  category: 'kitchen' | 'garden' | 'cleaning' | 'DIY' | 'organizing' | 'productivity' | 'food' | 'other' | string;
+  source: string;
+  status: 'pending' | 'used' | 'skipped';
+  createdAt: string;
+  usedAt?: string;
+  productCode?: number;
+  amazonUrl?: string;
 }
 
 export interface IElectronAPI {
@@ -166,6 +211,8 @@ export interface IElectronAPI {
       screenshotBase64?: string;
       videoBase64?: string;
       durationMode?: '30s' | 'full';
+      amazonProduct?: AmazonProduct;
+      autoSourceAmazon?: boolean;
     },
     topic?: string,
     language?: string,
@@ -181,6 +228,32 @@ export interface IElectronAPI {
   studioSaveScript: (data: { projectFolder: string; script: StudioScript; mode?: string; topic?: string; language?: string }) => Promise<{ success: boolean; error?: string }>,
   studioAssembleVideo: (data: any) => Promise<string>,
   saveTextFiles: (files: { filename: string; content: string }[]) => Promise<{ success: boolean; error?: string }>,
+
+  // Video Covers / Thumbnails
+  studioGenerateCovers: (data: {
+    projectFolder?: string;
+    topic?: string;
+    amazonProduct?: AmazonProduct;
+    script?: StudioScript;
+    imageModel?: string;
+    provider?: string;
+  }) => Promise<StudioVideoCover[]>,
+  studioRegenerateCover: (data: {
+    projectFolder?: string;
+    coverIndex: number;
+    prompt: string;
+    imageModel?: string;
+    amazonProduct?: AmazonProduct;
+  }) => Promise<{ coverIndex: number; imageUrl: string; fileName: string }>,
+  studioSelectCover: (data: {
+    projectFolder: string;
+    coverIndex: number;
+  }) => Promise<{ success: boolean; selectedCoverIndex: number }>,
+  studioGetCovers: (data: {
+    projectFolder: string;
+  }) => Promise<{ selectedCoverIndex: number; covers: StudioVideoCover[] } | null>,
+  onStudioCoversProgress: (callback: (data: { coverIndex?: number; total?: number; status?: string; styleTitle?: string; attempt?: number }) => void) => void,
+  removeStudioCoversProgressListener: () => void,
 
   // AI Stories
   storyCreateFolder: () => Promise<string>,
@@ -303,6 +376,39 @@ export interface IElectronAPI {
   primatecastSaveAllPrompts: (data: any) => Promise<{ success: boolean }>,
   onPrimatecastProgress: (callback: (data: { status: string, progress?: number }) => void) => void,
   removePrimatecastProgressListener: () => void,
+
+  // Lifehack Queue — persistent idea bank from long video analysis
+  lifehackQueueStats: () => Promise<{ total: number; pending: number; used: number; skipped: number }>,
+  lifehackQueueList: () => Promise<LifehackQueueItem[]>,
+  lifehackQueueGetNext: () => Promise<LifehackQueueItem | null>,
+  lifehackQueueExtract: (data: {
+    videoTranscript?: string;
+    screenshotText?: string;
+    rawText?: string;
+    sourceLabel?: string;
+    language?: string;
+    provider?: string;
+  }) => Promise<{ added: number; items: LifehackQueueItem[] }>,
+  lifehackQueueMarkUsed: (id: number) => Promise<LifehackQueueItem | null>,
+  lifehackQueueSkip: (id: number) => Promise<LifehackQueueItem | null>,
+  lifehackQueueDeleteItem: (id: number) => Promise<{ success: boolean }>,
+  lifehackQueueClearCompleted: () => Promise<{ success: boolean }>,
+  lifehackQueueClearPending: () => Promise<{ removed: boolean }>,
+  lifehackQueueClearAll: () => Promise<{ success: boolean }>,
+  lifehackQueueAddAmazon: (product: AmazonProduct) => Promise<LifehackQueueItem>,
+
+  // Amazon Showcase Integration
+  amazonProductsList: () => Promise<AmazonProduct[]>,
+  amazonProductByCode: (code: number) => Promise<AmazonProduct | null>,
+  amazonProductBuildTopic: (product: AmazonProduct) => Promise<string>,
+  amazonProductGetCta: (code: number) => Promise<string>,
+  amazonProductGetImage: (data: { product?: AmazonProduct; code?: number | string; projectFolder?: string }) => Promise<{ path?: string; data?: string; mimeType?: string } | null>,
+  amazonProductRegister: (productData: Partial<AmazonProduct> & { title: string }) => Promise<AmazonProduct>,
+  amazonProductDelete: (code: number | string) => Promise<AmazonProduct[]>,
+  amazonSourceProduct: (data: { topic: string; options?: { provider?: string; projectFolder?: string } }) => Promise<{ success: boolean; product: AmazonProduct; searchKeyword?: string; error?: string }>,
+  amazonSourceByUrl: (data: { urlOrAsin: string; options?: { topic?: string; provider?: string; projectFolder?: string } }) => Promise<{ success: boolean; product: AmazonProduct; error?: string }>,
+  onAmazonSourceProgress: (callback: (data: { status: string; progress: number }) => void) => void,
+  removeAmazonSourceProgressListener: () => void,
 }
 
 declare global {

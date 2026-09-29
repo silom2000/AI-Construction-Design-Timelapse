@@ -24,6 +24,8 @@ const { registerLocalizeHandlers } = require('./localize-handlers.cjs');
 const { registerExportHandlers } = require('./export-handlers.cjs');
 const { registerPrimateCastHandlers } = require('./primatecast-handlers.cjs');
 const { registerFrenchTalkHandlers } = require('./frenchtalk-handlers.cjs');
+const { registerLifehackQueueHandlers } = require('./lifehack-queue.cjs');
+const { registerAmazonHandlers } = require('./amazon-manager.cjs');
 
 // ── Новые модули (П.1, П.3, П.4, П.5) ──────────────────────────────────────
 const { queueManager, STATUS, TASK_TYPE } = require('./queue-manager.cjs');
@@ -286,6 +288,8 @@ app.whenReady().then(async () => {
     registerLocalizeHandlers(ipcMain);
     registerPrimateCastHandlers(ipcMain);
     registerFrenchTalkHandlers(ipcMain);
+    registerLifehackQueueHandlers(ipcMain);
+    registerAmazonHandlers(ipcMain);
 
     createWindow();
 });

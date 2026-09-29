@@ -272,10 +272,11 @@ Omni Flash example — edit video (restyle a ≤10s clip per the prompt):
 |-------|------|:--------:|---------|-------|
 | `prompt` | string | ✅ | — | Prompt. |
 | `mode` | string | ❌ | `t2v` | `t2i` (text→image) · `i2i` (image→image) · `t2v` (text→video) · `i2v` (image→video). Invalid mode → task fails. |
-| `aspect_ratio` | string | ❌ | `9:16` | One of `9:16`, `16:9`, `1:1`, `2:3`, `3:2`. Unknown → `9:16`. |
+| `aspect_ratio` | string | ❌ | `9:16` | Image (`t2i`/`i2i`): `9:16, 16:9, 1:1, 2:3, 3:2, 4:3, 21:9, 5:2`. Video (`t2v`/`i2v`): `9:16, 16:9, 1:1, 2:3, 3:2`. Unknown → `9:16`. |
 | `reference_images` | array | ❌ | `[]` | Up to **5** base64 images. **Required for `i2i` and `i2v`** (≥1, else the task fails). Ignored for `t2i` / `t2v`. |
 | `video_length` | int | ❌ | `6` | `6`, `10` or `15` (seconds). **Video modes only** (`t2v`/`i2v`). Other values → `6`. |
-| `resolution` | string | ❌ | `480p` | `480p` or `720p`. **Video modes only.** Image modes (`t2i`/`i2i`) always output **1K**. |
+| `resolution` | string | ❌ | `480p` | `480p`, `720p` or `1080p`. **Video modes only.** Image modes (`t2i`/`i2i`) always output **1K**. |
+| `first_frame` | bool | ❌ | `false` | **`i2v` only.** `true` = image is the opening frame (1 ref, aspect from the image); `false` = reference ingredient (multiple refs). |
 
 ```json
 {
@@ -284,6 +285,7 @@ Omni Flash example — edit video (restyle a ≤10s clip per the prompt):
   "aspect_ratio": "16:9",
   "video_length": 6,
   "resolution": "720p",
+  "first_frame": false,
   "reference_images": ["data:image/png;base64,iVBORw0KGgo..."]
 }
 ```
@@ -353,7 +355,7 @@ result). Reference images are **positional** (no `@tag`).
 | Field | Type | Required | Default | Notes |
 |-------|------|:--------:|---------|-------|
 | `prompt` | string | ✅ | — | Image description. |
-| `aspect_ratio` | string | ❌ | `1:1` | One of `1:1`, `3:2`, `4:3`, `16:9`, `2:3`, `3:4`, `9:16`. Unknown → `1:1`. |
+| `aspect_ratio` | string | ❌ | `1:1` | One of `1:1`, `3:2`, `4:3`, `16:9`, `21:9`, `2:3`, `3:4`, `4:5`, `9:16`, `custom`. Unknown → `1:1`. |
 | `quality` | string | ❌ | `high` | One of `low`, `medium`, `high`. Unknown → `high`. |
 | `prompt_mode` | string | ❌ | `auto` | `auto` (model refines the prompt) or `direct` (use the prompt verbatim). Unknown → `auto`. |
 | `reasoning` | string | ❌ | `none` | Reasoning effort: `none`, `low`, `medium`, `high`, `xhigh`, `max`. Unknown → `none`. |
@@ -494,15 +496,15 @@ via the URL rather than guessing the path on disk.
 | `veo_31_lite_relaxed` | Veo 3.1 Lite Lower Priority [0 Credit] (ULTRA only) | `16:9, 9:16` |
 | `omni_flash` | Omni Flash (video; 4/6/8/10s; up to 7 refs; 360p or 720p; edit video ≤10s via `reference_video`; no ULTRA) | `16:9, 9:16` |
 | *upscale* `model` | Whatever is installed in `bin/realesrgan/models/` — the Webhook tab's model table lists your actual set. Stock build: `upscayl-standard-4x`, `upscayl-lite-4x`, `digital-art-4x`, `high-fidelity-4x`, `remacri-4x`, `ultramix-balanced-4x`, `ultrasharp-4x` | scale `2`–`8` (aspect ratio unchanged) |
-| Grok `mode=t2i` | Text → Image (1K) | `9:16, 16:9, 1:1, 2:3, 3:2` |
-| Grok `mode=i2i` | Image → Image (1K) | `9:16, 16:9, 1:1, 2:3, 3:2` |
-| Grok `mode=t2v` | Text → Video (480p/720p) | `9:16, 16:9, 1:1, 2:3, 3:2` |
-| Grok `mode=i2v` | Image → Video (480p/720p) | `9:16, 16:9, 1:1, 2:3, 3:2` |
+| Grok `mode=t2i` | Text → Image (1K) | `9:16, 16:9, 1:1, 2:3, 3:2, 4:3, 21:9, 5:2` |
+| Grok `mode=i2i` | Image → Image (1K) | `9:16, 16:9, 1:1, 2:3, 3:2, 4:3, 21:9, 5:2` |
+| Grok `mode=t2v` | Text → Video (480p/720p/1080p) | `9:16, 16:9, 1:1, 2:3, 3:2` |
+| Grok `mode=i2v` | Image → Video (480p/720p/1080p) | `9:16, 16:9, 1:1, 2:3, 3:2` |
 | Meta `mode=t2i` | Meta AI Text → Image | `9:16, 16:9, 1:1` |
 | Meta `mode=t2v` | Meta AI Text → Video (480p/720p) | `9:16, 16:9, 1:1` |
 | Meta `mode=i2i` | Meta AI Image → Image (components) | `9:16, 16:9, 1:1` |
 | Meta `mode=i2v` | Meta AI Image → Video (start/end) | `9:16, 16:9, 1:1` |
-| OpenAI `GPT_IMAGE` | GPT Image 2 (~1.57 MP, no upscale) | `1:1, 3:2, 4:3, 16:9, 2:3, 3:4, 9:16` |
+| OpenAI `GPT_IMAGE` | GPT Image 2 (~1.57 MP, no upscale) | `1:1, 3:2, 4:3, 16:9, 21:9, 2:3, 3:4, 4:5, 9:16, custom` |
 
 ---
 

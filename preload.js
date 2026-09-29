@@ -56,6 +56,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   studioAssembleVideo: (data) => ipcRenderer.invoke('studio-assemble-video', data),
   saveTextFiles: (files) => ipcRenderer.invoke('save-text-files', files),
 
+  // Video Covers / Thumbnails
+  studioGenerateCovers: (data) => ipcRenderer.invoke('studio-generate-covers', data),
+  studioRegenerateCover: (data) => ipcRenderer.invoke('studio-regenerate-single-cover', data),
+  studioSelectCover: (data) => ipcRenderer.invoke('studio-select-cover', data),
+  studioGetCovers: (data) => ipcRenderer.invoke('studio-get-covers', data),
+  onStudioCoversProgress: (callback) => ipcRenderer.on('studio-covers-progress', (event, data) => callback(data)),
+  removeStudioCoversProgressListener: () => ipcRenderer.removeAllListeners('studio-covers-progress'),
+
   // AI Stories
   storyCreateFolder: () => ipcRenderer.invoke('story-create-folder'),
   storyGenerateIdeas: (topic, language, provider) => ipcRenderer.invoke('story-generate-ideas', { topic, language, provider }),
@@ -151,4 +159,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
   primatecastSaveAllPrompts: (data) => ipcRenderer.invoke('primatecast-save-all-prompts', data),
   onPrimatecastProgress: (callback) => ipcRenderer.on('primatecast-progress', (event, data) => callback(data)),
   removePrimatecastProgressListener: () => ipcRenderer.removeAllListeners('primatecast-progress'),
+
+  // Lifehack Queue — idea bank extracted from long videos
+  lifehackQueueStats: () => ipcRenderer.invoke('lifehack-queue-stats'),
+  lifehackQueueList: () => ipcRenderer.invoke('lifehack-queue-list'),
+  lifehackQueueGetNext: () => ipcRenderer.invoke('lifehack-queue-get-next'),
+  lifehackQueueExtract: (data) => ipcRenderer.invoke('lifehack-queue-extract', data),
+  lifehackQueueMarkUsed: (id) => ipcRenderer.invoke('lifehack-queue-mark-used', { id }),
+  lifehackQueueSkip: (id) => ipcRenderer.invoke('lifehack-queue-skip', { id }),
+  lifehackQueueDeleteItem: (id) => ipcRenderer.invoke('lifehack-queue-delete-item', { id }),
+  lifehackQueueClearCompleted: () => ipcRenderer.invoke('lifehack-queue-clear-completed'),
+  lifehackQueueClearPending: () => ipcRenderer.invoke('lifehack-queue-clear-pending'),
+  lifehackQueueClearAll: () => ipcRenderer.invoke('lifehack-queue-clear-all'),
+  lifehackQueueAddAmazon: (product) => ipcRenderer.invoke('lifehack-queue-add-amazon', { product }),
+
+  // Amazon Showcase Integration
+  amazonProductsList: () => ipcRenderer.invoke('amazon-products-list'),
+  amazonProductByCode: (code) => ipcRenderer.invoke('amazon-product-by-code', { code }),
+  amazonProductBuildTopic: (product) => ipcRenderer.invoke('amazon-product-build-topic', { product }),
+  amazonProductGetCta: (code) => ipcRenderer.invoke('amazon-product-get-cta', { code }),
+  amazonProductGetImage: (data) => ipcRenderer.invoke('amazon-product-get-image', data),
+  amazonProductRegister: (productData) => ipcRenderer.invoke('amazon-product-register', { productData }),
+  amazonProductDelete: (code) => ipcRenderer.invoke('amazon-product-delete', { code }),
+  amazonSourceProduct: (data) => ipcRenderer.invoke('amazon-source-product', data),
+  amazonSourceByUrl: (data) => ipcRenderer.invoke('amazon-source-by-url', data),
+  onAmazonSourceProgress: (callback) => ipcRenderer.on('amazon-source-progress', (event, data) => callback(data)),
+  removeAmazonSourceProgressListener: () => ipcRenderer.removeAllListeners('amazon-source-progress'),
 });

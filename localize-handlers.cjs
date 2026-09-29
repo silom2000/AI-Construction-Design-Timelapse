@@ -804,7 +804,7 @@ async function analyzeVoiceCharacteristics(audioPath, segments, speakers, projec
         const samplePath = path.join(projectDir, `speaker_${speaker.id}_sample.mp3`);
 
         try {
-            execSync(`ffmpeg -i "${audioPath}" -ss ${bestSeg.startTime.toFixed(2)} -to ${bestSeg.endTime.toFixed(2)} -acodec libmp3lame -q:a 4 -y "${samplePath}"`, { stdio: 'pipe' });
+            execSync(`ffmpeg -i "${audioPath}" -ss ${bestSeg.startTime.toFixed(2)} -to ${bestSeg.endTime.toFixed(2)} -acodec libmp3lame -ar 22050 -ac 1 -b:a 48k -y "${samplePath}"`, { stdio: 'pipe' });
         } catch (e) {
             console.warn(`[Localize] Failed to extract speaker ${speaker.id} audio sample:`, e.message);
             voiceProfiles[speaker.id] = null;
@@ -1069,7 +1069,7 @@ function registerLocalizeHandlers(ipcMain) {
 
             console.log('[Localize] Step 1: Extracting audio...');
             const audioPath = path.join(projectDir, 'audio.mp3');
-            execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -q:a 4 -y "${audioPath}"`, { stdio: 'pipe' });
+            execSync(`ffmpeg -i "${videoPath}" -vn -acodec libmp3lame -ar 16000 -ac 1 -b:a 32k -y "${audioPath}"`, { stdio: 'pipe' });
 
             console.log('[Localize] Step 1: Transcribing audio...');
             const sttResult = await ai.transcribe(audioPath);

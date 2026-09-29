@@ -16,9 +16,19 @@ import {
     CheckCircle,
     ClipboardPaste,
     Upload,
-    Film
+    Film,
+    ShoppingCart,
+    Tag,
+    ExternalLink,
+    PlusCircle,
+    Sparkles,
+    ZoomIn,
+    Check,
+    Search,
+    Link,
+    Trash2
 } from 'lucide-react';
-import { StudioScript, StudioScene } from './electron.d';
+import { StudioScript, StudioScene, LifehackQueueItem, AmazonProduct, StudioVideoCover } from './electron.d';
 import './StudioTab.css';
 
 interface StudioTabProps {
@@ -64,6 +74,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [script, setScript] = useState<StudioScript | null>(null);
     const scriptRef = React.useRef(script);
     scriptRef.current = script;
+    const [projectFolder, setProjectFolder] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
     const [isAutoGenerating, setIsAutoGenerating] = useState(false);
@@ -71,6 +82,33 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     const [isIdeasLoading, setIsIdeasLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    // ── Lifehack Queue State ──────────────────────────────────────────────────
+    const [queueStats, setQueueStats] = useState<{ total: number; pending: number; used: number; skipped: number } | null>(null);
+    const [queueNext, setQueueNext] = useState<LifehackQueueItem | null>(null);
+    const [queueList, setQueueList] = useState<LifehackQueueItem[]>([]);
+    const [showQueuePanel, setShowQueuePanel] = useState(false);
+    const [isExtractingQueue, setIsExtractingQueue] = useState(false);
+    const [queueFilter, setQueueFilter] = useState<'all' | 'pending' | 'used'>('pending');
+
+    // ── Amazon Showcase State ────────────────────────────────────────────────
+    const [amazonProducts, setAmazonProducts] = useState<AmazonProduct[]>([]);
+    const [selectedAmazonProduct, setSelectedAmazonProduct] = useState<AmazonProduct | null>(null);
+    const [showAmazonPanel, setShowAmazonPanel] = useState(true);
+    const [isLoadingAmazon, setIsLoadingAmazon] = useState(false);
+    const [autoSourceAmazon, setAutoSourceAmazon] = useState<boolean>(true);
+    const [isSourcingAmazon, setIsSourcingAmazon] = useState<boolean>(false);
+    const [sourcingProgressStatus, setSourcingProgressStatus] = useState<string>('');
+    const [showDirectImport, setShowDirectImport] = useState<boolean>(false);
+    const [directImportUrl, setDirectImportUrl] = useState<string>('');
+
+    // ── Video Covers State ────────────────────────────────────────────────────
+    const [covers, setCovers] = useState<StudioVideoCover[]>([]);
+    const [selectedCoverIndex, setSelectedCoverIndex] = useState<number>(0);
+    const [isGeneratingCovers, setIsGeneratingCovers] = useState<boolean>(false);
+    const [regeneratingCoverIndex, setRegeneratingCoverIndex] = useState<number | null>(null);
+    const [previewCoverModal, setPreviewCoverModal] = useState<StudioVideoCover | null>(null);
+    const [coversProgressStatus, setCoversProgressStatus] = useState<string>('');
 
     // ── Multi-thread G-Labs Concurrency State ──
     const [isMultiThread, setIsMultiThread] = useState<boolean>(true);
@@ -90,6 +128,284 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         };
         fetchMultiThread();
     }, []);
+
+    // ── Lifehack Queue helpers ─────────────────────────────────────────────────
+    const refreshQueueStats = async () => {
+        try {
+            const stats = await window.electronAPI.lifehackQueueStats();
+            setQueueStats(stats);
+            const next = await window.electronAPI.lifehackQueueGetNext();
+            setQueueNext(next);
+        } catch (e) {
+            console.error('[Queue] Failed to refresh stats', e);
+        }
+    };
+
+    const refreshAmazonProducts = async () => {
+        try {
+            setIsLoadingAmazon(true);
+            if (window.electronAPI?.amazonProductsList) {
+                const list = await window.electronAPI.amazonProductsList();
+                setAmazonProducts(list || []);
+            }
+        } catch (e) {
+            console.error('[Amazon] Failed to load products', e);
+        } finally {
+            setIsLoadingAmazon(false);
+        }
+    };
+
+    React.useEffect(() => {
+        if (mode === 'health') {
+            refreshQueueStats();
+            refreshAmazonProducts();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mode]);
+
+    const handleSelectAmazonProduct = (prod: AmazonProduct) => {
+        if (selectedAmazonProduct?.code === prod.code) {
+            setSelectedAmazonProduct(null);
+            return;
+        }
+        setSelectedAmazonProduct(prod);
+        setTopic(`PRODUIT TESTÉ & APPROUVÉ AMAZON #${prod.code}: "${prod.title}" (${prod.category}). Problème: ${prod.quote}. Astuce/Science: ${prod.verdict}`);
+        setLang('French');
+        setDurationMode('full');
+    };
+
+    const handleAddAmazonToQueue = async (prod: AmazonProduct) => {
+        try {
+            if (window.electronAPI?.lifehackQueueAddAmazon) {
+                await window.electronAPI.lifehackQueueAddAmazon(prod);
+                await refreshQueueStats();
+                alert(`✅ Товар #${prod.code} "${prod.title}" добавлен в очередь!`);
+            }
+        } catch (e: any) {
+            alert('Ошибка добавления: ' + e.message);
+        }
+    };
+
+    const handleAddAllAmazonToQueue = async () => {
+        try {
+            if (window.electronAPI?.lifehackQueueAddAmazon) {
+                let added = 0;
+                for (const prod of amazonProducts) {
+                    await window.electronAPI.lifehackQueueAddAmazon(prod);
+                    added++;
+                }
+                await refreshQueueStats();
+                alert(`✅ Все ${added} товаров Amazon добавлены в очередь лайфхаков!`);
+            }
+        } catch (e: any) {
+            alert('Ошибка: ' + e.message);
+        }
+    };
+
+    const handleDeleteAmazonProduct = async (prod: AmazonProduct) => {
+        if (!window.confirm(`Удалить товар #${prod.code} «${prod.title}» из каталога и с витрины сайта?`)) {
+            return;
+        }
+        try {
+            if (window.electronAPI?.amazonProductDelete) {
+                const updated = await window.electronAPI.amazonProductDelete(prod.code);
+                setAmazonProducts(updated);
+                if (selectedAmazonProduct?.code === prod.code) {
+                    setSelectedAmazonProduct(null);
+                }
+            }
+        } catch (e: any) {
+            alert('Ошибка при удалении товара: ' + e.message);
+        }
+    };
+
+    React.useEffect(() => {
+        if (window.electronAPI?.onAmazonSourceProgress) {
+            window.electronAPI.onAmazonSourceProgress((data) => {
+                if (data?.status) setSourcingProgressStatus(data.status);
+            });
+        }
+        return () => {
+            if (window.electronAPI?.removeAmazonSourceProgressListener) {
+                window.electronAPI.removeAmazonSourceProgressListener();
+            }
+        };
+    }, []);
+
+    const handleSourceAmazonProduct = async () => {
+        const queryTopic = topic.trim();
+        if (!queryTopic) {
+            alert('Сначала укажите тему или идею лайфхака!');
+            return;
+        }
+        try {
+            setIsSourcingAmazon(true);
+            setSourcingProgressStatus('ИИ анализирует проблему и ищет решение на Amazon.fr...');
+            if (window.electronAPI?.amazonSourceProduct) {
+                const res = await window.electronAPI.amazonSourceProduct({
+                    topic: queryTopic,
+                    options: { provider: llmProvider, projectFolder }
+                });
+                if (res.success && res.product) {
+                    await refreshAmazonProducts();
+                    setSelectedAmazonProduct(res.product);
+                    alert(`✅ Товар #${res.product.code} "${res.product.title}" успешно найден и добавлен в витрину!`);
+                } else {
+                    alert('Не удалось подобрать товар автоматически: ' + (res.error || 'попробуйте вставить ссылку вручную'));
+                }
+            }
+        } catch (e: any) {
+            alert('Ошибка авто-подбора: ' + e.message);
+        } finally {
+            setIsSourcingAmazon(false);
+            setSourcingProgressStatus('');
+        }
+    };
+
+    const handleImportByUrl = async () => {
+        if (!directImportUrl.trim()) return;
+        try {
+            setIsSourcingAmazon(true);
+            setSourcingProgressStatus('Парсинг карточки товара с Amazon...');
+            if (window.electronAPI?.amazonSourceByUrl) {
+                const res = await window.electronAPI.amazonSourceByUrl({
+                    urlOrAsin: directImportUrl.trim(),
+                    options: { topic: topic.trim() || undefined, provider: llmProvider, projectFolder }
+                });
+                if (res.success && res.product) {
+                    await refreshAmazonProducts();
+                    setSelectedAmazonProduct(res.product);
+                    setDirectImportUrl('');
+                    setShowDirectImport(false);
+                    alert(`✅ Товар #${res.product.code} "${res.product.title}" успешно импортирован с Amazon!`);
+                } else {
+                    alert('Ошибка парсинга товара: ' + (res.error || 'проверьте ссылку или ASIN'));
+                }
+            }
+        } catch (e: any) {
+            alert('Ошибка импорта: ' + e.message);
+        } finally {
+            setIsSourcingAmazon(false);
+            setSourcingProgressStatus('');
+        }
+    };
+
+    const loadQueueList = async () => {
+        try {
+            const items = await window.electronAPI.lifehackQueueList();
+            setQueueList(items);
+        } catch (e) {
+            console.error('[Queue] Failed to load list', e);
+        }
+    };
+
+    const extractToQueue = async () => {
+        if (!videoBase64 && !screenshotBase64 && !referenceUrl.trim() && !topic.trim()) {
+            alert('Загрузите видео, скриншот, укажите ссылку на референс или введите тему для извлечения лайфхаков!');
+            return;
+        }
+        setIsExtractingQueue(true);
+        setError(null);
+        try {
+            let videoTranscript: string | undefined;
+            let screenshotText: string | undefined;
+            let rawText: string | undefined;
+            let sourceLabel = 'Manual';
+
+            if (referenceUrl.trim()) {
+                setProgressStatus('🔗 Разбираем видео по ссылке...');
+                try {
+                    const refData = await window.electronAPI.studioParseReferenceVideo(referenceUrl.trim());
+                    if (refData?.transcript) {
+                        videoTranscript = refData.transcript;
+                        sourceLabel = referenceUrl.trim();
+                    } else {
+                        rawText = referenceUrl.trim();
+                    }
+                } catch {
+                    rawText = referenceUrl.trim();
+                }
+            } else if (screenshotBase64) {
+                setProgressStatus('🔍 Читаем скриншот...');
+                const parsed = await window.electronAPI.studioParseScreenshot(screenshotBase64);
+                screenshotText = parsed?.text || '';
+                sourceLabel = 'Screenshot';
+            } else if (topic.trim()) {
+                rawText = topic.trim();
+                sourceLabel = 'Topic text';
+            } else if (videoBase64) {
+                // For local video, use topic as hint or show guidance
+                rawText = topic.trim() || 'Extract all visible lifehacks and practical tips from this cooking/home tips video';
+                sourceLabel = 'Uploaded Video';
+            }
+
+            setProgressStatus('🧠 Извлекаем лайфхаки...');
+            const result = await window.electronAPI.lifehackQueueExtract({
+                videoTranscript,
+                screenshotText,
+                rawText,
+                sourceLabel,
+                language: lang,
+                provider: llmProvider
+            });
+            await refreshQueueStats();
+            setProgressStatus('');
+            alert(`✅ Извлечено и добавлено в очередь: ${result.added} лайфхаков!`);
+        } catch (err: any) {
+            setError('Ошибка извлечения лайфхаков: ' + err.message);
+        } finally {
+            setIsExtractingQueue(false);
+            setProgressStatus('');
+        }
+    };
+
+    const generateFromQueue = async () => {
+        if (!queueNext) {
+            alert('Очередь пуста! Загрузите видео и нажмите «Извлечь лайфхаки».');
+            return;
+        }
+        // Mark as used immediately so it won't be picked again
+        await window.electronAPI.lifehackQueueMarkUsed(queueNext.id);
+        // Set the topic to the lifehack's LLM topic and run normal generation
+        setTopic(queueNext.topicForLlm);
+        await refreshQueueStats();
+        // Small delay to let state update before triggering generation
+        setTimeout(() => {
+            document.getElementById('studio-generate-btn')?.click();
+        }, 100);
+    };
+
+    const skipQueueItem = async (id: number) => {
+        await window.electronAPI.lifehackQueueSkip(id);
+        await refreshQueueStats();
+        await loadQueueList();
+    };
+
+    const deleteQueueItem = async (id: number) => {
+        if (window.electronAPI?.lifehackQueueDeleteItem) {
+            await window.electronAPI.lifehackQueueDeleteItem(id);
+            await refreshQueueStats();
+            await loadQueueList();
+        }
+    };
+
+    const clearCompletedQueue = async () => {
+        if (window.electronAPI?.lifehackQueueClearCompleted) {
+            await window.electronAPI.lifehackQueueClearCompleted();
+            await refreshQueueStats();
+            await loadQueueList();
+        }
+    };
+
+    const clearAllQueue = async () => {
+        if (window.confirm('Очистить всю очередь лайфхаков полностью?')) {
+            if (window.electronAPI?.lifehackQueueClearAll) {
+                await window.electronAPI.lifehackQueueClearAll();
+                await refreshQueueStats();
+                setQueueList([]);
+            }
+        }
+    };
 
     const handleToggleMultiThread = async (enabled: boolean) => {
         setIsMultiThread(enabled);
@@ -117,6 +433,113 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         }
     };
 
+    // ── Video Covers Helpers ──────────────────────────────────────────────────
+    const loadExistingCovers = async (folder: string) => {
+        if (!folder || !window.electronAPI?.studioGetCovers) return;
+        try {
+            const res = await window.electronAPI.studioGetCovers({ projectFolder: folder });
+            if (res && Array.isArray(res.covers) && res.covers.length > 0) {
+                setCovers(res.covers);
+                setSelectedCoverIndex(res.selectedCoverIndex ?? 0);
+            } else {
+                setCovers([]);
+            }
+        } catch (e) {
+            console.warn('[StudioTab] Failed to load covers for folder', folder, e);
+        }
+    };
+
+    React.useEffect(() => {
+        if (projectFolder) {
+            loadExistingCovers(projectFolder);
+        }
+    }, [projectFolder]);
+
+    React.useEffect(() => {
+        if (window.electronAPI?.onStudioCoversProgress) {
+            window.electronAPI.onStudioCoversProgress((data) => {
+                if (data.status === 'generating') {
+                    setCoversProgressStatus(`Генерация обложки ${((data.coverIndex ?? 0) + 1)}/4 (${data.styleTitle || ''})...`);
+                } else if (data.status === 'completed') {
+                    setCoversProgressStatus('✅ Все 4 обложки успешно сгенерированы!');
+                    setTimeout(() => setCoversProgressStatus(''), 4000);
+                }
+            });
+        }
+        return () => {
+            if (window.electronAPI?.removeStudioCoversProgressListener) {
+                window.electronAPI.removeStudioCoversProgressListener();
+            }
+        };
+    }, []);
+
+    const handleGenerateCovers = async () => {
+        if (!projectFolder && !script) {
+            alert('Сначала сгенерируйте сценарий ролика!');
+            return;
+        }
+        setIsGeneratingCovers(true);
+        setCoversProgressStatus('🚀 Запуск генерации 4 обложек по формуле 100K Guide...');
+        try {
+            const effectiveFolder = projectFolder || `Studio_${Date.now()}`;
+            if (!projectFolder) setProjectFolder(effectiveFolder);
+
+            const result = await window.electronAPI.studioGenerateCovers({
+                projectFolder: effectiveFolder,
+                topic: topic.trim() || undefined,
+                amazonProduct: selectedAmazonProduct || undefined,
+                script: script || undefined,
+                imageModel: imageModel as any,
+                provider: llmProvider
+            });
+
+            if (result && Array.isArray(result)) {
+                setCovers(result);
+                setSelectedCoverIndex(0);
+            }
+        } catch (e: any) {
+            alert('Ошибка при генерации обложек: ' + e.message);
+        } finally {
+            setIsGeneratingCovers(false);
+        }
+    };
+
+    const handleSelectCover = async (index: number) => {
+        setSelectedCoverIndex(index);
+        setCovers(prev => prev.map((c, i) => ({ ...c, isSelected: i === index })));
+        if (projectFolder && window.electronAPI?.studioSelectCover) {
+            try {
+                await window.electronAPI.studioSelectCover({ projectFolder, coverIndex: index });
+            } catch (e) {
+                console.error('Failed to save selected cover', e);
+            }
+        }
+    };
+
+    const handleRegenerateCover = async (index: number, customPrompt?: string) => {
+        const cover = covers[index];
+        if (!cover) return;
+        setRegeneratingCoverIndex(index);
+        try {
+            const promptToUse = customPrompt || cover.prompt;
+            const res = await window.electronAPI.studioRegenerateCover({
+                projectFolder,
+                coverIndex: index,
+                prompt: promptToUse,
+                imageModel: imageModel as any,
+                amazonProduct: selectedAmazonProduct || undefined
+            });
+
+            if (res?.imageUrl) {
+                setCovers(prev => prev.map((c, i) => i === index ? { ...c, imageUrl: res.imageUrl, prompt: promptToUse } : c));
+            }
+        } catch (e: any) {
+            alert('Ошибка перегенерации обложки: ' + e.message);
+        } finally {
+            setRegeneratingCoverIndex(null);
+        }
+    };
+
     React.useEffect(() => {
         const handlePaste = (e: ClipboardEvent) => {
             const items = e.clipboardData?.items;
@@ -130,6 +553,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                             if (typeof reader.result === 'string') {
                                 setScreenshotBase64(reader.result);
                                 setVideoBase64(null);
+                                if (autoSourceAmazon) setSelectedAmazonProduct(null);
                             }
                         };
                         reader.readAsDataURL(file);
@@ -143,6 +567,7 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                             if (typeof reader.result === 'string') {
                                 setVideoBase64(reader.result);
                                 setScreenshotBase64(null);
+                                if (autoSourceAmazon) setSelectedAmazonProduct(null);
                             }
                         };
                         reader.readAsDataURL(file);
@@ -167,6 +592,9 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                     } else {
                         setScreenshotBase64(reader.result);
                         setVideoBase64(null);
+                    }
+                    if (autoSourceAmazon) {
+                        setSelectedAmazonProduct(null);
                     }
                 }
             };
@@ -210,7 +638,6 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
     // Assembly
     const [assembling, setAssembling] = useState(false);
     const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
-    const [projectFolder, setProjectFolder] = useState('');
 
     const IMAGE_MODELS = [
         { value: 'nano_banana_2', label: 'Nano Banana 2', desc: 'Improved Versatility' },
@@ -272,13 +699,25 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                 referenceUrl: referenceUrl.trim(),
                 screenshotBase64: screenshotBase64 || undefined,
                 videoBase64: videoBase64 || undefined,
-                durationMode
+                durationMode,
+                amazonProduct: selectedAmazonProduct || undefined,
+                autoSourceAmazon: autoSourceAmazon && !selectedAmazonProduct
             });
+            if ((result as any).amazonProduct) {
+                setSelectedAmazonProduct((result as any).amazonProduct);
+                refreshAmazonProducts();
+            }
             const initializedScript: StudioScript = {
                 ...result,
                 scenes: result.scenes.map(s => ({ ...s, status: 'idle' }))
             };
             setScript(initializedScript);
+            // Auto-queue: if backend extracted other lifehacks, refresh stats and notify
+            if ((result.autoQueuedCount ?? 0) > 0) {
+                refreshQueueStats();
+                setProgressStatus(`✅ ${result.autoQueuedCount} лайфхаков добавлено в очередь автоматически`);
+                setTimeout(() => setProgressStatus(''), 5000);
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -306,12 +745,35 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
         if (!scene) return null;
         updateScene(sceneId, { status: 'generating_images' });
         try {
+            const actorPrompt = (() => {
+                const raw = scene.imagePrompt || '';
+                // Strip all appearance descriptions — reference image is the sole source of character looks.
+                // Keep only the scene action/pose/environment part: everything after the first sentence
+                // that anchors to the reference image.
+                const withoutAppearance = raw
+                    // Remove the anchor sentence that duplicates reference image wording
+                    .replace(/The character from the reference image[^.]*\./gi, '')
+                    // Remove all character appearance sentences
+                    .replace(/The character(?:'s| stands at)[^.]*\./gi, '')
+                    .replace(/\bshe (has|wears|is dressed|sports)[^.]*\./gi, '')
+                    .replace(/\b(?:auburn|curly|wavy|straight|long|short) hair[^.]*\./gi, '')
+                    .replace(/white lab coat[^.]*\./gi, '')
+                    .replace(/round glasses[^.]*\./gi, '')
+                    .replace(/STYLE:[^.]*\./gi, '')
+                    .replace(/skin with visible[^.]*\./gi, '')
+                    .replace(/NOT:[^.]*\./gi, '')
+                    // Remove leftover comma/whitespace artifacts
+                    .replace(/\s{2,}/g, ' ')
+                    .trim();
+                return `STRICT VERTICAL 9:16 PORTRAIT ORIENTATION. ${withoutAppearance}`;
+            })();
             const imageUrl = await window.electronAPI.skeletonGenerateImage({
                 sceneIndex: sceneIndex,
-                imagePrompt: `STRICT VERTICAL 9:16 PORTRAIT ORIENTATION. ${scene.imagePrompt}`,
+                imagePrompt: actorPrompt,
                 imageModel: imageModel as any,
                 projectFolder,
-                mode
+                mode,
+                amazonProduct: selectedAmazonProduct || undefined
             });
             updateScene(sceneId, { status: 'idle', selectedImage: imageUrl, generatedImages: [imageUrl] });
             return imageUrl;
@@ -712,6 +1174,417 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                     )}
                 </div>
 
+                {/* ── Amazon Showcase Panel (health mode only) ─────────────────── */}
+                {mode === 'health' && (
+                    <div className="sidebar-section" style={{ background: 'rgba(245, 158, 11, 0.05)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.25)', marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <ShoppingCart size={15} color="#f59e0b" />
+                                <h3 className="sidebar-title" style={{ margin: 0, color: '#fbbf24', fontSize: '12px' }}>ВИТРИНА AMAZON</h3>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                    onClick={refreshAmazonProducts}
+                                    disabled={isLoadingAmazon}
+                                    title="Обновить товары из products.json"
+                                    style={{ background: 'none', border: 'none', color: isLoadingAmazon ? '#64748b' : '#94a3b8', cursor: 'pointer', fontSize: '11px', padding: '2px 4px' }}
+                                >
+                                    {isLoadingAmazon ? '⏳' : '🔄'}
+                                </button>
+                                <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontWeight: 700 }}>
+                                    {amazonProducts.length} товаров
+                                </span>
+                            </div>
+                        </div>
+
+                        {selectedAmazonProduct && (
+                            <div style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: '8px', padding: '8px', marginBottom: '8px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Tag size={11} /> ВЫБРАН ТОВАР #{selectedAmazonProduct.code}
+                                    </span>
+                                    <button
+                                        onClick={() => setSelectedAmazonProduct(null)}
+                                        style={{
+                                            background: 'rgba(239, 68, 68, 0.15)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            borderRadius: '4px',
+                                            color: '#fca5a5',
+                                            cursor: 'pointer',
+                                            fontSize: '10px',
+                                            padding: '2px 6px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '3px'
+                                        }}
+                                        title="Сбросить привязку и включить авто-подбор"
+                                    >
+                                        ✕ Отвязать
+                                    </button>
+                                </div>
+                                <div style={{ fontSize: '11px', fontWeight: 600, color: '#f1f5f9', lineHeight: '1.3' }}>
+                                    {selectedAmazonProduct.title}
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#f59e0b', marginTop: '3px', fontStyle: 'italic' }}>
+                                    🎯 Outro CTA: «...tape le numéro {selectedAmazonProduct.code} sur mon labo !»
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Auto-Sourcing & Direct Import Controls ── */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', padding: '6px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#e2e8f0', cursor: 'pointer' }} title="При создании сценария ИИ сам найдёт на Amazon подходящий инструмент, если товар не выбран вручную">
+                                <input
+                                    type="checkbox"
+                                    checked={autoSourceAmazon}
+                                    onChange={(e) => setAutoSourceAmazon(e.target.checked)}
+                                    style={{ accentColor: '#f59e0b', cursor: 'pointer' }}
+                                />
+                                ⚡ Авто-поиск по теме
+                            </label>
+                            <button
+                                onClick={handleSourceAmazonProduct}
+                                disabled={isSourcingAmazon}
+                                title="Подобрать товар на Amazon.fr под текущую тему прямо сейчас"
+                                style={{
+                                    background: isSourcingAmazon ? 'rgba(245, 158, 11, 0.2)' : '#f59e0b',
+                                    color: isSourcingAmazon ? '#fbbf24' : '#000',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    padding: '3px 8px',
+                                    cursor: isSourcingAmazon ? 'wait' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}
+                            >
+                                <Search size={11} /> {isSourcingAmazon ? 'Поиск...' : 'Найти сейчас'}
+                            </button>
+                        </div>
+
+                        {/* ── Direct URL / ASIN Import Button ── */}
+                        <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+                            <button
+                                onClick={() => setShowDirectImport(!showDirectImport)}
+                                style={{
+                                    flex: 1,
+                                    background: showDirectImport ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.04)',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: '6px',
+                                    color: showDirectImport ? '#60a5fa' : '#94a3b8',
+                                    fontSize: '11px',
+                                    padding: '4px 6px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '4px'
+                                }}
+                            >
+                                <Link size={12} /> {showDirectImport ? 'Закрыть импорт' : '+ Добавить по ссылке / ASIN'}
+                            </button>
+                        </div>
+
+                        {showDirectImport && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', padding: '8px', background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '6px', marginBottom: '8px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Ссылка на Amazon.fr или ASIN (B0...)"
+                                    value={directImportUrl}
+                                    onChange={(e) => setDirectImportUrl(e.target.value)}
+                                    disabled={isSourcingAmazon}
+                                    style={{
+                                        width: '100%',
+                                        padding: '5px 8px',
+                                        borderRadius: '4px',
+                                        border: '1px solid rgba(255,255,255,0.15)',
+                                        background: '#0f172a',
+                                        color: '#fff',
+                                        fontSize: '11px',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                                    <button
+                                        onClick={() => setShowDirectImport(false)}
+                                        style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '10px', cursor: 'pointer' }}
+                                    >
+                                        Отмена
+                                    </button>
+                                    <button
+                                        onClick={handleImportByUrl}
+                                        disabled={isSourcingAmazon || !directImportUrl.trim()}
+                                        style={{
+                                            background: '#3b82f6',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            fontSize: '10px',
+                                            fontWeight: 700,
+                                            padding: '4px 10px',
+                                            cursor: isSourcingAmazon ? 'wait' : 'pointer'
+                                        }}
+                                    >
+                                        {isSourcingAmazon ? 'Загрузка...' : 'Импортировать'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {isSourcingAmazon && (
+                            <div style={{ padding: '6px 8px', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '6px', marginBottom: '8px', fontSize: '10px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>⏳</span>
+                                <span style={{ flex: 1 }}>{sourcingProgressStatus || 'ИИ подбирает товар на Amazon...'}</span>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                <button
+                                    onClick={() => setShowAmazonPanel(!showAmazonPanel)}
+                                    style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#94a3b8', fontSize: '11px', padding: '5px 8px', cursor: 'pointer' }}
+                                >
+                                    {showAmazonPanel ? '▲ Скрыть каталог' : '▼ Показать каталог'}
+                                </button>
+                                <button
+                                    onClick={handleAddAllAmazonToQueue}
+                                    title="Добавить все товары Amazon в очередь лайфхаков"
+                                    style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', color: '#34d399', fontSize: '11px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                >
+                                    + Все в очередь
+                                </button>
+                            </div>
+                        </div>
+
+                        {showAmazonPanel && amazonProducts.length > 0 && (
+                            <div style={{ marginTop: '8px', maxHeight: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                {amazonProducts.map(prod => {
+                                    const isSelected = selectedAmazonProduct?.code === prod.code;
+                                    return (
+                                        <div
+                                            key={prod.code}
+                                            style={{
+                                                background: isSelected ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.04)',
+                                                borderRadius: '6px',
+                                                padding: '6px 8px',
+                                                border: isSelected ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(255,255,255,0.08)',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '4px'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
+                                                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: '#f59e0b', color: '#000', flexShrink: 0 }}>
+                                                        #{prod.code}
+                                                    </span>
+                                                    <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {prod.title}
+                                                    </span>
+                                                </div>
+                                                <span style={{ fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase', flexShrink: 0 }}>
+                                                    {prod.category}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                                                <button
+                                                    onClick={() => handleSelectAmazonProduct(prod)}
+                                                    style={{
+                                                        background: isSelected ? '#f59e0b' : 'rgba(245, 158, 11, 0.2)',
+                                                        color: isSelected ? '#000' : '#fbbf24',
+                                                        border: 'none',
+                                                        borderRadius: '4px',
+                                                        fontSize: '10px',
+                                                        fontWeight: 700,
+                                                        padding: '3px 8px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {isSelected ? '✓ Выбран' : 'Выбрать для ролика'}
+                                                </button>
+                                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                    <button
+                                                        onClick={() => handleAddAmazonToQueue(prod)}
+                                                        title="Добавить этот товар в очередь лайфхаков"
+                                                        style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <PlusCircle size={13} />
+                                                    </button>
+                                                    {prod.amazonUrl && (
+                                                        <a
+                                                            href={prod.amazonUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            title="Открыть на Amazon"
+                                                            style={{ color: '#94a3b8', display: 'flex', alignItems: 'center' }}
+                                                        >
+                                                            <ExternalLink size={12} />
+                                                        </a>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteAmazonProduct(prod)}
+                                                        title="Удалить товар из каталога и с витрины"
+                                                        style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── Lifehack Queue Panel (health mode only) ─────────────────── */}
+                {mode === 'health' && (
+                    <div className="sidebar-section" style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <h3 className="sidebar-title" style={{ margin: 0, color: '#34d399' }}>📚 ОЧЕРЕДЬ ЛАЙФХАКОВ</h3>
+                            {queueStats && (
+                                <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: queueStats.pending > 0 ? 'rgba(16,185,129,0.2)' : 'rgba(100,116,139,0.2)', color: queueStats.pending > 0 ? '#34d399' : '#64748b', fontWeight: 700 }}>
+                                    {queueStats.pending} в очереди
+                                </span>
+                            )}
+                        </div>
+
+                        {queueNext && (
+                            <div style={{ background: 'rgba(16,185,129,0.08)', borderRadius: '8px', padding: '8px 10px', marginBottom: '8px', border: '1px solid rgba(16,185,129,0.15)' }}>
+                                <div style={{ fontSize: '10px', color: '#6ee7b7', fontWeight: 700, marginBottom: '3px', textTransform: 'uppercase' }}>Следующий:</div>
+                                <div style={{ fontSize: '12px', color: '#e2e8f0', fontWeight: 600, lineHeight: '1.4' }}>{queueNext.title}</div>
+                                <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '3px' }}>{queueNext.category}</div>
+                            </div>
+                        )}
+
+                        {!queueNext && queueStats && queueStats.total > 0 && (
+                            <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', padding: '8px 0' }}>
+                                Все {queueStats.total} лайфхаков использованы
+                            </div>
+                        )}
+
+                        {!queueStats || queueStats.total === 0 ? (
+                            <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', padding: '4px 0 8px' }}>
+                                Загрузите видео и нажмите<br />«Извлечь лайфхаки в очередь»
+                            </div>
+                        ) : null}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                                <button
+                                    onClick={() => { setShowQueuePanel(!showQueuePanel); if (!showQueuePanel) loadQueueList(); }}
+                                    style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#94a3b8', fontSize: '11px', padding: '5px 8px', cursor: 'pointer' }}
+                                >
+                                    {showQueuePanel ? '▲ Скрыть список' : '▼ Показать список'}
+                                </button>
+                                {queueStats && queueStats.used > 0 && (
+                                    <button
+                                        onClick={clearCompletedQueue}
+                                        style={{ background: 'rgba(100,116,139,0.15)', border: '1px solid rgba(100,116,139,0.25)', borderRadius: '6px', color: '#94a3b8', fontSize: '10px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                        title="Удалить из списка все уже сгенерированные и пропущенные видео"
+                                    >
+                                        🧹 Снять готовые ({queueStats.used})
+                                    </button>
+                                )}
+                            </div>
+                            {queueStats && queueStats.total > 0 && (
+                                <button
+                                    onClick={clearAllQueue}
+                                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', color: '#f87171', fontSize: '10px', padding: '4px 8px', cursor: 'pointer' }}
+                                >
+                                    🗑 Очистить всю очередь
+                                </button>
+                            )}
+                        </div>
+
+                        {showQueuePanel && (
+                            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                {/* Filter Tabs */}
+                                <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '6px' }}>
+                                    <button
+                                        onClick={() => setQueueFilter('pending')}
+                                        style={{ flex: 1, background: queueFilter === 'pending' ? 'rgba(16,185,129,0.2)' : 'transparent', border: 'none', borderRadius: '4px', color: queueFilter === 'pending' ? '#34d399' : '#64748b', fontSize: '10px', padding: '3px 0', cursor: 'pointer', fontWeight: 600 }}
+                                    >
+                                        В очереди ({queueStats?.pending || 0})
+                                    </button>
+                                    <button
+                                        onClick={() => setQueueFilter('used')}
+                                        style={{ flex: 1, background: queueFilter === 'used' ? 'rgba(59,130,246,0.2)' : 'transparent', border: 'none', borderRadius: '4px', color: queueFilter === 'used' ? '#60a5fa' : '#64748b', fontSize: '10px', padding: '3px 0', cursor: 'pointer', fontWeight: 600 }}
+                                    >
+                                        Сделанные ({queueStats?.used || 0})
+                                    </button>
+                                    <button
+                                        onClick={() => setQueueFilter('all')}
+                                        style={{ flex: 1, background: queueFilter === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', borderRadius: '4px', color: queueFilter === 'all' ? '#e2e8f0' : '#64748b', fontSize: '10px', padding: '3px 0', cursor: 'pointer', fontWeight: 600 }}
+                                    >
+                                        Все ({queueStats?.total || 0})
+                                    </button>
+                                </div>
+
+                                {queueList.length === 0 ? (
+                                    <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', padding: '8px 0' }}>Список пуст</div>
+                                ) : (
+                                    <div style={{ maxHeight: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {queueList
+                                            .filter(i => queueFilter === 'all' ? true : queueFilter === 'pending' ? i.status === 'pending' : (i.status === 'used' || i.status === 'skipped'))
+                                            .map(item => {
+                                                const isDone = item.status === 'used' || item.status === 'skipped';
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        style={{
+                                                            background: isDone ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
+                                                            borderRadius: '6px',
+                                                            padding: '6px 8px',
+                                                            border: isDone ? '1px solid rgba(255,255,255,0.04)' : '1px solid rgba(255,255,255,0.08)',
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            opacity: isDone ? 0.75 : 1
+                                                        }}
+                                                    >
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                {item.status === 'used' && <span style={{ fontSize: '9px', background: 'rgba(59,130,246,0.2)', color: '#60a5fa', padding: '1px 4px', borderRadius: '3px' }}>✓ Готово</span>}
+                                                                {item.status === 'skipped' && <span style={{ fontSize: '9px', background: 'rgba(100,116,139,0.2)', color: '#94a3b8', padding: '1px 4px', borderRadius: '3px' }}>Пропущено</span>}
+                                                                <div style={{ fontSize: '11px', color: isDone ? '#94a3b8' : '#e2e8f0', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                    {item.title}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ fontSize: '9px', color: '#64748b', marginTop: '2px' }}>{item.category}</div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            {item.status === 'pending' && (
+                                                                <button
+                                                                    onClick={() => skipQueueItem(item.id)}
+                                                                    style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px 4px', fontSize: '10px' }}
+                                                                    title="Отметить как пропущенный"
+                                                                >
+                                                                    ⏭
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => deleteQueueItem(item.id)}
+                                                                style={{ background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '4px', color: '#f87171', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', lineHeight: 1 }}
+                                                                title="Удалить из очереди навсегда"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="sidebar-section">
                     <h3 className="sidebar-title">🌍 LANGUAGE</h3>
                     <div className="selection-list">
@@ -1096,7 +1969,9 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                 </div>
 
                                 {!script && (
+                                    <>
                                     <button
+                                        id="studio-generate-btn"
                                         onClick={generateScript}
                                         disabled={isLoading || (!topic.trim() && !referenceUrl.trim() && !screenshotBase64 && !videoBase64)}
                                         className="generate-btn"
@@ -1110,6 +1985,36 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                             ? ' 🔍 РАСПОЗНАТЬ СКРИНШОТ И СОЗДАТЬ СЦЕНАРИЙ'
                                             : (referenceUrl.trim() ? ' ⚡ РАЗОБРАТЬ РЕФЕРЕНС И СОЗДАТЬ СЦЕНАРИЙ' : ' GENERATE SCRIPT')}
                                     </button>
+
+                                    {/* ── Кнопки очереди лайфхаков (только health mode) ── */}
+                                    {mode === 'health' && (
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                            {/* Manual extraction button — hidden when referenceUrl is set (auto-extraction happens during generateScript) */}
+                                            {(videoBase64 || screenshotBase64 || topic.trim()) && !referenceUrl.trim() && (
+                                                <button
+                                                    onClick={extractToQueue}
+                                                    disabled={isExtractingQueue || isLoading}
+                                                    className="generate-btn"
+                                                    style={{ background: 'linear-gradient(135deg, #0891b2, #0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.35)', flex: 1 }}
+                                                >
+                                                    {isExtractingQueue ? <RefreshCw className="spin" size={18} /> : '📥'}
+                                                    {' ИЗВЛЕЧЬ ВСЕ ЛАЙФХАКИ В ОЧЕРЕДЬ'}
+                                                </button>
+                                            )}
+                                            {queueNext && (
+                                                <button
+                                                    onClick={generateFromQueue}
+                                                    disabled={isLoading}
+                                                    className="generate-btn"
+                                                    style={{ background: 'linear-gradient(135deg, #059669, #047857)', boxShadow: '0 4px 14px rgba(5,150,105,0.35)', flex: 1 }}
+                                                >
+                                                    <Zap size={18} />
+                                                    {` 📂 ИЗ ОЧЕРЕДИ (${queueStats?.pending ?? '?'} осталось)`}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                    </>
                                 )}
 
                                 {script && (
@@ -1332,9 +2237,371 @@ const StudioTab: React.FC<StudioTabProps> = ({ mode }) => {
                                 ))}
                             </div>
                         )}
+
+                        {/* ── Video Covers Section (Under 8 Scenes) ──────────── */}
+                        {script && (
+                            <section className="video-covers-section" style={{
+                                marginTop: '28px',
+                                background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                padding: '20px',
+                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{
+                                            background: 'rgba(245, 158, 11, 0.15)',
+                                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                                            borderRadius: '10px',
+                                            padding: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <Sparkles size={20} color="#fbbf24" />
+                                        </div>
+                                        <div>
+                                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                🎨 ОБЛОЖКИ ДЛЯ ВИДЕО (TIKTOK THUMBNAILS — 9:16)
+                                                <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontWeight: 700 }}>
+                                                    100K Prompt Guide
+                                                </span>
+                                            </h3>
+                                            <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#94a3b8' }}>
+                                                4 вирусных архетипа с сохранением лица Génie. Кликните по обложке, чтобы выбрать её для публикации.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        {coversProgressStatus && (
+                                            <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <RefreshCw size={13} className="spin" /> {coversProgressStatus}
+                                            </span>
+                                        )}
+                                        <button
+                                            onClick={handleGenerateCovers}
+                                            disabled={isGeneratingCovers}
+                                            style={{
+                                                background: isGeneratingCovers ? '#64748b' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                                color: '#000',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                padding: '8px 16px',
+                                                fontWeight: 800,
+                                                fontSize: '12px',
+                                                cursor: isGeneratingCovers ? 'not-allowed' : 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {isGeneratingCovers ? <RefreshCw size={14} className="spin" /> : <Sparkles size={14} />}
+                                            {covers.length > 0 ? 'ПЕРЕГЕНЕРИРОВАТЬ 4 ОБЛОЖКИ' : 'СГЕНЕРИРОВАТЬ 4 ОБЛОЖКИ'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Grid of 4 covers */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(4, 1fr)',
+                                    gap: '16px'
+                                }}>
+                                    {([0, 1, 2, 3]).map((idx) => {
+                                        const cover = covers[idx];
+                                        const isSelected = selectedCoverIndex === idx;
+                                        const isRegenerating = regeneratingCoverIndex === idx;
+
+                                        // Fallback display styles if not generated yet
+                                        const fallbackStyles = [
+                                            { title: 'Шок-открытие', badge: 'Любопытство (Curiosity)', desc: 'Крупный план, широко раскрытые глаза, светящаяся реакция' },
+                                            { title: 'Контраст До / После', badge: 'До / После (Proof)', desc: 'Разделенный экран: грязь слева и чистый блеск справа' },
+                                            { title: 'Герой Продукта', badge: 'Товар (Hero Showcase)', desc: 'Фокус на товаре в руках с кодом #X и размытым фоном' },
+                                            { title: 'Заговорщический секрет', badge: 'Секрет (Insider Hook)', desc: 'Палец у губ «Тсс!», драматичный свет, закрытый инсайд' }
+                                        ];
+                                        const styleInfo = cover ? {
+                                            title: cover.styleTitle,
+                                            badge: cover.badge,
+                                            desc: cover.description
+                                        } : fallbackStyles[idx];
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                style={{
+                                                    background: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'rgba(15, 23, 42, 0.6)',
+                                                    border: isSelected ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
+                                                    borderRadius: '12px',
+                                                    padding: '10px',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '10px',
+                                                    boxShadow: isSelected ? '0 0 20px rgba(16, 185, 129, 0.25)' : 'none',
+                                                    transition: 'all 0.2s',
+                                                    position: 'relative'
+                                                }}
+                                            >
+                                                {/* Header badge */}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span style={{
+                                                        fontSize: '9px',
+                                                        fontWeight: 800,
+                                                        padding: '2px 6px',
+                                                        borderRadius: '6px',
+                                                        background: isSelected ? '#10b981' : 'rgba(255, 255, 255, 0.08)',
+                                                        color: isSelected ? '#000' : '#94a3b8',
+                                                        textTransform: 'uppercase'
+                                                    }}>
+                                                        {isSelected ? '✓ ГЛАВНАЯ' : `ВАРИАНТ #${idx + 1}`}
+                                                    </span>
+                                                    <span style={{ fontSize: '9px', color: '#fbbf24', fontWeight: 700 }}>
+                                                        {styleInfo.badge}
+                                                    </span>
+                                                </div>
+
+                                                {/* 9:16 Thumbnail Container */}
+                                                <div
+                                                    onClick={() => {
+                                                        if (cover?.imageUrl) handleSelectCover(idx);
+                                                    }}
+                                                    style={{
+                                                        position: 'relative',
+                                                        width: '100%',
+                                                        paddingTop: '177.77%', // 9:16 aspect ratio
+                                                        borderRadius: '8px',
+                                                        overflow: 'hidden',
+                                                        background: 'rgba(0, 0, 0, 0.5)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                                                        cursor: cover?.imageUrl ? 'pointer' : 'default'
+                                                    }}
+                                                >
+                                                    {isRegenerating ? (
+                                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', gap: '8px' }}>
+                                                            <RefreshCw size={28} className="spin" color="#10b981" />
+                                                            <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 600 }}>Генерация...</span>
+                                                        </div>
+                                                    ) : cover?.imageUrl ? (
+                                                        <>
+                                                            <img
+                                                                src={cover.imageUrl}
+                                                                alt={styleInfo.title}
+                                                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            />
+                                                            {isSelected && (
+                                                                <div style={{ position: 'absolute', top: '8px', left: '8px', background: '#10b981', color: '#000', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                                                                    <Check size={14} strokeWidth={3} />
+                                                                </div>
+                                                            )}
+                                                            <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px' }}>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); setPreviewCoverModal(cover); }}
+                                                                    title="Увеличить обложку"
+                                                                    style={{ background: 'rgba(0,0,0,0.7)', border: 'none', color: '#fff', borderRadius: '6px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                                >
+                                                                    <ZoomIn size={13} />
+                                                                </button>
+                                                                <a
+                                                                    href={cover.imageUrl}
+                                                                    download={`cover_${idx + 1}.jpg`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    title="Скачать обложку"
+                                                                    style={{ background: 'rgba(0,0,0,0.7)', border: 'none', color: '#fff', borderRadius: '6px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                                                                >
+                                                                    <Download size={13} />
+                                                                </a>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px', textAlign: 'center', color: '#64748b', gap: '8px' }}>
+                                                            <ImageIcon size={32} />
+                                                            <span style={{ fontSize: '10px', lineHeight: 1.3 }}>{styleInfo.desc}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Card info & action buttons */}
+                                                <div>
+                                                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#e2e8f0', marginBottom: '2px' }}>
+                                                        {styleInfo.title}
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: '#64748b', minHeight: '26px', lineHeight: 1.3 }}>
+                                                        {styleInfo.desc}
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (cover?.imageUrl) handleSelectCover(idx);
+                                                        }}
+                                                        disabled={!cover?.imageUrl}
+                                                        style={{
+                                                            flex: 1,
+                                                            background: isSelected ? '#10b981' : 'rgba(255, 255, 255, 0.06)',
+                                                            color: isSelected ? '#000' : (cover?.imageUrl ? '#e2e8f0' : '#475569'),
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            padding: '5px',
+                                                            fontSize: '10px',
+                                                            fontWeight: 700,
+                                                            cursor: cover?.imageUrl ? 'pointer' : 'default'
+                                                        }}
+                                                    >
+                                                        {isSelected ? '✓ Выбрана' : 'Выбрать'}
+                                                    </button>
+                                                    {cover?.imageUrl && (
+                                                        <button
+                                                            onClick={() => handleRegenerateCover(idx)}
+                                                            disabled={isRegenerating}
+                                                            title="Перегенерировать эту обложку"
+                                                            style={{
+                                                                background: 'rgba(255, 255, 255, 0.06)',
+                                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                                borderRadius: '6px',
+                                                                color: '#94a3b8',
+                                                                padding: '5px 8px',
+                                                                cursor: isRegenerating ? 'not-allowed' : 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                        >
+                                                            <RefreshCw size={11} className={isRegenerating ? 'spin' : ''} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
                     </div>
                 </main>
             </div>
+
+            {/* Modal for Cover Zoom Preview */}
+            {previewCoverModal && (
+                <div
+                    onClick={() => setPreviewCoverModal(null)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: '#0f172a',
+                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                            borderRadius: '16px',
+                            maxWidth: '760px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            display: 'flex',
+                            gap: '20px',
+                            padding: '20px',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.7)',
+                            overflowY: 'auto'
+                        }}
+                    >
+                        <div style={{ width: '280px', flexShrink: 0, borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <img
+                                src={previewCoverModal.imageUrl}
+                                alt="Preview"
+                                style={{ width: '100%', height: 'auto', display: 'block', aspectRatio: '9/16', objectFit: 'cover' }}
+                            />
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div>
+                                        <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', textTransform: 'uppercase' }}>
+                                            {previewCoverModal.badge}
+                                        </span>
+                                        <h3 style={{ margin: '6px 0 2px', fontSize: '18px', color: '#f8fafc' }}>
+                                            {previewCoverModal.styleTitle}
+                                        </h3>
+                                        <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
+                                            {previewCoverModal.description}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setPreviewCoverModal(null)}
+                                        style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                <div style={{ marginTop: '16px' }}>
+                                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                                        <ImageIcon size={13} /> Промпт из 100K Guide:
+                                    </label>
+                                    <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '8px', padding: '10px', border: '1px solid rgba(255,255,255,0.06)', maxHeight: '180px', overflowY: 'auto' }}>
+                                        <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', lineHeight: 1.4, fontFamily: 'monospace' }}>
+                                            {previewCoverModal.prompt}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                <button
+                                    onClick={() => {
+                                        handleSelectCover(previewCoverModal.id);
+                                        setPreviewCoverModal(null);
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        background: '#10b981',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '10px',
+                                        fontWeight: 800,
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    <Check size={16} strokeWidth={3} /> Выбрать как главную обложку видео
+                                </button>
+                                <a
+                                    href={previewCoverModal.imageUrl}
+                                    download={`cover_${previewCoverModal.id + 1}.jpg`}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.08)',
+                                        color: '#fff',
+                                        borderRadius: '8px',
+                                        padding: '10px 14px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        textDecoration: 'none'
+                                    }}
+                                    title="Скачать обложку"
+                                >
+                                    <Download size={16} />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
         .max-width-wrapper { max-width: 1200px; margin: 0 auto; width: 100%; }
