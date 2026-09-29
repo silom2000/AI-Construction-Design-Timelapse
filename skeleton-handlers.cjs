@@ -2118,10 +2118,15 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
             ${effectiveAmazonProduct ? `
             13. 🛒 MANDATORY OUTRO & CTA FOR AMAZON SHOWCASE PRODUCT #${effectiveAmazonProduct.code} ("${effectiveAmazonProduct.title}"):
                  - The FINAL SCENE (Scene ${isShort ? '5' : '8'}) is the Outro.
-                 - Génie MUST address the viewer with irresistible, enthusiastic, and confident charm, giving an EXPLICIT CALL TO ACTION: go to her profile (@bertranna), click the website link in bio, and on the product showcase page type the exact number #${effectiveAmazonProduct.code} in the search box to find the Amazon product link.
-                 - Language requirement: In ${langName} (especially French for @bertranna), the CTA must tell the viewer: (1) go to the profile / click link in bio, (2) type/enter code #${effectiveAmazonProduct.code} on the site TO FIND the Amazon link.
-                   e.g. in French: "Va sur mon profil, clique le lien en bio et tape le ${effectiveAmazonProduct.code} pour voir le lien Amazon !" OR "Clique le lien en bio @bertranna, tape le ${effectiveAmazonProduct.code} et retrouve directement sur Amazon !"
-                   ⚠️ AVOID vague phrases like "sur mon labo" that the viewer won't understand. Be EXPLICIT: profile → link in bio → type the number → Amazon link.
+                 - Génie MUST deliver a clear, friendly, step-by-step call to action that ANY viewer of any age can follow WITHOUT confusion.
+                 - THE EXACT 3-STEP SEQUENCE TO COMMUNICATE (in this order):
+                   STEP 1: "Go to the link in my bio / profile" → the viewer clicks the link in the TikTok/Instagram bio.
+                   STEP 2: "Enter the number ${effectiveAmazonProduct.code}" → on the website page, type the product number to find it.
+                   STEP 3: "You arrive directly on Amazon to buy it" → the site redirects them to the Amazon product page.
+                 - Language requirement: In ${langName} (especially French for @bertranna), the line MUST make all 3 steps explicit and simple.
+                   ✅ GOOD example: "Clique le lien dans mon profil, tape le numéro ${effectiveAmazonProduct.code} sur le site et tu arrives directement sur Amazon !"
+                   ✅ GOOD example: "Va sur le lien en bio, entre le ${effectiveAmazonProduct.code} sur la page et commande ce produit directement sur Amazon !"
+                   ❌ FORBIDDEN: vague phrases like "sur mon labo", "sur le clavier", "sur ma page", "en bio" alone without explaining what to do there.
                  - Dialogue length: STRICTLY 18-22 words, natural conversational pace filling the 8-second video clip.
                  - Example French Outro line: "${amazonManager.getRandomCta(effectiveAmazonProduct.code)}"
             14. 🎯 STRICT 50/50 NARRATIVE FORMULA (MANDATORY WHEN AN AMAZON PRODUCT IS PRESENT):
@@ -2132,7 +2137,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
                    * Scene 5 is THE TURNING POINT: The DIY trick works, but doing the physical scrubbing/watching by hand is exhausting. Bertranna pivots with empathy: "Pour vous épargner cet effort et vous faciliter la vie, je vous recommande d'utiliser..." and introduces the Amazon tool (${effectiveAmazonProduct.title}).
                    * Scene 6 explains why this tool solves the manual exhaustion (ergonomics, high speed, telescopic handle, convenience).
                    * Scene 7 highlights the triumphant synergy: the smart lifehack + this physical tool = flawless result in minutes without back pain or fatigue.
-                 - 🏁 BLOCK 3: SCENE 8 — OUTRO CTA (Bio link + code #${effectiveAmazonProduct.code} on the virtual lab keypad).` : ''}`;
+                 - 🏁 BLOCK 3: SCENE 8 — OUTRO CTA: Génie guides the viewer through 3 simple steps: (1) click the link in bio → (2) type number #${effectiveAmazonProduct.code} on the site → (3) arrive directly on Amazon to purchase.` : ''}`;
 
             const effectiveTopic = localVideoData
                 ? `Uploaded Video Material: "${localVideoData.combinedSummary.slice(0, 700)}..."`
@@ -2148,7 +2153,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
 - Scientific Principle: ${effectiveAmazonProduct.verdict}
 - Key Highlights: ${Array.isArray(effectiveAmazonProduct.features) ? effectiveAmazonProduct.features.join('; ') : ''}
 - Role of the Product: Smart physical amplifier introduced in Scene 5 to ease manual effort (ABSOLUTELY ZERO MENTION in Scenes 1-4!).
-- MANDATORY OUTRO REQUIREMENT: Scene ${isShort ? '5' : '8'} MUST instruct the viewer in ${langName} to go to bio and enter code #${effectiveAmazonProduct.code} on the lab keypad!\n` : '';
+- MANDATORY OUTRO REQUIREMENT: Scene ${isShort ? '5' : '8'} MUST guide the viewer through 3 clear steps in ${langName}: (1) click the link in bio → (2) type the number ${effectiveAmazonProduct.code} on the website → (3) you arrive directly on Amazon to purchase the product.\n` : '';
 
             userPrompt = `Create a viral short LIFEHACK & SMART TIPS script with EXACTLY ${isShort ? '5' : '8'} scenes for: "${effectiveTopic}".
                         ${amazonProductContext}
@@ -2165,7 +2170,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
             - Scene 2 (CONCRETE DIY TRICK — 18-22 words): Specific recipe/ingredients/method. ZERO product mention!
             - Scene 3 (THE PIVOT: TO EASE YOUR EFFORTS — 18-22 words): "Pour vous épargner cet effort, je vous recommande..." (introducing ${effectiveAmazonProduct.title}).
             - Scene 4 (RESULT & RELIEF — 18-22 words): Flawless result without fatigue.
-            - Scene 5 (OUTRO CTA — 18-22 words): Spoken callout: bio link + code #${effectiveAmazonProduct.code}!
+            - Scene 5 (OUTRO CTA — 18-22 words): 3 clear steps — (1) click link in bio, (2) type number ${effectiveAmazonProduct.code} on the site, (3) arrive on Amazon to buy!
             ` : `
             - Scene 1 (HOOK & EVERYDAY PAIN — 18-22 words): Sharp callout of everyday pain/frustration. ZERO product mention!
             - Scene 2 (THE MISTAKE / WRONG WAY — 18-22 words): Why ordinary ways fail, waste money or damage health/materials. ZERO product mention!
@@ -2174,7 +2179,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
             - Scene 5 (THE PIVOT: "TO EASE YOUR EFFORTS..." — 18-22 words): Turning point! The hack works, but doing it manually is exhausting. Bertranna introduces the Amazon tool: "Pour vous épargner cet effort et vous faciliter la vie, je vous recommande..." (introducing ${effectiveAmazonProduct.title}).
             - Scene 6 (ERGONOMICS & HOW THE TOOL AMPLIFIES THE HACK — 18-22 words): Specific features solving manual fatigue (telescopic handle, high-speed motor, self-adhesive strip, etc.).
             - Scene 7 (TRIUMPHANT SYNERGY — 18-22 words): The combined victory: cheap clever trick + smart tool = perfect result in minutes with zero back pain or tiredness!
-            - Scene 8 (OUTRO CTA — 18-22 words): Spoken callout: bio link + type code #${effectiveAmazonProduct.code} on the lab keypad!
+            - Scene 8 (OUTRO CTA — 18-22 words): 3 clear steps — (1) click link in bio, (2) type number ${effectiveAmazonProduct.code} on the site, (3) arrive on Amazon to buy!
             `}
             ` : `
             ${isShort ? `
