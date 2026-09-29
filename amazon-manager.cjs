@@ -24,11 +24,11 @@ const FALLBACK_PRODUCTS_FILE = path.join(__dirname, 'amazon_products_cache.json'
 
 // ── CTA Variations for Outro in French (18-22 words, natural, high retention) ──
 const OUTRO_CTA_TEMPLATES_FR = [
-    (code) => `Pour tester cette pépite sans risque, le lien est dans ma bio : tape le numéro ${code} sur mon labo !`,
-    (code) => `Ne perds plus ton temps : retrouve ma sélection vérifiée avec le code ${code} sur le site en bio !`,
-    (code) => `Je t'ai mis la référence exacte en bio. Rentre simplement le code numéro ${code} pour voir la fiche complète !`,
-    (code) => `Tous les détails et mon test complet sont sur mon site en bio : tape le code ${code} et dis-moi en commentaire !`,
-    (code) => `Envie d'avoir le même résultat ? File voir le lien dans ma bio et tape le numéro ${code} sur le clavier !`
+    (code) => `Va sur mon profil @bertranna, clique le lien en bio et tape le ${code} pour trouver le lien Amazon direct !`,
+    (code) => `Clique le lien dans ma bio, tape simplement le numéro ${code} sur la page et tu arrives directement sur Amazon !`,
+    (code) => `File sur mon profil, ouvre le lien en bio et entre le ${code} — le lien Amazon t'attend direct sur la page !`,
+    (code) => `Lien dans ma bio @bertranna : tape le ${code} sur le site et retrouve exactement ce produit sur Amazon en un clic !`,
+    (code) => `Va sur mon profil, clique le lien, tape le numéro ${code} et achète directement sur Amazon sans chercher !`
 ];
 
 function getProductsFilePath() {

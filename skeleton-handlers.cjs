@@ -2118,9 +2118,10 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
             ${effectiveAmazonProduct ? `
             13. 🛒 MANDATORY OUTRO & CTA FOR AMAZON SHOWCASE PRODUCT #${effectiveAmazonProduct.code} ("${effectiveAmazonProduct.title}"):
                  - The FINAL SCENE (Scene ${isShort ? '5' : '8'}) is the Outro.
-                 - Génie MUST address the viewer with irresistible, enthusiastic, and confident charm, giving an EXPLICIT CALL TO ACTION to visit her bio link and enter the exact product code #${effectiveAmazonProduct.code} on the virtual lab keypad.
-                 - Language requirement: In ${langName} (especially French for @bertranna), she MUST explicitly tell the viewer to type or enter code #${effectiveAmazonProduct.code}:
-                   e.g. in French: "tape le numéro ${effectiveAmazonProduct.code} sur mon labo en bio" OR "retrouve la référence exacte avec le code ${effectiveAmazonProduct.code} sur mon site en bio".
+                 - Génie MUST address the viewer with irresistible, enthusiastic, and confident charm, giving an EXPLICIT CALL TO ACTION: go to her profile (@bertranna), click the website link in bio, and on the product showcase page type the exact number #${effectiveAmazonProduct.code} in the search box to find the Amazon product link.
+                 - Language requirement: In ${langName} (especially French for @bertranna), the CTA must tell the viewer: (1) go to the profile / click link in bio, (2) type/enter code #${effectiveAmazonProduct.code} on the site TO FIND the Amazon link.
+                   e.g. in French: "Va sur mon profil, clique le lien en bio et tape le ${effectiveAmazonProduct.code} pour voir le lien Amazon !" OR "Clique le lien en bio @bertranna, tape le ${effectiveAmazonProduct.code} et retrouve directement sur Amazon !"
+                   ⚠️ AVOID vague phrases like "sur mon labo" that the viewer won't understand. Be EXPLICIT: profile → link in bio → type the number → Amazon link.
                  - Dialogue length: STRICTLY 18-22 words, natural conversational pace filling the 8-second video clip.
                  - Example French Outro line: "${amazonManager.getRandomCta(effectiveAmazonProduct.code)}"
             14. 🎯 STRICT 50/50 NARRATIVE FORMULA (MANDATORY WHEN AN AMAZON PRODUCT IS PRESENT):
