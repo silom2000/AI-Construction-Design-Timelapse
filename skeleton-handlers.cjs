@@ -2119,14 +2119,15 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
             13. 🛒 MANDATORY OUTRO & CTA FOR AMAZON SHOWCASE PRODUCT #${effectiveAmazonProduct.code} ("${effectiveAmazonProduct.title}"):
                  - The FINAL SCENE (Scene ${isShort ? '5' : '8'}) is the Outro.
                  - Génie MUST deliver a clear, friendly, step-by-step call to action that ANY viewer of any age can follow WITHOUT confusion.
-                 - THE EXACT 3-STEP SEQUENCE TO COMMUNICATE (in this order):
-                   STEP 1: "Click the link in my bio / profile" → viewer opens the "Laboratoire des Trouvailles" website.
-                   STEP 2: "Type the number ${effectiveAmazonProduct.code} on the keypad" → the site has a real numeric keypad, viewer taps the digits.
-                   STEP 3: "Press OK → you arrive directly on Amazon to buy it" → the OK button redirects to the Amazon product page.
-                 - Language requirement: In ${langName} (especially French for @bertranna), the line MUST make all 3 steps explicit and simple.
-                   ✅ GOOD: "Clique le lien dans mon profil, tape le ${effectiveAmazonProduct.code} sur le clavier et OK t'envoie direct sur Amazon !"
-                   ✅ GOOD: "Va sur le lien en bio, entre le ${effectiveAmazonProduct.code} sur le clavier du site, OK et tu commandes sur Amazon !"
-                   ❌ FORBIDDEN: vague phrases like "sur mon labo", "sur le site", or "tape le code" — the word "clavier" MUST appear explicitly (e.g. "sur le clavier") to name the numeric keypad. "sur le site" is not enough.
+                 - MANDATORY SKELETON — generate the line using exactly these 3 parts in ${langName}, in this order:
+                   PART 1 [bio link]:   Imperative verb → tell the viewer to click/open the link in your profile/bio.
+                   PART 2 [code + OK]:  Imperative verb → enter number ${effectiveAmazonProduct.code} on the keypad AND press OK (both in one clause, never separated).
+                   PART 3 [Amazon]:     Result → they arrive on Amazon to order/buy the product.
+                 - In ${langName} (especially French for @bertranna), all 3 parts MUST be present, explicit, and simple enough for any viewer of any age.
+                   ✅ GOOD: "Clique sur le lien en bio ! Entre le ${effectiveAmazonProduct.code} sur le clavier et appuie sur OK — tu arrives sur Amazon pour commander !"
+                   ✅ GOOD: "Va sur le lien dans mon profil, tape le ${effectiveAmazonProduct.code} sur le clavier, appuie sur OK et commande-le direct sur Amazon !"
+                   ❌ FORBIDDEN: "sur le site" or "sur mon labo" instead of "sur le clavier" — the word "clavier" MUST appear explicitly.
+                   ❌ FORBIDDEN: splitting PART 2 across two sentences (enter code in one sentence, OK in another).
                  - Dialogue length: STRICTLY 18-22 words, natural conversational pace filling the 8-second video clip.
                  - Example French Outro line: "${amazonManager.getRandomCta(effectiveAmazonProduct.code)}"
             14. 🎯 STRICT 50/50 NARRATIVE FORMULA (MANDATORY WHEN AN AMAZON PRODUCT IS PRESENT):
