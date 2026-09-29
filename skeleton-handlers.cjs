@@ -1243,8 +1243,8 @@ For EACH scene (exactly 6), generate following JSON:
             // If the prompt already has structured metadata (from Studio mode), use it as is.
             // Otherwise (Skeleton mode), append the default intense voice.
             let promptToUse = videoPrompt;
-            if (!promptToUse.toLowerCase().includes('cartoon')) {
-                promptToUse = `3D cartoon animation style. ` + promptToUse;
+            if (!promptToUse.toLowerCase().includes('cgi') && !promptToUse.toLowerCase().includes('animation')) {
+                promptToUse = `High-end 3D CGI animation. ` + promptToUse;
             }
             if (!videoPrompt.includes('CHARACTER:') && !videoPrompt.includes('NEGATIVE PROMPT:')) {
                 promptToUse = `${promptToUse} AUDIO TRACK: A highly emotional, panicked, and intense adult male voice ALMOST SCREAMING in ${langStr}. STRICTLY NO BACKGROUND NOISE, NO MUSIC, NO SOUND EFFECTS, JUST PURE RAW SHOUTING VOICE. Spoken text: "${scriptLine}"`;
@@ -1271,7 +1271,14 @@ For EACH scene (exactly 6), generate following JSON:
                 .replace(/\bmid-twenties\b/gi, 'late twenties')
                 .replace(/\bgirl\b/gi, 'woman')
                 .replace(/\bkid\b/gi, 'person')
-                .replace(/\bkids\b/gi, 'people');
+                .replace(/\bkids\b/gi, 'people')
+                .replace(/\bPixar 3D animation style\b/gi, 'high-end 3D CGI animation')
+                .replace(/\bPixar style\b/gi, 'high-end 3D CGI')
+                .replace(/\bPixar\b/gi, 'high-end CGI')
+                .replace(/\b3D cartoon animation style\b/gi, 'high-end 3D CGI animation')
+                .replace(/\bcartoon animation style\b/gi, 'CGI animation style')
+                .replace(/\bcartoon animation\b/gi, 'CGI animation')
+                .replace(/\bcartoon\b/gi, 'animated CGI');
 
             // Prepend explicit adult framing for Omni Flash safety classifiers
             if (!promptToUse.includes('ADULT PERSON') && !promptToUse.includes('mature adult')) {
@@ -2033,7 +2040,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
                   "imageVariant": "A",
                   "videoVariant": "A",
                   "imagePrompt": "(In English) [PASTE CHARACTER BIBLE HERE]. Describe the moody urban location, dramatic lighting, and his confident body posture.",
-                  "videoPrompt": "(In English) 3D cartoon animation style. Describe the animation starting from the exact pose in imagePrompt. Deliberate gestures: pointed finger, arms crossed, wry shrug. LIP-SYNC: \"[line]\""
+                  "videoPrompt": "(In English) High-end 3D CGI animation. Describe the animation starting from the exact pose in imagePrompt. Deliberate gestures: pointed finger, arms crossed, wry shrug. LIP-SYNC: \"[line]\""
                 }
               ]
             }`;
@@ -2220,7 +2227,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
                   "imageVariant": "E",
                   "videoVariant": "E",
                   "imagePrompt": "(In English) [PASTE CHARACTER BIBLE HERE]. In the sharp foreground macro focus: vivid physical problem (e.g. slimy garden slugs chewing leaves, cracked textures, or dark stubborn fabric stains). In soft bokeh behind it, Génie leans in at adult height inspecting it with shock/intrigue. Describe the detailed scene.",
-                  "videoPrompt": "(In English) 3D cartoon animation style. Describe the animation starting from the exact pose in imagePrompt. Slow rack-focus from foreground problem to Génie pointing and addressing the camera. LIP-SYNC: \"[line]\""
+                  "videoPrompt": "(In English) High-end 3D CGI animation. Describe the animation starting from the exact pose in imagePrompt. Slow rack-focus from foreground problem to Génie pointing and addressing the camera. LIP-SYNC: \"[line]\""
                 }
               ]
             }`;
@@ -2333,7 +2340,7 @@ Provide a clear, dense summary of the exact lifehack/trick demonstrated in the v
                   "imageVariant": "E",
                   "videoVariant": "E",
                   "imagePrompt": "In English: [PASTE CHARACTER BIBLE HERE]. In sharp foreground: the physical problem or pest up-close. In background bokeh: Génie inspecting the disaster. Describe the environment.",
-                  "videoPrompt": "In English: 3D cartoon animation style. Describe the animation starting from the exact pose in imagePrompt. Animate rack focus from problem to character explaining. LIP-SYNC: \"[line]\""
+                  "videoPrompt": "In English: High-end 3D CGI animation. Describe the animation starting from the exact pose in imagePrompt. Animate rack focus from problem to character explaining. LIP-SYNC: \"[line]\""
                 }
               ]
             }`;
